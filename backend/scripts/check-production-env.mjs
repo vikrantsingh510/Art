@@ -40,7 +40,7 @@ if (!process.env.MIGRATION_DATABASE_URL) {
 }
 
 if (env.TRUST_PROXY === 0) {
-  warnings.push('TRUST_PROXY is 0. Set TRUST_PROXY=1 when Express sits behind a reverse proxy so rate limiting sees client IPs.');
+  warnings.push('TRUST_PROXY is 0. Set TRUST_PROXY=1 when Express sits behind a reverse proxy so request logs see the client IP.');
 }
 
 warnings.push('DEFERRED: Razorpay credentials are not required for the current MVP.');

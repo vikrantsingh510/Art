@@ -1,9 +1,27 @@
 import { AccountNav } from '@/components/account-nav';
 import { LogoutButton } from '@/components/logout-button';
-import { requireUser } from '@/lib/session';
+import { ErrorState } from '@/components/states';
+import { isRateLimitError, requireUser } from '@/lib/session';
 
 export default async function AccountLayout({ children }) {
-  const { user } = await requireUser();
+  let user = null;
+  let rateLimitError = null;
+  try {
+    ({ user } = await requireUser());
+  } catch (error) {
+    if (!isRateLimitError(error)) {
+      throw error;
+    }
+    rateLimitError = error;
+  }
+
+  if (rateLimitError) {
+    return (
+      <div className="page-shell py-16">
+        <ErrorState title="Too many requests" error={rateLimitError} retryHref="/account" />
+      </div>
+    );
+  }
 
   return (
     <div className="page-shell py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">

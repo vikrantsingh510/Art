@@ -1,4 +1,5 @@
 import { PageTransition } from '@/components/page-transition';
+import { ErrorState } from '@/components/states';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { api } from '@/lib/api';
@@ -11,12 +12,22 @@ export default async function GalleryLayout({ children }) {
   let token = null;
   let cartCount = 0;
   let wishlistCount = 0;
+  let rateLimitError = null;
+  let current = { user: null, token: null };
   try {
-    const current = await getCurrentUser();
+    current = await getCurrentUser();
+  } catch {
+    current = { user: null, token: null };
+  }
+
+  if (current.unavailable === 'rate_limited') {
+    rateLimitError = current.error;
+    user = current.token
+      ? { id: 'signed-in', fullName: '', email: '', roles: [], isAdmin: false }
+      : null;
+  } else {
     user = current.user;
     token = current.token;
-  } catch {
-    user = null;
   }
 
   if (user && token) {
@@ -27,7 +38,10 @@ export default async function GalleryLayout({ children }) {
       ]);
       cartCount = cart?.count ?? cart?.items?.length ?? 0;
       wishlistCount = wishlist?.count ?? wishlist?.items?.length ?? 0;
-    } catch {
+    } catch (error) {
+      if (error?.status === 429 && !rateLimitError) {
+        rateLimitError = error;
+      }
       cartCount = 0;
       wishlistCount = 0;
     }
@@ -37,6 +51,11 @@ export default async function GalleryLayout({ children }) {
     <>
       <SiteHeader user={user} cartCount={cartCount} wishlistCount={wishlistCount} />
       <main className="min-h-screen pt-[7.5rem] bg-surface">
+        {rateLimitError ? (
+          <div className="page-shell pt-6">
+            <ErrorState title="Too many requests" error={rateLimitError} retryHref="/" />
+          </div>
+        ) : null}
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter />

@@ -1,6 +1,8 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { api, ApiClientError } from './api';
+import { readCurrentUser } from './current-user';
 import { canAccessAdmin } from './guards';
 import { createServerSupabaseClient } from './supabase/server';
 
@@ -14,22 +16,12 @@ export async function getAccessToken() {
   return session?.access_token ?? null;
 }
 
-export async function getCurrentUser() {
-  const token = await getAccessToken();
-  if (!token) {
-    return { user: null, token: null };
-  }
-
-  try {
-    const user = await api.getMe({ token });
-    return { user, token };
-  } catch (error) {
-    if (error instanceof ApiClientError && (error.status === 401 || error.status === 403)) {
-      return { user: null, token: null };
-    }
-    throw error;
-  }
-}
+export const getCurrentUser = cache(function getCurrentUser() {
+  return readCurrentUser({
+    getAccessToken,
+    getMe: (options) => api.getMe(options),
+  });
+});
 
 function loginPath(nextPath) {
   const next = nextPath && nextPath !== '/auth/login' ? nextPath : '/account';
@@ -39,11 +31,14 @@ function loginPath(nextPath) {
 export async function requireUser() {
   const headerStore = await headers();
   const nextPath = headerStore.get('x-pathname') || '/account';
-  const { user, token } = await getCurrentUser();
-  if (!user || !token) {
+  const current = await getCurrentUser();
+  if (current.unavailable === 'rate_limited') {
+    throw current.error;
+  }
+  if (!current.user || !current.token) {
     redirect(loginPath(nextPath));
   }
-  return { user, token };
+  return { user: current.user, token: current.token };
 }
 
 export async function requireAdmin() {
@@ -52,4 +47,8 @@ export async function requireAdmin() {
     redirect('/forbidden');
   }
   return { user, token };
+}
+
+export function isRateLimitError(error) {
+  return error instanceof ApiClientError && error.status === 429;
 }

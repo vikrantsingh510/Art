@@ -1,3 +1,5 @@
+import { isNavHrefActive } from './nav-active.js';
+
 export const ACCOUNT_NAV_LINKS = [
   { href: '/account', label: 'Overview' },
   { href: '/account/profile', label: 'Profile' },
@@ -8,10 +10,9 @@ export const ACCOUNT_NAV_LINKS = [
 ];
 
 export function isAccountNavActive(pathname, href) {
-  const current = String(pathname || '').replace(/\/+$/, '') || '/';
-  const target = String(href || '').replace(/\/+$/, '') || '/';
-  if (target === '/account') {
-    return current === '/account';
-  }
-  return current === target || current.startsWith(`${target}/`);
+  return isNavHrefActive(
+    pathname,
+    href,
+    ACCOUNT_NAV_LINKS.map((link) => link.href),
+  );
 }

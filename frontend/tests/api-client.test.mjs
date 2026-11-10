@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ApiClientError, createArtApi } from '../lib/api-client.js';
+import { ApiClientError, createArtApi, parseRetryAfter } from '../lib/api-client.js';
 
 test('unwraps success envelopes and sends bearer tokens', async () => {
   const calls = [];
@@ -48,6 +48,45 @@ test('maps Express error envelopes without retrying', async () => {
       && error.details[0].path === 'limit',
   );
   assert.equal(hits, 1);
+});
+
+test('parses Retry-After as seconds or an HTTP date', () => {
+  assert.equal(parseRetryAfter('12'), 12);
+  assert.equal(parseRetryAfter('0'), 0);
+  assert.equal(parseRetryAfter(''), null);
+  const later = new Date(Date.now() + 5000).toUTCString();
+  const seconds = parseRetryAfter(later);
+  assert.ok(seconds >= 4 && seconds <= 6);
+});
+
+test('429 preserves retry metadata and does not retry or sign out', async () => {
+  let hits = 0;
+  let unauthorized = 0;
+  const api = createArtApi({
+    baseUrl: 'http://api.test',
+    onUnauthorized: async () => {
+      unauthorized += 1;
+    },
+    fetchImpl: async () => {
+      hits += 1;
+      return {
+        ok: false,
+        status: 429,
+        headers: { get: (name) => (name.toLowerCase() === 'retry-after' ? '8' : null) },
+        text: async () => JSON.stringify({ success: false, error: { message: 'Too many requests' } }),
+      };
+    },
+  });
+
+  await assert.rejects(
+    () => api.getMe(),
+    (error) => error instanceof ApiClientError
+      && error.status === 429
+      && error.retryAfterSeconds === 8
+      && /Retry in 8 seconds/.test(error.message),
+  );
+  assert.equal(hits, 1);
+  assert.equal(unauthorized, 0);
 });
 
 test('invokes onUnauthorized once for 401 and does not loop', async () => {

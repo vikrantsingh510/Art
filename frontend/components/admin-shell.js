@@ -1,14 +1,7 @@
 import Link from 'next/link';
+import { AdminNav } from './admin-nav';
 import { LogoutButton } from './logout-button';
 import { PageTransition } from './page-transition';
-
-const links = [
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/admin/artworks', label: 'Artwork collection' },
-  { href: '/admin/artworks/new', label: 'Add new artwork' },
-  { href: '/admin/orders', label: 'Orders' },
-  { href: '/admin/customers', label: 'Customers' },
-];
 
 export function AdminShell({ user, children }) {
   return (
@@ -18,13 +11,7 @@ export function AdminShell({ user, children }) {
           <p className="font-display tracking-[0.16em] uppercase">Maison d&apos;Art</p>
           <p className="label-sm text-patina mt-2">Curatorial console</p>
         </div>
-        <nav className="space-y-3">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href} className="block label-md text-on-surface-variant hover:text-primary">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <AdminNav />
         <p className="text-xs text-patina">Archival protocol: private lots stay path-only. No live dispatch or payment controls.</p>
         <Link href="/" className="text-link block">View salon</Link>
       </aside>

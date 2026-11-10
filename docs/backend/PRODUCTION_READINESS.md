@@ -90,7 +90,20 @@ Health checks:
 - Liveness: `GET /api/v1/health`
 - Readiness: `GET /api/v1/health/db`
 
-CORS uses a single allowlisted origin (`FRONTEND_URL`). Helmet, 1 MB JSON limits, and rate limiting (100 requests / 15 minutes, health excluded) are enabled. Unexpected 500 responses return a generic message.
+CORS uses a single allowlisted origin (`FRONTEND_URL`). Helmet and 1 MB JSON body limits are enabled. `TRUST_PROXY` must stay `0` unless a reverse proxy is actually in front. Unexpected 500 responses return a generic message.
+
+### Protection model
+
+Express does **not** apply request-count rate limits to application APIs. Catalogue reads, `/auth/me`, admin dashboard and artwork CRUD, cart, wishlist, addresses, and orders are not capped by an IP or user request budget.
+
+Abuse protection that remains:
+
+- **Login / OTP / password recovery:** Google OAuth and session issuance are handled by **Supabase Auth**. Express has no login, OTP, or password-recovery routes. Do not invent them.
+- **Contact form:** storefront `mailto:` only; there is no contact or ticketing API to rate-limit.
+- **JWT and authorization:** `requireAuth` verifies the Supabase access token on each request and loads roles from `user_roles`. `requireAdmin` is server-side. Client-supplied `isAdmin` / `role` values are ignored. Identity is stored on `req.user` for that request only — there is no process-wide authenticated-user cache.
+- **Artwork uploads:** live Storage bucket MIME and file-size constraints, the five-image catalogue cap, `requireAdmin`, and Storage RLS. Deletion stays Storage-first and retryable. These are resource checks, not request-count caps.
+- **Body size:** 1 MB JSON / urlencoded limit.
+- **Upstream 429:** Supabase Auth or Storage may still return 429. The frontend treats that as a recoverable pause (no sign-out, no automatic retry loop).
 
 ---
 

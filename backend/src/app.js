@@ -1,6 +1,5 @@
 import express from 'express';
 import helmet from 'helmet';
-import { rateLimit } from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 import { env } from './config/env.js';
 import { corsMiddleware } from './config/cors.js';
@@ -43,22 +42,6 @@ app.use(express.json({
   },
 }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-if (process.env.NODE_ENV !== 'test') {
-  app.use(rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-    skip: (req) => String(req.originalUrl || req.path).startsWith('/api/v1/health'),
-    message: {
-      success: false,
-      error: {
-        message: 'Too many requests',
-      },
-    },
-  }));
-}
 
 app.use('/api/v1', apiRouter);
 app.use(notFoundMiddleware);

@@ -15,13 +15,27 @@ export function EmptyState({ title, description, action }) {
   );
 }
 
+function retryHint(error) {
+  const seconds = Number(error?.retryAfterSeconds);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return null;
+  }
+  if (seconds < 60) {
+    return `Please wait about ${seconds} seconds before retrying.`;
+  }
+  const minutes = Math.ceil(seconds / 60);
+  return `Please wait about ${minutes} minute${minutes === 1 ? '' : 's'} before retrying.`;
+}
+
 export function ErrorState({ title = 'The salon archive could not be reached', error, retryHref }) {
+  const wait = retryHint(error);
   return (
     <div className="border border-fillet bg-stone px-6 py-12">
       <h2 className="font-display text-2xl italic text-ink">{title}</h2>
       <p className="mt-3 text-sm text-on-surface-variant">
         {error?.message || 'Please retry in a moment. No placeholder inventory is shown.'}
       </p>
+      {wait ? <p className="mt-2 text-sm text-on-surface-variant">{wait}</p> : null}
       {retryHref ? (
         <div className="mt-6">
           <Button href={retryHref} variant="secondary">Retry</Button>

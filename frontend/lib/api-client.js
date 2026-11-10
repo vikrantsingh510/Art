@@ -1,11 +1,38 @@
 export class ApiClientError extends Error {
-  constructor(message, { status = 0, details, payload } = {}) {
+  constructor(message, { status = 0, details, payload, retryAfterSeconds = null } = {}) {
     super(message);
     this.name = 'ApiClientError';
     this.status = status;
     this.details = details;
     this.payload = payload;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
+}
+
+export function parseRetryAfter(value, now = Date.now()) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const asNumber = Number(value);
+  if (Number.isFinite(asNumber) && asNumber >= 0) {
+    return Math.ceil(asNumber);
+  }
+  const asDate = Date.parse(String(value));
+  if (Number.isNaN(asDate)) {
+    return null;
+  }
+  return Math.max(0, Math.ceil((asDate - now) / 1000));
+}
+
+function headerValue(headers, name) {
+  if (!headers) {
+    return null;
+  }
+  if (typeof headers.get === 'function') {
+    return headers.get(name);
+  }
+  const match = Object.keys(headers).find((key) => key.toLowerCase() === name.toLowerCase());
+  return match ? headers[match] : null;
 }
 
 function joinUrl(baseUrl, path) {
@@ -68,12 +95,17 @@ export function createApiClient({
       }
 
       if (!response.ok || payload?.success === false) {
+        const retryAfterSeconds = parseRetryAfter(headerValue(response.headers, 'retry-after'));
+        const message = payload?.error?.message || `Request failed (${response.status})`;
         throw new ApiClientError(
-          payload?.error?.message || `Request failed (${response.status})`,
+          response.status === 429 && retryAfterSeconds !== null
+            ? `${message}. Retry in ${retryAfterSeconds} seconds.`
+            : message,
           {
             status: response.status,
             details: payload?.error?.details,
             payload,
+            retryAfterSeconds,
           },
         );
       }
