@@ -1,0 +1,350 @@
+import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm';
+import { db } from '../config/database.js';
+import {
+  artworkCategories,
+  artworkImages,
+  artworkMedia,
+  artworks,
+  collectionArtworks,
+  orderItems,
+  orders,
+} from '../db/schema/index.js';
+import { ApiError } from '../utils/ApiError.js';
+import { uniqueSlug } from '../utils/slug.js';
+import { writeAuditLog } from './audit.service.js';
+import { getActiveReservedQuantities, withAvailability } from './inventory.service.js';
+
+const PUBLIC_STATUSES = ['published'];
+const PURCHASED_ORDER_STATUSES = ['confirmed', 'processing', 'shipped', 'delivered'];
+
+function mapArtworkRow(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    story: row.story,
+    technique: row.technique,
+    medium: row.medium,
+    material: row.material,
+    artistName: row.artistName,
+    yearCreated: row.yearCreated,
+    width: row.width,
+    height: row.height,
+    depth: row.depth,
+    dimensionUnit: row.dimensionUnit,
+    pricePaise: row.pricePaise,
+    currency: row.currency,
+    inventoryQuantity: row.inventoryQuantity,
+    status: row.status,
+    isFeatured: row.isFeatured,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+async function attachRelations(artworkRows, { includePrivateMedia = false } = {}) {
+  if (artworkRows.length === 0) {
+    return [];
+  }
+
+  const artworkIds = artworkRows.map((row) => row.id);
+  const reservedMap = await getActiveReservedQuantities(artworkIds);
+
+  const [images, media, categoryRows, collectionRows] = await Promise.all([
+    db.select().from(artworkImages).where(inArray(artworkImages.artworkId, artworkIds)),
+    db.select().from(artworkMedia).where(inArray(artworkMedia.artworkId, artworkIds)),
+    db.select().from(artworkCategories).where(inArray(artworkCategories.artworkId, artworkIds)),
+    db.select().from(collectionArtworks).where(inArray(collectionArtworks.artworkId, artworkIds)),
+  ]);
+
+  return artworkRows.map((row) => {
+    const artwork = withAvailability(mapArtworkRow(row), reservedMap.get(row.id) || 0);
+    artwork.images = images
+      .filter((image) => image.artworkId === row.id)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    artwork.media = media
+      .filter((item) => item.artworkId === row.id)
+      .filter((item) => includePrivateMedia || item.accessLevel === 'public')
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+    artwork.categoryIds = categoryRows
+      .filter((item) => item.artworkId === row.id)
+      .map((item) => item.categoryId);
+    artwork.collectionIds = collectionRows
+      .filter((item) => item.artworkId === row.id)
+      .map((item) => item.collectionId);
+    return artwork;
+  });
+}
+
+async function replaceArtworkLinks(artworkId, { categoryIds, collectionIds } = {}) {
+  if (categoryIds) {
+    await db.delete(artworkCategories).where(eq(artworkCategories.artworkId, artworkId));
+    if (categoryIds.length > 0) {
+      await db.insert(artworkCategories).values(
+        categoryIds.map((categoryId) => ({ artworkId, categoryId })),
+      );
+    }
+  }
+
+  if (collectionIds) {
+    await db.delete(collectionArtworks).where(eq(collectionArtworks.artworkId, artworkId));
+    if (collectionIds.length > 0) {
+      await db.insert(collectionArtworks).values(
+        collectionIds.map((collectionId, index) => ({
+          artworkId,
+          collectionId,
+          displayOrder: index,
+        })),
+      );
+    }
+  }
+}
+
+export async function listArtworks(query, { publicOnly = true } = {}) {
+  const filters = [];
+
+  if (publicOnly) {
+    filters.push(inArray(artworks.status, PUBLIC_STATUSES));
+  } else if (query.status) {
+    filters.push(eq(artworks.status, query.status));
+  }
+
+  if (query.q) {
+    const pattern = `%${query.q}%`;
+    filters.push(or(
+      ilike(artworks.title, pattern),
+      ilike(artworks.artistName, pattern),
+      ilike(artworks.description, pattern),
+    ));
+  }
+
+  if (query.minPricePaise !== undefined) {
+    filters.push(gte(artworks.pricePaise, query.minPricePaise));
+  }
+
+  if (query.maxPricePaise !== undefined) {
+    filters.push(lte(artworks.pricePaise, query.maxPricePaise));
+  }
+
+  if (query.featured === 'true') {
+    filters.push(eq(artworks.isFeatured, true));
+  }
+
+  let source = db.select({ artwork: artworks }).from(artworks);
+
+  if (query.categoryId) {
+    source = source.innerJoin(
+      artworkCategories,
+      eq(artworkCategories.artworkId, artworks.id),
+    );
+    filters.push(eq(artworkCategories.categoryId, query.categoryId));
+  }
+
+  if (query.collectionId) {
+    source = source.innerJoin(
+      collectionArtworks,
+      eq(collectionArtworks.artworkId, artworks.id),
+    );
+    filters.push(eq(collectionArtworks.collectionId, query.collectionId));
+  }
+
+  const whereClause = filters.length > 0 ? and(...filters) : undefined;
+  const page = query.page || 1;
+  const limit = query.limit || 20;
+  const offset = (page - 1) * limit;
+
+  const [countRow] = await db
+    .select({ count: sql`count(distinct ${artworks.id})::int`.as('count') })
+    .from(artworks)
+    .leftJoin(artworkCategories, eq(artworkCategories.artworkId, artworks.id))
+    .leftJoin(collectionArtworks, eq(collectionArtworks.artworkId, artworks.id))
+    .where(whereClause);
+
+  const rows = await source
+    .where(whereClause)
+    .orderBy(desc(artworks.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  const uniqueArtworks = [];
+  const seen = new Set();
+  for (const row of rows) {
+    const artwork = row.artwork || row;
+    if (!seen.has(artwork.id)) {
+      seen.add(artwork.id);
+      uniqueArtworks.push(artwork);
+    }
+  }
+
+  const items = await attachRelations(uniqueArtworks, { includePrivateMedia: !publicOnly });
+
+  return {
+    items,
+    page,
+    limit,
+    total: Number(countRow?.count || 0),
+  };
+}
+
+export async function getArtworkById(artworkId, { publicOnly = true, includePrivateMedia = false } = {}) {
+  const [row] = await db.select().from(artworks).where(eq(artworks.id, artworkId)).limit(1);
+  if (!row || (publicOnly && !PUBLIC_STATUSES.includes(row.status))) {
+    throw new ApiError(404, 'Artwork not found');
+  }
+
+  const [item] = await attachRelations([row], { includePrivateMedia: includePrivateMedia || !publicOnly });
+  return item;
+}
+
+export async function userHasPurchasedArtwork(userId, artworkId) {
+  const [row] = await db
+    .select({ id: orderItems.id })
+    .from(orderItems)
+    .innerJoin(orders, eq(orders.id, orderItems.orderId))
+    .where(and(
+      eq(orderItems.artworkId, artworkId),
+      eq(orders.userId, userId),
+      inArray(orders.status, PURCHASED_ORDER_STATUSES),
+    ))
+    .limit(1);
+
+  return Boolean(row);
+}
+
+export async function createArtwork(payload, actorUserId) {
+  const slug = payload.slug || uniqueSlug(payload.title);
+  const [created] = await db.insert(artworks).values({
+    title: payload.title,
+    slug,
+    description: payload.description ?? null,
+    story: payload.story ?? null,
+    technique: payload.technique ?? null,
+    medium: payload.medium ?? null,
+    material: payload.material ?? null,
+    artistName: payload.artistName,
+    yearCreated: payload.yearCreated ?? null,
+    width: payload.width ?? null,
+    height: payload.height ?? null,
+    depth: payload.depth ?? null,
+    dimensionUnit: payload.dimensionUnit ?? null,
+    pricePaise: payload.pricePaise,
+    currency: payload.currency || 'INR',
+    inventoryQuantity: payload.inventoryQuantity ?? 1,
+    status: payload.status || 'draft',
+    isFeatured: payload.isFeatured ?? false,
+  }).returning();
+
+  await replaceArtworkLinks(created.id, {
+    categoryIds: payload.categoryIds || [],
+    collectionIds: payload.collectionIds || [],
+  });
+  await writeAuditLog({
+    actorUserId,
+    action: 'artwork.create',
+    entityType: 'artwork',
+    entityId: created.id,
+  });
+
+  return getArtworkById(created.id, { publicOnly: false, includePrivateMedia: true });
+}
+
+export async function updateArtwork(artworkId, payload, actorUserId) {
+  const [existing] = await db.select().from(artworks).where(eq(artworks.id, artworkId)).limit(1);
+  if (!existing) {
+    throw new ApiError(404, 'Artwork not found');
+  }
+
+  const updates = { ...payload };
+  delete updates.categoryIds;
+  delete updates.collectionIds;
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(artworks).set(updates).where(eq(artworks.id, artworkId));
+  }
+
+  if (payload.categoryIds || payload.collectionIds) {
+    await replaceArtworkLinks(artworkId, {
+      categoryIds: payload.categoryIds ?? undefined,
+      collectionIds: payload.collectionIds ?? undefined,
+    });
+  }
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'artwork.update',
+    entityType: 'artwork',
+    entityId: artworkId,
+  });
+
+  return getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+}
+
+export async function archiveArtwork(artworkId, actorUserId) {
+  return updateArtwork(artworkId, { status: 'archived' }, actorUserId);
+}
+
+export async function addArtworkImage(artworkId, payload, actorUserId) {
+  await getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+
+  if (payload.isPrimary) {
+    await db.update(artworkImages)
+      .set({ isPrimary: false })
+      .where(eq(artworkImages.artworkId, artworkId));
+  }
+
+  const [created] = await db.insert(artworkImages).values({
+    artworkId,
+    storagePath: payload.storagePath,
+    altText: payload.altText ?? null,
+    displayOrder: payload.displayOrder ?? 0,
+    isPrimary: payload.isPrimary ?? false,
+  }).returning();
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'artwork.image.add',
+    entityType: 'artwork',
+    entityId: artworkId,
+    metadata: { imageId: created.id },
+  });
+
+  return created;
+}
+
+export async function addArtworkMedia(artworkId, payload, actorUserId) {
+  await getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+
+  const [created] = await db.insert(artworkMedia).values({
+    artworkId,
+    mediaType: payload.mediaType,
+    storageBucket: payload.storageBucket,
+    storagePath: payload.storagePath,
+    originalFilename: payload.originalFilename ?? null,
+    mimeType: payload.mimeType ?? null,
+    fileSizeBytes: payload.fileSizeBytes ?? null,
+    accessLevel: payload.accessLevel,
+    displayOrder: payload.displayOrder ?? 0,
+  }).returning();
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'artwork.media.add',
+    entityType: 'artwork',
+    entityId: artworkId,
+    metadata: { mediaId: created.id, mediaType: created.mediaType },
+  });
+
+  return created;
+}
+
+export default {
+  listArtworks,
+  getArtworkById,
+  userHasPurchasedArtwork,
+  createArtwork,
+  updateArtwork,
+  archiveArtwork,
+  addArtworkImage,
+  addArtworkMedia,
+};

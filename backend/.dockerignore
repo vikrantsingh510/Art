@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+node_modules
+tests
+scripts/.tmp-roadmap
+*.md
+test-migration-connection.mjs

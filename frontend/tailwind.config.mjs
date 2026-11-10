@@ -1,0 +1,57 @@
+/** @type {import('tailwindcss').Config} */
+const config = {
+  content: ['./app/**/*.{js,jsx}', './components/**/*.{js,jsx}', './lib/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        background: '#fff8f2',
+        surface: '#fff8f2',
+        ivory: '#faf8f5',
+        stone: '#f2efe9',
+        fillet: '#e6e2da',
+        'surface-dim': '#dfd9d3',
+        'surface-bright': '#fff8f2',
+        'surface-container-lowest': '#ffffff',
+        'surface-container-low': '#f9f3ec',
+        'surface-container': '#f3ede6',
+        'surface-container-high': '#ede7e1',
+        'surface-container-highest': '#e8e1db',
+        'on-surface': '#1d1b18',
+        'on-surface-variant': '#4a4640',
+        outline: '#7b766f',
+        'outline-variant': '#ccc5bd',
+        primary: '#000000',
+        'on-primary': '#ffffff',
+        'primary-container': '#1c1b1a',
+        secondary: '#715b33',
+        'on-secondary': '#ffffff',
+        'secondary-container': '#fddeac',
+        error: '#ba1a1a',
+        'error-container': '#ffdad6',
+        ink: '#111110',
+        charcoal: '#1a1918',
+        patina: '#78746f',
+        bronze: '#a38a5e',
+        antique: '#8c734b',
+      },
+      fontFamily: {
+        sans: ['var(--font-manrope)', 'sans-serif'],
+        display: ['var(--font-playfair)', 'serif'],
+      },
+      borderRadius: {
+        none: '0px',
+        sm: '0px',
+        DEFAULT: '0px',
+        md: '0px',
+        lg: '0px',
+        xl: '0px',
+        '2xl': '0px',
+        '3xl': '0px',
+        full: '0px',
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;

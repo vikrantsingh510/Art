@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&amp;family=Manrope:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"tertiary":"#000000","surface-variant":"#e8e1db","surface-container-lowest":"#ffffff","surface-container-high":"#ede7e1","secondary-fixed":"#fddeac","on-surface-variant":"#4a4640","tertiary-container":"#281900","error":"#ba1a1a","inverse-on-surface":"#f6f0e9","tertiary-fixed":"#fedeae","on-background":"#1d1b18","surface-dim":"#dfd9d3","surface-container-low":"#f9f3ec","outline":"#7b766f","primary-fixed":"#e6e2df","tertiary-fixed-dim":"#e1c294","primary-container":"#1c1b1a","secondary-container":"#fddeac","outline-variant":"#ccc5bd","primary":"#000000","on-secondary-fixed-variant":"#57441e","on-tertiary-fixed":"#281900","secondary-fixed-dim":"#dfc392","inverse-primary":"#cac6c4","on-primary-fixed":"#1c1b1a","error-container":"#ffdad6","on-tertiary-fixed-variant":"#584320","surface-container-highest":"#e8e1db","secondary":"#715b33","on-primary-fixed-variant":"#484645","on-error":"#ffffff","surface-container":"#f3ede6","primary-fixed-dim":"#cac6c4","on-primary-container":"#868382","surface-bright":"#fff8f2","on-secondary":"#ffffff","inverse-surface":"#33302c","on-surface":"#1d1b18","surface-tint":"#605e5c","on-tertiary":"#ffffff","on-tertiary-container":"#9a8057","surface":"#fff8f2","on-error-container":"#93000a","on-secondary-container":"#776139","background":"#fff8f2","on-primary":"#ffffff","on-secondary-fixed":"#271900"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-md":"1.75rem","space-lg":"3rem","margin-mobile":"1.5rem","margin":"4rem","gutter":"2rem","gutter-mobile":"1rem","space-xs":"0.5rem","space-sm":"1rem","space-xl":"5rem"},fontFamily:{"headline-lg":["Playfair Display"],"headline-md":["Playfair Display"],"display-xl-mobile":["Playfair Display"],"headline-sm":["Playfair Display"],"headline-lg-mobile":["Playfair Display"],"body-sm":["Manrope"],"display-xl":["Playfair Display"],"body-md":["Manrope"],"label-sm":["Manrope"],"label-lg":["Manrope"],"body-lg":["Manrope"],"label-md":["Manrope"]},fontSize:{"headline-lg":["40px",{lineHeight:"50px",letterSpacing:"-0.015em",fontWeight:"400"}],"headline-md":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"400"}],"display-xl-mobile":["38px",{lineHeight:"48px",letterSpacing:"-0.01em",fontWeight:"400"}],"headline-sm":["22px",{lineHeight:"30px",fontWeight:"500"}],"headline-lg-mobile":["30px",{lineHeight:"38px",letterSpacing:"-0.01em",fontWeight:"400"}],"body-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"display-xl":["56px",{lineHeight:"68px",letterSpacing:"-0.02em",fontWeight:"400"}],"body-md":["15px",{lineHeight:"24px",letterSpacing:"0.005em",fontWeight:"400"}],"label-sm":["10px",{lineHeight:"12px",letterSpacing:"0.16em",fontWeight:"600"}],"label-lg":["12px",{lineHeight:"16px",letterSpacing:"0.12em",fontWeight:"500"}],"body-lg":["18px",{lineHeight:"30px",letterSpacing:"0.01em",fontWeight:"300"}],"label-md":["11px",{lineHeight:"14px",letterSpacing:"0.14em",fontWeight:"500"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased min-h-screen selection:bg-secondary-fixed selection:text-on-secondary-fixed"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between border-r border-outline-variant/40"><div class="flex flex-col"><div class="px-8 pt-8 pb-6 border-b border-outline-variant/30"><div class="flex items-center gap-3"><div class="w-9 h-9 bg-primary flex items-center justify-center"><span class="font-headline-sm text-surface text-base italic tracking-widest">M</span></div><div><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface block leading-tight">Maison d'Art</span><span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary block mt-0.5">Vérité Fine Art</span></div></div><div class="mt-4 inline-flex items-center gap-1.5 px-2 py-1 bg-surface-container border border-outline-variant/50"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant text-[9px]">Atelier Direct</span></div></div><nav class="flex flex-col gap-1 px-4 py-6" data-active-classes="bg-primary text-on-primary font-medium shadow-none"><a aria-current="page" class="flex items-center gap-3.5 px-4 py-3 transition-colors uppercase tracking-wider bg-primary text-on-primary font-medium shadow-none" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[19px]">dashboard</span><span>Dashboard</span></a><a class="flex items-center gap-3.5 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm uppercase tracking-wider" data-path="artwork-collection" href="#"><span class="material-symbols-outlined text-[19px]">palette</span><span>Artwork Collection</span></a><a class="flex items-center gap-3.5 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm uppercase tracking-wider" data-path="add-new-artwork" href="#"><span class="material-symbols-outlined text-[19px]">add_circle</span><span>Add New Artwork</span></a><a class="flex items-center gap-3.5 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm uppercase tracking-wider" data-path="orders" href="#"><span class="material-symbols-outlined text-[19px]">receipt_long</span><span>Orders</span></a><a class="flex items-center gap-3.5 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm uppercase tracking-wider" data-path="customers" href="#"><span class="material-symbols-outlined text-[19px]">group</span><span>Customers</span></a><a class="flex items-center gap-3.5 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm uppercase tracking-wider" data-path="settings" href="#"><span class="material-symbols-outlined text-[19px]">settings</span><span>Settings</span></a></nav></div><div class="p-6 border-t border-outline-variant/30"><div class="p-4 bg-surface border border-outline-variant/40"><div class="flex items-center justify-between mb-2"><span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary">Salon Vault</span><span class="material-symbols-outlined text-secondary text-[16px]">lock</span></div><p class="font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-relaxed">Archival protocol active. Private lots encrypted under provenance token.</p></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 z-40 flex items-center justify-between px-8"><div class="flex items-center gap-6"><div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md uppercase tracking-widest"><span class="hover:text-on-surface cursor-pointer">Maison d'Art</span><span class="text-outline">/</span><span class="text-on-surface font-semibold">Curatorial Console</span></div><div class="h-4 w-px bg-outline-variant/60 hidden lg:block"></div><span class="hidden xl:inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low text-secondary font-label-sm text-label-sm uppercase tracking-wider border border-outline-variant/40"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Salon Curatorial Portal — Direct Atelier Management</span></div><div class="flex items-center gap-6"><div class="relative hidden md:block w-72"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span><input class="w-full bg-surface-container-low border-0 border-b border-outline-variant/60 pl-9 pr-3 py-1.5 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-colors" placeholder="Search catalog lots, collectors..." type="search"/></div><button aria-label="Curatorial Notifications" class="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-secondary rounded-full"></span></button><div class="h-5 w-px bg-outline-variant/60"></div><div class="flex items-center gap-3.5"><div class="text-right hidden sm:block"><span class="font-body-md text-body-md text-on-surface block leading-tight font-medium">Éléonore de Vérité</span><span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary block">Principal Curator</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-20 w-full min-h-screen bg-surface"><div class="flex flex-col w-full">
+<div class="px-8 lg:px-12 py-10 max-w-[1600px] mx-auto w-full space-y-12">
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-8 border-b border-outline-variant/30">
+<div class="space-y-2">
+<div class="inline-flex items-center gap-2 px-2.5 py-1 bg-surface-container border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary">Salon Registry • Autumn 2025</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Executive Dashboard &amp; Curatorial Overview</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Real-time acquisitions, catalog status, and private salon order dispatches.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="inline-flex items-center gap-2.5 px-4 py-3 bg-surface-container hover:bg-surface-container-high transition-colors font-label-md text-label-md uppercase tracking-wider text-on-surface" type="button">
+<span class="material-symbols-outlined text-[17px] text-secondary">tune</span>
+<span>Catalog Audit</span>
+</button>
+<button class="inline-flex items-center gap-2.5 px-4 py-3 bg-surface-container hover:bg-surface-container-high transition-colors font-label-md text-label-md uppercase tracking-wider text-on-surface" type="button">
+<span class="material-symbols-outlined text-[17px] text-secondary">local_shipping</span>
+<span>Dispatch Log</span>
+</button>
+<button class="inline-flex items-center gap-2.5 px-5 py-3 bg-primary text-on-primary hover:bg-secondary transition-colors font-label-md text-label-md uppercase tracking-wider" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add New Artwork</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+<div class="p-6 bg-surface-container-low hover:bg-surface-container transition-colors relative flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Gross Acquisitions</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">account_balance_wallet</span>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md tracking-tight text-on-surface">₹48,65,000</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase font-semibold">INR</span>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-between text-body-sm">
+<span class="inline-flex items-center gap-1 text-[#2d5a27] font-medium">
+<span class="material-symbols-outlined text-[15px]">north_east</span>
+            +18.4%
+          </span>
+<span class="text-on-surface-variant">vs past 30 days</span>
+</div>
+</div>
+<div class="p-6 bg-surface-container-low hover:bg-surface-container transition-colors relative flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Active Provenance Holdings</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">palette</span>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md tracking-tight text-on-surface">38 Pieces</span>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-on-surface font-semibold">31 Published</span>
+<span>•</span>
+<span>5 Monographs</span>
+<span>•</span>
+<span class="text-outline">2 Archived</span>
+</div>
+</div>
+<div class="p-6 bg-surface-container-low hover:bg-surface-container transition-colors relative flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Collector Acquisitions</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">fact_check</span>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md tracking-tight text-on-surface">19 Orders</span>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-on-surface font-semibold">14 Installed</span>
+<span>•</span>
+<span class="text-secondary font-medium">3 En Route</span>
+<span>•</span>
+<span>2 In Review</span>
+</div>
+</div>
+<div class="p-6 bg-surface-container-low hover:bg-surface-container transition-colors relative flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Average Acquisition Value</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">analytics</span>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-md text-headline-md tracking-tight text-on-surface">₹2,56,000</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase font-semibold">INR</span>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-between text-body-sm text-on-surface-variant">
+<span class="inline-flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+            Curated Singular Lots
+          </span>
+<span class="font-label-sm text-label-sm uppercase">Indexed</span>
+</div>
+</div>
+</div>
+<div class="p-8 bg-surface-container-low space-y-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/30">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Acquisition Trajectory &amp; Escrow Settlement</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider px-2 py-0.5 bg-surface text-secondary">FY 2025</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Aggregated capital inflow from private collector transactions across gallery salons.</p>
+</div>
+<div class="inline-flex p-1 bg-surface" id="period-toggles">
+<button class="px-3 py-1 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors" data-period="7D" type="button">7D</button>
+<button class="px-3 py-1 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors" data-period="30D" type="button">30D</button>
+<button class="px-3 py-1 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant hover:text-on-surface transition-colors" data-period="90D" type="button">90D</button>
+<button class="px-3 py-1 font-label-sm text-label-sm uppercase tracking-wider bg-primary text-on-primary" data-period="12M" type="button">12M (2025)</button>
+</div>
+</div>
+<div class="h-64 w-full flex flex-col justify-end pt-4">
+<div class="relative w-full h-48 flex items-end justify-between gap-2 sm:gap-4 px-2">
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+<div class="border-b border-outline"></div>
+<div class="border-b border-outline"></div>
+<div class="border-b border-outline"></div>
+<div class="border-b border-outline"></div>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹2.1L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 28%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Jan</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹3.4L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 42%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Feb</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹2.8L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 36%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Mar</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹4.2L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 52%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Apr</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹3.9L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 48%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">May</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹5.1L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 64%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Jun</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹4.6L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 58%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Jul</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹6.2L</span>
+<div class="w-full max-w-[42px] bg-outline-variant/40 group-hover:bg-secondary transition-all" style="height: 76%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Aug</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<span class="font-label-sm text-label-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">₹7.1L</span>
+<div class="w-full max-w-[42px] bg-secondary/80 group-hover:bg-secondary transition-all" style="height: 86%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Sep</span>
+</div>
+<div class="relative z-10 flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-primary text-on-primary font-label-sm text-label-sm whitespace-nowrap">
+<span>₹9.35L Peak</span>
+</div>
+<div class="w-full max-w-[42px] bg-primary group-hover:bg-secondary transition-all" style="height: 100%"></div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface font-semibold">Oct</span>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap items-center justify-between pt-4 border-t border-outline-variant/30 text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-primary"></span>
+<span class="font-label-sm text-label-sm uppercase">Curated Peak (Singular Lot Closures)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-secondary"></span>
+<span class="font-label-sm text-label-sm uppercase">Steady Salon Volume</span>
+</div>
+</div>
+<span class="font-body-sm italic">Next archival reconciliation: 31 October 2025</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="lg:col-span-8 space-y-6">
+<div class="flex items-center justify-between pb-4 border-b border-outline-variant/30">
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface">Recent Collector Acquisitions</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Validated orders and white-glove transport tracking.</p>
+</div>
+<a class="font-label-md text-label-md uppercase tracking-wider text-secondary hover:text-on-surface transition-colors underline decoration-outline-variant/60 underline-offset-4" href="#">
+            View All Dispatches
+          </a>
+</div>
+<div class="bg-surface-container-low overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest bg-surface-container">
+<th class="py-4 px-5">Order / Lot ID</th>
+<th class="py-4 px-5">Collector</th>
+<th class="py-4 px-5">Artwork &amp; Artist</th>
+<th class="py-4 px-5">Amount</th>
+<th class="py-4 px-5">Escrow State</th>
+<th class="py-4 px-5">Fulfillment</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 font-body-sm text-body-sm">
+<tr class="hover:bg-surface-container/70 transition-colors">
+<td class="py-4 px-5">
+<span class="font-label-md text-label-md text-on-surface font-semibold block">#MDA-2025-089</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Today, 11:30 AM</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">Devendra Varma</td>
+<td class="py-4 px-5">
+<span class="font-headline-sm text-base italic block text-on-surface">Silence of the Ochre Dunes</span>
+<span class="font-label-sm text-label-sm text-secondary">A. V. Mukherjee</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">₹4,20,000</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-surface text-on-surface font-label-sm text-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 bg-[#2d5a27] rounded-full"></span>
+                    NEFT Escrow
+                  </span>
+</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1 text-secondary font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[15px]">airport_shuttle</span>
+                    White-Glove En Route
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/70 transition-colors">
+<td class="py-4 px-5">
+<span class="font-label-md text-label-md text-on-surface font-semibold block">#MDA-2025-088</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Yesterday</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">Meera Sen-Gupta</td>
+<td class="py-4 px-5">
+<span class="font-headline-sm text-base italic block text-on-surface">The Obsidian Threshold</span>
+<span class="font-label-sm text-label-sm text-secondary">Kalyan Rathore</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">₹1,60,000</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-surface text-on-surface font-label-sm text-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 bg-[#2d5a27] rounded-full"></span>
+                    Paid (UPI)
+                  </span>
+</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[15px]">inventory_2</span>
+                    Curatorial Packing
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/70 transition-colors">
+<td class="py-4 px-5">
+<span class="font-label-md text-label-md text-on-surface font-semibold block">#MDA-2025-087</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Oct 24, 2025</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">Siddharth Rao</td>
+<td class="py-4 px-5">
+<span class="font-headline-sm text-base italic block text-on-surface">Terracotta Memory VII</span>
+<span class="font-label-sm text-label-sm text-secondary">Tara Narayanan</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">₹85,000</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-surface text-on-surface font-label-sm text-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 bg-[#2d5a27] rounded-full"></span>
+                    Credit Card
+                  </span>
+</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1 text-[#2d5a27] font-label-sm text-label-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-[15px]">check_circle</span>
+                    Delivered &amp; Installed
+                  </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/70 transition-colors">
+<td class="py-4 px-5">
+<span class="font-label-md text-label-md text-on-surface font-semibold block">#MDA-2025-086</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Oct 22, 2025</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">Rajesh Singhania</td>
+<td class="py-4 px-5">
+<span class="font-headline-sm text-base italic block text-on-surface">Monsoon Nocturne in Indigo</span>
+<span class="font-label-sm text-label-sm text-secondary">Devashish Roy</span>
+</td>
+<td class="py-4 px-5 font-medium text-on-surface">₹1,85,000</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-surface text-on-surface font-label-sm text-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 bg-[#2d5a27] rounded-full"></span>
+                    Escrow Verified
+                  </span>
+</td>
+<td class="py-4 px-5">
+<span class="inline-flex items-center gap-1 text-secondary font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[15px]">flight_takeoff</span>
+                    In Transit
+                  </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+</div>
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface font-semibold block">COA &amp; Archival Ledger Authenticity</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Every completed order includes a curator-signed physical seal and cryptographic register.</span>
+</div>
+</div>
+<button class="px-4 py-2 border border-outline-variant bg-surface hover:bg-surface-container-high transition-colors font-label-sm text-label-sm uppercase tracking-wider text-on-surface" type="button">
+            Export Audit CSV
+          </button>
+</div>
+</div>
+<div class="lg:col-span-4 space-y-6">
+<div class="flex items-center justify-between pb-4 border-b border-outline-variant/30">
+<div>
+<span class="font-headline-sm text-headline-sm text-on-surface">Catalog Status</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Recently accessioned artworks.</p>
+</div>
+<a class="font-label-md text-label-md uppercase tracking-wider text-secondary hover:text-on-surface transition-colors underline decoration-outline-variant/60 underline-offset-4" href="#">
+            Curate All
+          </a>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container-low hover:bg-surface-container transition-colors flex gap-4 items-center">
+<div class="w-20 h-20 bg-surface-container-high flex-shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A museum gallery exhibition wall with a textured earth-toned mixed media painting featuring impasto ochre, natural sand, and 24-karat gold leaf highlights, illuminated by soft museum track lights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-BXLWVRaeTkhV1YYQrKQ-uY5mChYBXT04RQ9bTir8Isxlv33yWdUn-FcZRlKT9ilkPn-K4y_WjD2kegwRQlO13pDW2kUSSD9XO0uHL19lvJQ-pDo_OQ_DT3U4G9NhbZJN-kG2MJ3588fNAgrZWRBeOmqi2j122hkORkA8R1QpAEQLSjSHq06XSRgVmTye9BT-bzojfI6v_k9cI1rtLguWk1M1b378coJL-HDuXIY"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-[#2d5a27] font-semibold">Published</span>
+<span class="font-label-sm text-label-sm font-semibold text-on-surface">₹4,20,000</span>
+</div>
+<h4 class="font-headline-sm text-base italic truncate text-on-surface mt-0.5">Silence of the Ochre Dunes</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Crushed Basalt &amp; 24K Leaf</p>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low hover:bg-surface-container transition-colors flex gap-4 items-center">
+<div class="w-20 h-20 bg-surface-container-high flex-shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Abstract minimalist modern artwork with heavy natural clay texture, raw organic pigments of burnt umber and terra cotta, hung in a pristine gallery context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnYncQTPnYVS2Cr9uMHmrxHxsqwAG3mvOyZsf05Hyc6DbLrxhWPRXjj7t1CXAFss4SRrlOD3vwVhkU4UNI16J-t_Ic4nmAMxGYLliShNsJv22o8ZtreF_4g_l9I67pvem8FqjFzj-9vtOM1QxwnCkC1WTMeHgtTYmZ-fxiQF_vQp4A5_OTjtrCOANfk_kX9Y-MrYRg_C6uWRhda0xBy4-IaPH51xyfMDZgC9cvotc"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-[#2d5a27] font-semibold">Published</span>
+<span class="font-label-sm text-label-sm font-semibold text-on-surface">₹3,80,000</span>
+</div>
+<h4 class="font-headline-sm text-base italic truncate text-on-surface mt-0.5">Echoes of the Aravalli</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Raw Earth &amp; Binder</p>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low hover:bg-surface-container transition-colors flex gap-4 items-center">
+<div class="w-20 h-20 bg-surface-container-high flex-shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Classical Indian miniature-inspired contemporary wasli tempera painting with delicate silver leaf accents and morning mist hues over sacred river ripples." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiYQedafyUGDs1hOKniN51lO7z46ylzhvw6eOhyhE-xAoCRCBbTiwQ1fTqZ7Gs_LL6RGJVekPRXiVf0jaHpMUc2Cu7fqdqn5LoTT15VTtqitcbSi-qriRvno5XhhK8GiLkXlBvx_bta1T8e_QMzV4G2fOV6Nymo6mwKKMLzj541X8rtdfrFYR5TPBLkJw8J-8piJOIsgggyCSnwUlAGXdlnMbpFQ4d3qFEqJW7yoQ"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-semibold">Draft (Pending COA)</span>
+<span class="font-label-sm text-label-sm font-semibold text-on-surface">₹2,40,000</span>
+</div>
+<h4 class="font-headline-sm text-base italic truncate text-on-surface mt-0.5">Varanasi Whispers at Dawn</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Wasli Tempera</p>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low hover:bg-surface-container transition-colors flex gap-4 items-center">
+<div class="w-20 h-20 bg-surface-container-high flex-shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Monolithic patinated bronze sculpture mounted on a rough carved travertine stone base inside a modern minimalist white-cube museum gallery." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAzEIQnRvDd9wC8d6lVLOj4wrvelocNTJbYwmu1byXJGS8XUHz2FaMo9jnnoTCdZrRR6lPRcR-ZT7rkqSXJp7lSDQUvX36qRnCcz56jlZRVag5SuAz4aXUKHu27-qx_nVqkbB_SeSQJ3ZzmH9jwtWrGkKcdbL01B5KKrgZtIchzthlK--iPql0t_5zdaErinHHIrv1AJ26-rgNAHa-EzEqpp5TMLu8YSCnSVTAveU"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-[#2d5a27] font-semibold">Published</span>
+<span class="font-label-sm text-label-sm font-semibold text-on-surface">₹5,10,000</span>
+</div>
+<h4 class="font-headline-sm text-base italic truncate text-on-surface mt-0.5">Equinox Sentinel</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Bronze &amp; Raw Stone</p>
+</div>
+</div>
+</div>
+<div class="p-6 bg-surface-container space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant">Private Salon Reserve</span>
+<span class="font-label-sm text-label-sm uppercase text-secondary">3 Vaulted</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Access to encrypted archival lots is limited to verified VIP patronage accounts under curated NDA terms.</p>
+<button class="w-full py-2.5 bg-primary text-on-primary hover:bg-secondary transition-colors font-label-md text-label-md uppercase tracking-wider text-center" type="button">
+            Manage Salon Invitations
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const toggles = document.querySelectorAll('#period-toggles button');
+    toggles.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggles.forEach(b => {
+          b.classList.remove('bg-primary', 'text-on-primary');
+          b.classList.add('text-on-surface-variant');
+        });
+        btn.classList.add('bg-primary', 'text-on-primary');
+        btn.classList.remove('text-on-surface-variant');
+      });
+    });
+  })();
+</script></main></div></body></html>
