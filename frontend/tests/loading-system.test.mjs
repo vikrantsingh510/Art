@@ -42,13 +42,13 @@ test('about, contact and sign-in stack a centered column instead of a two-column
   const contact = read('app/(gallery)/contact/page.js');
   for (const source of [login, about, contact]) {
     assert.match(source, /page-shell/);
-    assert.match(source, /mx-auto/);
     assert.doesNotMatch(source, /PageIntro/);
     assert.doesNotMatch(source, /lg:grid-cols-12|md:grid-cols-2/);
   }
-  assert.match(about, /max-w-4xl/);
-  assert.match(contact, /max-w-4xl/);
+  assert.doesNotMatch(about, /max-w-4xl/);
   assert.match(contact, /mailto:atelier@maisondart\.example/);
+  assert.doesNotMatch(contact, /max-w-4xl/);
+  assert.match(login, /mx-auto/);
   assert.match(login, /max-w-xl/);
   assert.match(login, /LoginButton/);
 });
