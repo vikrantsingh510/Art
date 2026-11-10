@@ -15,13 +15,15 @@ export default async function LoginPage({ searchParams }) {
         title="Sign in with Google"
         description="Supabase Auth issues the session. The Express API then provisions a customer profile on first visit. Passwords are not stored in this application."
       />
-      <div className="max-w-md mx-auto px-6 pb-24 space-y-6">
+      <div className="page-shell pb-24">
+      <div className="max-w-md space-y-6">
         {error ? (
           <p className="notice notice-error">
             {error === 'session' ? 'The sign-in session could not be completed.' : 'The authentication callback was incomplete.'}
           </p>
         ) : null}
         <LoginButton nextPath={nextPath} />
+      </div>
       </div>
     </div>
   );

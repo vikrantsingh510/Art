@@ -3,7 +3,7 @@ import Link from 'next/link';
 export function SiteFooter() {
   return (
     <footer className="w-full bg-surface-container-low mt-20">
-      <div className="max-w-7xl mx-auto px-6 md:px-16 pt-20 pb-12">
+      <div className="page-shell pt-20 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-12">
           <div className="md:col-span-5 space-y-4">
             <p className="font-display tracking-[0.16em] uppercase text-primary">Maison d&apos;Art</p>

@@ -10,7 +10,8 @@ export default function ContactPage() {
         title="Write to the atelier"
         description="There is no ticketing API in this release. Use email for private viewing requests and provenance questions."
       />
-      <div className="max-w-3xl mx-auto px-6 md:px-16 pb-24 space-y-6">
+      <div className="page-shell pb-24">
+      <div className="max-w-3xl space-y-6">
         <div className="notice">
           <p className="label-md text-patina">Salon correspondence</p>
           <p className="mt-2">
@@ -20,6 +21,7 @@ export default function ContactPage() {
             New Delhi salon correspondence is handled by the principal curator. Submitting this page does not create an order, escrow, or shipment.
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export default async function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-surface/80 via-surface/20 to-transparent" />
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-6 md:px-16 pt-44 pb-16">
+        <div className="relative z-10 page-shell pt-44 pb-16">
           <div className="max-w-3xl space-y-5">
             <p className="inline-flex items-center gap-3 bg-surface/90 px-3.5 py-1.5 label-sm text-on-surface-variant">
               <span className="w-1.5 h-1.5 bg-secondary" />
@@ -72,7 +72,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 md:px-16 py-20 grid md:grid-cols-2 gap-16">
+      <section className="page-shell py-20 grid md:grid-cols-2 gap-16">
         <div>
           <p className="label-md text-patina">The Maison manifesto</p>
           <h2 className="font-display text-4xl leading-tight mt-4">Solitary devotion, uncompromised permanence.</h2>
@@ -101,7 +101,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 md:px-16 pb-20">
+      <section className="page-shell pb-20">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
             <p className="label-md text-patina">Archival salon catalogue</p>
@@ -127,7 +127,7 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-stone py-20">
-        <div className="max-w-7xl mx-auto px-6 md:px-16">
+        <div className="page-shell">
           <p className="label-md text-patina">Taxonomy of form</p>
           <h2 className="font-display text-3xl md:text-4xl mt-2 mb-10">Explore by medium &amp; series</h2>
           {categories.length === 0 && collections.length === 0 ? (

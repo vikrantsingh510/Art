@@ -26,9 +26,9 @@ export function primaryArtworkImage(artwork) {
   return images.find((image) => image.isPrimary) || images[0] || null;
 }
 
-export function artworkImageUrl(artwork) {
-  const image = primaryArtworkImage(artwork);
-  return publicStorageUrl(image?.storagePath);
+export function artworkImageUrl(artwork, image) {
+  const chosen = image || primaryArtworkImage(artwork);
+  return publicStorageUrl(chosen?.storagePath);
 }
 
 export function publicMediaItems(artwork) {

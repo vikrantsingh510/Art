@@ -41,8 +41,20 @@ export const artworkListQuery = paginationQuery.extend({
 export const artworkImageBody = z.object({
   storagePath: z.string().trim().min(1).max(1000),
   altText: z.string().trim().max(500).optional().nullable(),
-  displayOrder: z.number().int().min(0).default(0),
+  displayOrder: z.number().int().min(0).optional(),
   isPrimary: z.boolean().default(false),
+  mimeType: z.string().trim().max(100).optional().nullable(),
+  fileSizeBytes: z.number().int().min(0).optional().nullable(),
+});
+
+export const artworkImageReorderBody = z.object({
+  imageIds: z.array(z.string().uuid()).min(1).max(5),
+  primaryImageId: z.string().uuid().optional().nullable(),
+});
+
+export const artworkImageParam = z.object({
+  id: z.string().uuid(),
+  imageId: z.string().uuid(),
 });
 
 export const artworkMediaBody = z.object({
@@ -69,5 +81,7 @@ export default {
   artworkUpdateBody,
   artworkListQuery,
   artworkImageBody,
+  artworkImageReorderBody,
+  artworkImageParam,
   artworkMediaBody,
 };

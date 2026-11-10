@@ -9,10 +9,22 @@ import {
   orderItems,
   orders,
 } from '../db/schema/index.js';
+import {
+  assertCanPublish,
+  assertImageCapacity,
+  assertImageFileAgainstConstraints,
+  assertPrimaryBelongsToArtwork,
+  assertReorderPayload,
+  assertStoragePathForArtwork,
+  nextDisplayOrder,
+  replacementPrimaryId,
+  sortArtworkImages,
+} from '../lib/artwork-images.js';
 import { ApiError } from '../utils/ApiError.js';
 import { uniqueSlug } from '../utils/slug.js';
 import { writeAuditLog } from './audit.service.js';
 import { getActiveReservedQuantities, withAvailability } from './inventory.service.js';
+import { getArtworkImagesUploadConstraints } from './storage-constraints.service.js';
 
 const PUBLIC_STATUSES = ['published'];
 const PURCHASED_ORDER_STATUSES = ['confirmed', 'processing', 'shipped', 'delivered'];
@@ -60,9 +72,9 @@ async function attachRelations(artworkRows, { includePrivateMedia = false } = {}
 
   return artworkRows.map((row) => {
     const artwork = withAvailability(mapArtworkRow(row), reservedMap.get(row.id) || 0);
-    artwork.images = images
-      .filter((image) => image.artworkId === row.id)
-      .sort((a, b) => a.displayOrder - b.displayOrder);
+    artwork.images = sortArtworkImages(
+      images.filter((image) => image.artworkId === row.id),
+    );
     artwork.media = media
       .filter((item) => item.artworkId === row.id)
       .filter((item) => includePrivateMedia || item.accessLevel === 'public')
@@ -212,7 +224,44 @@ export async function userHasPurchasedArtwork(userId, artworkId) {
   return Boolean(row);
 }
 
+async function listArtworkImageRows(artworkId) {
+  return db.select().from(artworkImages).where(eq(artworkImages.artworkId, artworkId));
+}
+
+async function compactArtworkImageOrder(artworkId, images) {
+  const ordered = sortArtworkImages(images);
+  await Promise.all(ordered.map((image, index) => (
+    db.update(artworkImages)
+      .set({ displayOrder: index })
+      .where(eq(artworkImages.id, image.id))
+  )));
+}
+
+async function setArtworkPrimaryImage(artworkId, primaryImageId) {
+  if (!primaryImageId) {
+    return;
+  }
+  await db.update(artworkImages)
+    .set({ isPrimary: false })
+    .where(eq(artworkImages.artworkId, artworkId));
+  await db.update(artworkImages)
+    .set({ isPrimary: true })
+    .where(and(
+      eq(artworkImages.artworkId, artworkId),
+      eq(artworkImages.id, primaryImageId),
+    ));
+}
+
+async function assertArtworkCanBePublished(artworkId, status) {
+  if (status !== 'published') {
+    return;
+  }
+  const images = await listArtworkImageRows(artworkId);
+  assertCanPublish(status, images.length);
+}
+
 export async function createArtwork(payload, actorUserId) {
+  assertCanPublish(payload.status || 'draft', 0);
   const slug = payload.slug || uniqueSlug(payload.title);
   const [created] = await db.insert(artworks).values({
     title: payload.title,
@@ -258,6 +307,8 @@ export async function updateArtwork(artworkId, payload, actorUserId) {
   const updates = { ...payload };
   delete updates.categoryIds;
   delete updates.collectionIds;
+  const nextStatus = updates.status ?? existing.status;
+  await assertArtworkCanBePublished(artworkId, nextStatus);
 
   if (Object.keys(updates).length > 0) {
     await db.update(artworks).set(updates).where(eq(artworks.id, artworkId));
@@ -285,9 +336,16 @@ export async function archiveArtwork(artworkId, actorUserId) {
 }
 
 export async function addArtworkImage(artworkId, payload, actorUserId) {
-  await getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+  assertStoragePathForArtwork(artworkId, payload.storagePath);
+  const constraints = await getArtworkImagesUploadConstraints();
+  assertImageFileAgainstConstraints(payload, constraints);
 
-  if (payload.isPrimary) {
+  await getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+  const existing = await listArtworkImageRows(artworkId);
+  assertImageCapacity(existing.length, 1);
+
+  const isPrimary = existing.length === 0 ? true : Boolean(payload.isPrimary);
+  if (isPrimary) {
     await db.update(artworkImages)
       .set({ isPrimary: false })
       .where(eq(artworkImages.artworkId, artworkId));
@@ -297,8 +355,8 @@ export async function addArtworkImage(artworkId, payload, actorUserId) {
     artworkId,
     storagePath: payload.storagePath,
     altText: payload.altText ?? null,
-    displayOrder: payload.displayOrder ?? 0,
-    isPrimary: payload.isPrimary ?? false,
+    displayOrder: payload.displayOrder ?? nextDisplayOrder(existing),
+    isPrimary,
   }).returning();
 
   await writeAuditLog({
@@ -310,6 +368,87 @@ export async function addArtworkImage(artworkId, payload, actorUserId) {
   });
 
   return created;
+}
+
+export async function removeArtworkImage(artworkId, imageId, actorUserId) {
+  await getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+  const existing = await listArtworkImageRows(artworkId);
+  const target = existing.find((image) => image.id === imageId);
+  if (!target) {
+    throw new ApiError(404, 'Artwork image not found');
+  }
+
+  const nextPrimaryId = replacementPrimaryId(existing, imageId);
+  await db.delete(artworkImages).where(and(
+    eq(artworkImages.id, imageId),
+    eq(artworkImages.artworkId, artworkId),
+  ));
+
+  const remaining = existing.filter((image) => image.id !== imageId);
+  if (nextPrimaryId) {
+    await setArtworkPrimaryImage(artworkId, nextPrimaryId);
+  }
+  await compactArtworkImageOrder(artworkId, remaining.map((image) => (
+    image.id === nextPrimaryId ? { ...image, isPrimary: true } : image
+  )));
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'artwork.image.remove',
+    entityType: 'artwork',
+    entityId: artworkId,
+    metadata: { imageId, storagePath: target.storagePath },
+  });
+
+  return {
+    removedId: imageId,
+    storagePath: target.storagePath,
+    images: sortArtworkImages(await listArtworkImageRows(artworkId)),
+  };
+}
+
+export async function reorderArtworkImages(artworkId, payload, actorUserId) {
+  await getArtworkById(artworkId, { publicOnly: false, includePrivateMedia: true });
+  const existing = await listArtworkImageRows(artworkId);
+  const existingIds = existing.map((image) => image.id);
+  assertReorderPayload(existingIds, payload.imageIds);
+  assertPrimaryBelongsToArtwork(existingIds, payload.primaryImageId);
+
+  await db.transaction(async (tx) => {
+    await Promise.all(payload.imageIds.map((imageId, index) => (
+      tx.update(artworkImages)
+        .set({ displayOrder: index })
+        .where(and(
+          eq(artworkImages.id, imageId),
+          eq(artworkImages.artworkId, artworkId),
+        ))
+    )));
+
+    if (payload.primaryImageId) {
+      await tx.update(artworkImages)
+        .set({ isPrimary: false })
+        .where(eq(artworkImages.artworkId, artworkId));
+      await tx.update(artworkImages)
+        .set({ isPrimary: true })
+        .where(and(
+          eq(artworkImages.artworkId, artworkId),
+          eq(artworkImages.id, payload.primaryImageId),
+        ));
+    }
+  });
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'artwork.image.reorder',
+    entityType: 'artwork',
+    entityId: artworkId,
+    metadata: {
+      imageIds: payload.imageIds,
+      primaryImageId: payload.primaryImageId || null,
+    },
+  });
+
+  return sortArtworkImages(await listArtworkImageRows(artworkId));
 }
 
 export async function addArtworkMedia(artworkId, payload, actorUserId) {
@@ -346,5 +485,7 @@ export default {
   updateArtwork,
   archiveArtwork,
   addArtworkImage,
+  removeArtworkImage,
+  reorderArtworkImages,
   addArtworkMedia,
 };

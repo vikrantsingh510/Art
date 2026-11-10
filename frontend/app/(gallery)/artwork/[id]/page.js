@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArViewer } from '@/components/ar-viewer';
-import { ArtworkImage } from '@/components/artwork-image';
+import { ArtworkGallery } from '@/components/artwork-gallery';
 import { AddToCartButton, AddToWishlistButton } from '@/components/collection-actions';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui';
@@ -38,7 +38,7 @@ export default async function ArtworkDetailPage({ params }) {
       notFound();
     }
     return (
-      <div className="max-w-7xl mx-auto px-6 md:px-16 py-16">
+      <div className="page-shell py-16">
         <ErrorState error={error} retryHref={`/artwork/${id}`} />
       </div>
     );
@@ -49,20 +49,13 @@ export default async function ArtworkDetailPage({ params }) {
   const dimensions = formatDimensions(artwork);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-16 py-10 md:py-16">
+    <div className="page-shell py-10 md:py-16">
       <p className="label-sm text-patina mb-8">
         <Link href="/explore" className="text-link">The permanent collection</Link>
       </p>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-7 space-y-6">
-          <ArtworkImage artwork={artwork} priority sizes="(min-width: 1024px) 55vw, 100vw" />
-          {(artwork.images || []).length > 1 ? (
-            <div className="grid grid-cols-3 gap-3">
-              {artwork.images.slice(1, 4).map((image) => (
-                <ArtworkImage key={image.id} artwork={{ ...artwork, images: [image] }} />
-              ))}
-            </div>
-          ) : null}
+          <ArtworkGallery key={artwork.id} artwork={artwork} />
         </div>
         <aside className="lg:col-span-5 space-y-6">
           <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>

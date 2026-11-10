@@ -5,10 +5,17 @@ import Image from 'next/image';
 import { artworkImageUrl, primaryArtworkImage } from '@/lib/media';
 import { ImagePlaceholder } from './loading';
 
-export function ArtworkImage({ artwork, className = '', priority = false, sizes = '(min-width: 1024px) 33vw, 100vw' }) {
-  const url = artworkImageUrl(artwork);
-  const image = primaryArtworkImage(artwork);
-  const alt = image?.altText || artwork?.title || 'Artwork';
+export function ArtworkImage({
+  artwork,
+  image = null,
+  className = '',
+  variant = 'frame',
+  priority = false,
+  sizes = '(min-width: 1024px) 33vw, 100vw',
+}) {
+  const chosen = image || primaryArtworkImage(artwork);
+  const url = artworkImageUrl(artwork, chosen);
+  const alt = chosen?.altText || artwork?.title || 'Artwork';
 
   if (!url) {
     return <ImagePlaceholder className={className} label="Image not catalogued" />;
@@ -20,13 +27,14 @@ export function ArtworkImage({ artwork, className = '', priority = false, sizes 
       url={url}
       alt={alt}
       className={className}
+      variant={variant}
       priority={priority}
       sizes={sizes}
     />
   );
 }
 
-function CataloguedImage({ url, alt, className, priority, sizes }) {
+function CataloguedImage({ url, alt, className, variant, priority, sizes }) {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -35,7 +43,7 @@ function CataloguedImage({ url, alt, className, priority, sizes }) {
   }
 
   return (
-    <div className={`artwork-image-frame aspect-[4/5] ${className}`}>
+    <div className={`artwork-image-frame ${variant === 'lightbox' ? 'artwork-lightbox-frame' : 'aspect-[4/5]'} ${className}`}>
       <Image
         src={url}
         alt={alt}

@@ -92,7 +92,7 @@ export function ArtworkGridSkeleton({
 
 export function ArtworkDetailSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-6 md:px-16 py-10 md:py-16" role="status" aria-live="polite" aria-label="Loading artwork">
+    <div className="page-shell py-10 md:py-16" role="status" aria-live="polite" aria-label="Loading artwork">
       <Skeleton className="h-3 w-40 mb-8" />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-7">
@@ -141,7 +141,7 @@ export function HomeSalonSkeleton() {
   return (
     <div role="status" aria-live="polite" aria-label="Loading exhibition">
       <div className="hero-frame relative w-full -mt-[7.5rem] min-h-[34rem] md:min-h-[52rem] bg-surface-container-low" />
-      <section className="max-w-7xl mx-auto px-6 md:px-16 py-20">
+      <section className="page-shell py-20">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div className="space-y-3">
             <Skeleton className="h-3 w-40" />
@@ -275,7 +275,7 @@ export function AccountPanelSkeleton() {
 
 export function CartSkeleton() {
   return (
-    <div className="max-w-4xl mx-auto px-6 md:px-16 py-12 space-y-8" role="status" aria-live="polite" aria-label="Loading bag">
+    <div className="page-shell py-12 space-y-8" role="status" aria-live="polite" aria-label="Loading bag">
       <Skeleton className="h-10 w-56" />
       <Skeleton className="h-16 w-full" />
       {Array.from({ length: 2 }).map((_, index) => (

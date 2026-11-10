@@ -31,7 +31,7 @@ export default async function CollectionDetailPage({ params }) {
       notFound();
     }
     return (
-      <div className="max-w-7xl mx-auto px-6 md:px-16 py-16">
+      <div className="page-shell py-16">
         <ErrorState error={error} retryHref={`/collections/${id}`} />
       </div>
     );
@@ -40,7 +40,7 @@ export default async function CollectionDetailPage({ params }) {
   return (
     <div>
       <PageIntro eyebrow="Published hanging" title={collection.name} description={collection.description} />
-      <div className="max-w-7xl mx-auto px-6 md:px-16 pb-20">
+      <div className="page-shell pb-20">
         {artworks.length === 0 ? (
           <EmptyState title="This hanging has no published works yet" />
         ) : (

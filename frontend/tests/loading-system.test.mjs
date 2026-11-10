@@ -14,6 +14,21 @@ function exists(relativePath) {
   return fs.existsSync(path.join(frontendRoot, relativePath));
 }
 
+test('page-shell is the shared full-width gutter without a 7xl cap', () => {
+  const css = read('app/globals.css');
+  assert.match(css, /\.page-shell\s*\{[\s\S]*?width:\s*100%/);
+  assert.doesNotMatch(css, /\.page-shell\s*\{[\s\S]*?max-width:\s*80rem/);
+  const header = read('components/site-header.js');
+  const footer = read('components/site-footer.js');
+  const intro = read('components/ui.js');
+  assert.match(header, /page-shell/);
+  assert.match(footer, /page-shell/);
+  assert.match(intro, /page-shell/);
+  assert.doesNotMatch(header, /max-w-7xl/);
+  assert.doesNotMatch(footer, /max-w-7xl/);
+  assert.doesNotMatch(intro, /max-w-7xl/);
+});
+
 test('quiet luxury loading tokens exist without shimmer or spinner CSS', () => {
   const css = read('app/globals.css');
   assert.match(css, /prefers-reduced-motion/);

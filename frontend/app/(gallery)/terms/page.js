@@ -6,10 +6,12 @@ export default function TermsPage() {
   return (
     <div>
       <PageIntro title="Terms" description="Acquisition on this storefront is a reservation request, not a completed sale." />
-      <div className="max-w-3xl mx-auto px-6 md:px-16 pb-24 space-y-4 text-sm leading-6 text-on-surface-variant">
+      <div className="page-shell pb-24">
+      <div className="max-w-3xl space-y-4 text-sm leading-6 text-on-surface-variant">
         <p>Checkout creates a pending_payment order and a short inventory reservation. Payment capture is not enabled.</p>
         <p>Each original is unique. The collector bag holds one of each work and is the same list as the wishlist.</p>
         <p>Admin access is granted only by a database role, never by a browser flag.</p>
+      </div>
       </div>
     </div>
   );

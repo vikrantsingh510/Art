@@ -59,7 +59,7 @@ First successful auth provisions `profiles` + `customer` role + wishlist + cart.
 
 Artwork object (verified fields): `id`, `title`, `slug`, `description`, `story`, `technique`, `medium`, `material`, `artistName`, `yearCreated`, `width`, `height`, `depth`, `dimensionUnit`, `pricePaise`, `currency`, `inventoryQuantity`, `status`, `isFeatured`, `createdAt`, `updatedAt`, `reservedQuantity`, `availableQuantity`, `isPurchasable`, `images[]`, `media[]`, `categoryIds`, `collectionIds`.
 
-Images/media store **storage paths**, not public URLs. Public list omits private media. Authenticated purchaser or admin may receive private media metadata.
+Images/media store **storage paths**, not public URLs. `images[]` is ordered by `displayOrder` (then `id`). `isPrimary` marks the cover used by listing cards. At most five catalogue images are accepted. Public list omits private media. Authenticated purchaser or admin may receive private media metadata.
 
 Public `GET /artworks` accepts `status` in validation but **always** filters `status = published`. Admin list uses `status` when provided. `featured=true` filters featured works; `featured=false` does not exclude them.
 
@@ -117,11 +117,14 @@ All `/admin/*` require Bearer **and** database role `admin`.
 | Method | Path | Body / query |
 |---|---|---|
 | GET | `/admin/ping` | `{ ok, userId }` |
+| GET | `/admin/storage/artwork-images` | Live bucket limits: `fileSizeLimitBytes`, `allowedMimeTypes`. Source of truth for upload validation. |
 | GET | `/admin/artworks` | Same list query as public, plus `status` |
 | POST | `/admin/artworks` | See create body below |
 | PATCH | `/admin/artworks/:id` | Partial create body |
 | DELETE | `/admin/artworks/:id` | Archives (`status: archived`), does not hard-delete |
-| POST | `/admin/artworks/:id/images` | `{ storagePath, altText?, displayOrder?, isPrimary? }` |
+| POST | `/admin/artworks/:id/images` | `{ storagePath, altText?, displayOrder?, isPrimary?, mimeType?, fileSizeBytes? }`. Maximum five images. Path must start with `{artworkId}/`. MIME/size must match the live bucket; if bucket metadata cannot be loaded the register is `503` (or `404` if the bucket is missing), never skipped. |
+| PATCH | `/admin/artworks/:id/images/order` | `{ imageIds: uuid[], primaryImageId? }` — `imageIds` must be every image exactly once. |
+| DELETE | `/admin/artworks/:id/images/:imageId` | Removes the catalogue row after the browser has deleted the Storage object (`404` = already gone). If it was primary, the next image by `display_order` becomes primary. |
 | POST | `/admin/artworks/:id/media` | `{ mediaType, storageBucket, storagePath, accessLevel, ... }` certificates/documents must be `private` |
 | GET/POST/PATCH | `/admin/categories` | `{ name, slug?, description?, isActive? }` |
 | GET/POST/PATCH | `/admin/collections` | `{ name, slug?, description?, coverImagePath?, isPublished? }` |

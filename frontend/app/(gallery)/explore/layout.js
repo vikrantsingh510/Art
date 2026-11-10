@@ -19,7 +19,7 @@ export default async function ExploreLayout({ children }) {
         title="The permanent collection & recent acquisitions"
         description="Browse singular, non-reproducible original paintings. Search, category and valuation filters are live. Medium, scale and movement remain unavailable until the catalog API supports them."
       />
-      <div className="max-w-7xl mx-auto px-6 md:px-16 pb-20 space-y-10">
+      <div className="page-shell pb-20 space-y-10">
         <Suspense fallback={<ExploreFiltersFallback />}>
           <ExploreFilters categories={categories} />
         </Suspense>

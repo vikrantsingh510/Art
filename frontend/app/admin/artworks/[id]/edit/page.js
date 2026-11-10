@@ -33,7 +33,7 @@ export default async function EditArtworkPage({ params }) {
         <h1 className="font-display text-4xl mt-2">Edit {artwork.title}</h1>
       </div>
       <Notice>
-        Image deletion is not available. Additional public images can be uploaded; private media cannot be opened without signed URLs.
+        Up to five public images can be catalogued. Removing an image deletes its Storage object after the catalogue row is removed. Private media cannot be opened without signed URLs.
       </Notice>
       <ArtworkForm
         mode="edit"

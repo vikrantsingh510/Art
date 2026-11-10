@@ -15,7 +15,7 @@ export default async function CartPage() {
   const total = items.reduce((sum, item) => sum + Number(item.artwork?.pricePaise || 0), 0);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 md:px-16 py-12 space-y-8">
+    <div className="page-shell py-12 space-y-8">
       <h1 className="font-display text-4xl">Collector bag</h1>
       <Notice>
         Quantity is one per original. Checkout reserves inventory for 15 minutes without taking payment. Wishlist is a separate list and is not checked out.

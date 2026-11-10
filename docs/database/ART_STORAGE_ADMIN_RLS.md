@@ -52,7 +52,20 @@ Expect after 0007:
 
 - SELECT `Public can view artwork images` unchanged (`bucket_id = 'artwork-images'`, roles `{anon,authenticated}`).
 - UPDATE `Admins can update artwork media` unchanged (JWT `app_metadata.role`).
-- DELETE `Admins can delete artwork media` unchanged (JWT `app_metadata.role`).
+- DELETE `Admins can delete artwork media` unchanged (JWT `app_metadata.role`) until `0008`.
+- After `0008_artwork_images_admin_delete.sql`, `Admins can delete artwork images` allows DELETE on `artwork-images` only when `current_user_is_admin()` is true. Private-bucket DELETE stays on the JWT policy.
+
+## 0008 review (not applied)
+
+`backend/src/db/migrations/0008_artwork_images_admin_delete.sql`:
+
+- `FOR DELETE` only; `TO authenticated` (not `anon`).
+- `USING (bucket_id = 'artwork-images' AND public.current_user_is_admin())`.
+- Drops/recreates only the DELETE policy named `Admins can delete artwork images`.
+- Does not alter SELECT or INSERT. Does not grant anonymous delete. Does not change private-bucket JWT DELETE.
+- Journal `idx` 8, tag `0008_artwork_images_admin_delete`. Snapshot id `c8a00008-…` with `prevId` `c7a00007-…` (0007).
+
+Do not apply until explicitly approved. Storage object DELETE from the admin form needs this policy on the target database.
 - SELECT `Admins can view private artwork media` unchanged (JWT + private buckets).
 
 ## Rollback

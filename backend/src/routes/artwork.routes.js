@@ -7,15 +7,19 @@ import {
   getPublicArtwork,
   listAdminArtworks,
   listPublicArtworks,
+  removeAdminArtworkImage,
+  reorderAdminArtworkImages,
   updateAdminArtwork,
 } from '../controllers/artwork.controller.js';
 import { createPreview, listPreviews } from '../controllers/preview.controller.js';
-import { optionalAuth, requireAdmin, requireAuth } from '../middlewares/auth.middleware.js';
+import { optionalAuth, requireAuth } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import {
   artworkCreateBody,
   artworkImageBody,
+  artworkImageParam,
+  artworkImageReorderBody,
   artworkListQuery,
   artworkMediaBody,
   artworkUpdateBody,
@@ -49,6 +53,16 @@ adminRouter.post(
   '/:id/images',
   validate({ params: uuidParam, body: artworkImageBody }),
   asyncHandler(addAdminArtworkImage),
+);
+adminRouter.patch(
+  '/:id/images/order',
+  validate({ params: uuidParam, body: artworkImageReorderBody }),
+  asyncHandler(reorderAdminArtworkImages),
+);
+adminRouter.delete(
+  '/:id/images/:imageId',
+  validate({ params: artworkImageParam }),
+  asyncHandler(removeAdminArtworkImage),
 );
 adminRouter.post(
   '/:id/media',

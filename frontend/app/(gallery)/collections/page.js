@@ -22,7 +22,7 @@ export default async function CollectionsPage() {
         title="Collections"
         description="Only collections the atelier has published are listed. Lookup is by identifier, not a public slug endpoint."
       />
-      <div className="max-w-7xl mx-auto px-6 md:px-16 pb-20">
+      <div className="page-shell pb-20">
         {error ? <ErrorState error={error} retryHref="/collections" /> : null}
         {!error && collections.length === 0 ? (
           <EmptyState title="No published collections" description="When a hanging is released, it will appear here." />

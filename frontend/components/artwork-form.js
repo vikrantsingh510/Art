@@ -1,22 +1,26 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserArtApi, getBrowserAccessToken } from '@/lib/browser-api';
 import { ApiClientError } from '@/lib/api-client';
 import { rupeesToPaise, paiseToRupees } from '@/lib/money';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
+import { validateArtworkImageFile } from '@/lib/artwork-image-constraints';
+import { explainImagePersistError, persistPendingArtworkImage, purgeCatalogueImage } from '@/lib/artwork-image-upload';
 import {
-  explainStorageUploadError,
-  isSelectedImageFile,
-  validateArtworkImageFile,
-} from '@/lib/artwork-image-constraints';
-import { uploadArtworkImageFile } from '@/lib/artwork-image-upload';
-import { ArtworkImageField } from './artwork-image-field';
+  ArtworkImageManager,
+  createManagerItems,
+  managerHasBlockingError,
+} from './artwork-image-manager';
 import { ActionStatus, ButtonLoader } from './loading';
 import { Field } from './ui';
 
 const STATUSES = ['draft', 'published', 'reserved', 'sold', 'archived'];
+
+function sanitizeFileName(name) {
+  return String(name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_');
+}
 
 export function ArtworkForm({ artwork, categories, collections, mode }) {
   const router = useRouter();
@@ -27,17 +31,8 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
   const [constraints, setConstraints] = useState(null);
   const [constraintsError, setConstraintsError] = useState('');
   const [constraintsLoading, setConstraintsLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [imageItems, setImageItems] = useState(() => createManagerItems(artwork));
   const [progress, setProgress] = useState(null);
-  const previewUrl = useMemo(
-    () => (selectedFile ? URL.createObjectURL(selectedFile) : ''),
-    [selectedFile],
-  );
-  const fileError = isSelectedImageFile(selectedFile)
-    ? (validateArtworkImageFile(selectedFile, constraints).ok
-      ? ''
-      : validateArtworkImageFile(selectedFile, constraints).message)
-    : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -67,15 +62,91 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
     };
   }, []);
 
-  useEffect(() => () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-  }, [previewUrl]);
+  async function persistImages(client, artworkId) {
+    const original = createManagerItems(artwork);
+    const remainingSavedIds = new Set(
+      imageItems.filter((item) => item.kind === 'saved').map((item) => item.id),
+    );
+    const removed = original.filter((item) => !remainingSavedIds.has(item.id));
+    const notes = [];
 
-  function onFileChange(file) {
-    setSelectedFile(file);
-    setUploadNote('');
+    for (const item of removed) {
+      const accessToken = await getBrowserAccessToken();
+      await purgeCatalogueImage({
+        storagePath: item.storagePath,
+        storageSession: {
+          supabaseUrl: getSupabaseUrl(),
+          publishableKey: getSupabasePublishableKey(),
+          accessToken,
+        },
+        removeCatalogue: () => client.removeArtworkImage(artworkId, item.id),
+      });
+    }
+
+    const registered = [];
+    const pendingItems = imageItems.filter((item) => item.kind === 'pending');
+    for (const [index, item] of pendingItems.entries()) {
+      const validation = validateArtworkImageFile(item.file, constraints);
+      if (!validation.ok) {
+        throw new Error(validation.message);
+      }
+      if (!isSupabaseConfigured()) {
+        throw new Error('Artwork saved, but image upload needs Supabase browser configuration.');
+      }
+      const accessToken = await getBrowserAccessToken();
+      const path = `${artworkId}/${Date.now()}-${index}-${sanitizeFileName(item.file.name)}`;
+      setImageItems((current) => current.map((entry) => (
+        entry.key === item.key ? { ...entry, progress: 0 } : entry
+      )));
+      const created = await persistPendingArtworkImage({
+        storageSession: {
+          supabaseUrl: getSupabaseUrl(),
+          publishableKey: getSupabasePublishableKey(),
+          accessToken,
+        },
+        artworkId,
+        path,
+        file: item.file,
+        onProgress: (value) => {
+          setProgress(value);
+          setImageItems((current) => current.map((entry) => (
+            entry.key === item.key ? { ...entry, progress: value } : entry
+          )));
+        },
+        registerCatalogue: () => client.addArtworkImage(artworkId, {
+          storagePath: path,
+          altText: item.label || artwork?.title || null,
+          isPrimary: Boolean(item.isPrimary),
+          mimeType: item.file.type || null,
+          fileSizeBytes: item.file.size,
+        }),
+      });
+      registered.push({ key: item.key, id: created.id });
+    }
+
+    const orderKeys = imageItems.map((item) => {
+      if (item.kind === 'saved') {
+        return item.id;
+      }
+      return registered.find((entry) => entry.key === item.key)?.id;
+    }).filter(Boolean);
+
+    const primaryItem = imageItems.find((item) => item.isPrimary);
+    let primaryImageId = null;
+    if (primaryItem?.kind === 'saved') {
+      primaryImageId = primaryItem.id;
+    } else if (primaryItem) {
+      primaryImageId = registered.find((entry) => entry.key === primaryItem.key)?.id || null;
+    }
+
+    if (orderKeys.length > 0) {
+      await client.reorderArtworkImages(artworkId, {
+        imageIds: orderKeys,
+        primaryImageId,
+      });
+    }
+
+    return notes;
   }
 
   async function onSubmit(event) {
@@ -89,6 +160,7 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
     const categoryIds = formData.getAll('categoryIds').filter(Boolean);
     const collectionIds = formData.getAll('collectionIds').filter(Boolean);
     const rupees = formData.get('priceRupees');
+    const intendedStatus = String(formData.get('status') || 'draft');
     const body = {
       title: String(formData.get('title') || '').trim(),
       slug: String(formData.get('slug') || '').trim() || undefined,
@@ -106,7 +178,7 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
       pricePaise: rupeesToPaise(rupees),
       currency: 'INR',
       inventoryQuantity: formData.get('inventoryQuantity') ? Number(formData.get('inventoryQuantity')) : 1,
-      status: String(formData.get('status') || 'draft'),
+      status: intendedStatus,
       isFeatured: formData.get('isFeatured') === 'on',
       categoryIds,
       collectionIds,
@@ -118,58 +190,61 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
       return;
     }
 
-    const file = isSelectedImageFile(selectedFile) ? selectedFile : null;
-    if (file) {
-      const result = validateArtworkImageFile(file, constraints);
-      if (!result.ok) {
-        setError(result.message);
-        setPending(false);
-        return;
-      }
+    if (managerHasBlockingError(imageItems, constraints)) {
+      setError('One or more selected images are outside the artwork-images bucket limits.');
+      setPending(false);
+      return;
+    }
+
+    const pendingCount = imageItems.filter((item) => item.kind === 'pending').length;
+    const savedCount = imageItems.filter((item) => item.kind === 'saved').length;
+    if (intendedStatus === 'published' && savedCount + pendingCount === 0) {
+      setError('An artwork must have at least one catalogue image before it can be published.');
+      setPending(false);
+      return;
     }
 
     try {
       const client = await createBrowserArtApi();
-      const saved = savedArtworkId
-        ? await client.updateArtwork(savedArtworkId, body)
-        : await client.createArtwork(body);
-
-      setSavedArtworkId(saved.id);
-      if (typeof window !== 'undefined' && window.history?.replaceState) {
-        window.history.replaceState(null, '', `/admin/artworks/${saved.id}/edit`);
-      }
-
-      if (file) {
-        if (!isSupabaseConfigured()) {
-          setUploadNote('Artwork saved, but image upload needs Supabase browser configuration.');
-        } else {
-          const accessToken = await getBrowserAccessToken();
-          const path = `${saved.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-          try {
-            setProgress(0);
-            await uploadArtworkImageFile({
-              supabaseUrl: getSupabaseUrl(),
-              publishableKey: getSupabasePublishableKey(),
-              accessToken,
-              path,
-              file,
-              onProgress: setProgress,
-            });
-            await client.addArtworkImage(saved.id, {
-              storagePath: path,
-              altText: body.title,
-              displayOrder: 0,
-              isPrimary: true,
-            });
-            setUploadNote('Image uploaded to artwork-images and registered by path.');
-          } catch (uploadError) {
-            setUploadNote(explainStorageUploadError(uploadError));
-            setPending(false);
-            return;
-          }
+      let saved;
+      let notes = [];
+      if (savedArtworkId) {
+        try {
+          notes = await persistImages(client, savedArtworkId);
+        } catch (uploadError) {
+          setUploadNote(explainImagePersistError(uploadError));
+          setPending(false);
+          return;
+        }
+        saved = await client.updateArtwork(savedArtworkId, body);
+      } else {
+        saved = await client.createArtwork({
+          ...body,
+          status: intendedStatus === 'published' ? 'draft' : intendedStatus,
+        });
+        setSavedArtworkId(saved.id);
+        if (typeof window !== 'undefined' && window.history?.replaceState) {
+          window.history.replaceState(null, '', `/admin/artworks/${saved.id}/edit`);
+        }
+        try {
+          notes = await persistImages(client, saved.id);
+        } catch (uploadError) {
+          setUploadNote(explainImagePersistError(uploadError));
+          setPending(false);
+          return;
+        }
+        if (intendedStatus === 'published') {
+          saved = await client.updateArtwork(saved.id, { status: 'published' });
         }
       }
 
+      imageItems
+        .filter((item) => item.kind === 'pending' && item.previewUrl)
+        .forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      setImageItems(createManagerItems(saved));
+      setProgress(null);
+      setPending(false);
+      setUploadNote(notes[0] || (pendingCount > 0 ? 'Images uploaded to artwork-images and registered by path.' : ''));
       router.push(`/admin/artworks/${saved.id}/edit`);
       router.refresh();
     } catch (caught) {
@@ -260,27 +335,20 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
         </Field>
       </section>
 
-      <ArtworkImageField
-        artwork={artwork}
+      <ArtworkImageManager
         constraints={constraints}
         constraintsError={constraintsError}
         constraintsLoading={constraintsLoading}
-        file={selectedFile}
-        fileError={fileError}
-        previewUrl={previewUrl}
-        progress={progress}
-        onFileChange={onFileChange}
+        disabled={pending}
+        items={imageItems}
+        onItemsChange={setImageItems}
       />
 
       <ActionStatus pending={pending} pendingLabel={savingLabel} message={uploadNote} error={error} />
       <button
         className="btn-primary"
         type="submit"
-        disabled={
-          pending
-          || Boolean(fileError)
-          || (isSelectedImageFile(selectedFile) && (constraintsLoading || !constraints))
-        }
+        disabled={pending || managerHasBlockingError(imageItems, constraints)}
         aria-busy={pending}
       >
         {pending ? <ButtonLoader label={savingLabel} /> : savingLabel}

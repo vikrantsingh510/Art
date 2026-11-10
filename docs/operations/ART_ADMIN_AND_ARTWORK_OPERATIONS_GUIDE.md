@@ -393,18 +393,18 @@ Source: `backend/src/db/schema/order-items.schema.js`, `backend/src/services/che
 
 **Confirmed** (`frontend/components/artwork-form.js`):
 
-1. Admin submits the artwork form. The JSON artwork is created/updated **first**.
-2. If `imageFile` has a size:
-   - If Supabase browser env is missing: notice “Artwork saved, but image upload needs Supabase browser configuration.”
-   - Else the **browser** uploads directly to Supabase Storage (not Express):
-     - bucket: `artwork-images`
-     - path: `{artworkId}/{timestamp}-{sanitizedFileName}`
-     - `upsert: false`
-     - `contentType`: file MIME or `image/jpeg`
-   - On Storage error: “Artwork saved. Image was not registered: {message}. The browser cannot invent a storage policy.” The artwork row still exists.
-   - On Storage success: `POST /api/v1/admin/artworks/{id}/images` with `{ storagePath, altText: title, displayOrder: 0, isPrimary: true }`.
-   - Success note: “Image uploaded to artwork-images and registered by path.”
-3. Form copy: “There is no multipart Express upload. The file is sent to the public `artwork-images` bucket, then the path is registered.”
+1. The administrator can select up to five images, preview them, reorder (drag-and-drop or move up/down), mark primary, and remove pending files immediately. Removing a saved image asks for confirmation and happens on save.
+2. On create, Express saves a **draft** first if the intended status is `published`, so images can exist before publication. On edit, image add/remove/reorder runs **before** the artwork PATCH so a publish request sees the new catalogue.
+3. For each pending file the **browser** uploads directly to Supabase Storage (not Express):
+   - bucket: `artwork-images`
+   - path: `{artworkId}/{timestamp}-{index}-{sanitizedFileName}`
+   - `upsert: false`
+   - `contentType`: file MIME or `image/jpeg`
+   - size and MIME are checked against `GET /api/v1/admin/storage/artwork-images`
+   - On Storage or register failure, a newly uploaded object is deleted when possible. The artwork row still exists.
+   - On Storage success: `POST /api/v1/admin/artworks/{id}/images` with `{ storagePath, altText, isPrimary, mimeType, fileSizeBytes }`. Maximum five images. Display order and primary are then confirmed with `PATCH .../images/order`.
+4. Saved images that were removed: browser Storage DELETE first (`404` = already gone), then `DELETE /api/v1/admin/artworks/{id}/images/{imageId}`. If Storage delete fails, the catalogue row is left in place and save fails so the administrator can retry. If Storage succeeds and the catalogue delete fails, the row remains as the recoverable record; retry is safe.
+5. Success note: “Images uploaded to artwork-images and registered by path.” Form copy: there is no multipart Express upload.
 
 ### Answers to the inspection questions
 
@@ -413,16 +413,16 @@ Source: `backend/src/db/schema/order-items.schema.js`, `backend/src/services/che
 | 1 | Direct to Storage or through Express? | **Confirmed:** browser → Supabase Storage, then Express only stores the path. |
 | 2 | Bucket name | **Confirmed:** `artwork-images` (`PUBLIC_IMAGE_BUCKET` in `frontend/lib/media.js`). |
 | 3 | Public or private? | **Code assumes public** (public object URLs). **Unverified** in the live project: no Storage SQL/policies are in this repo. |
-| 4 | Allowed formats | UI `accept="image/*"` only. No server MIME allow-list on the image register endpoint (`storagePath` string). |
-| 5 | Maximum file size | **Missing** in application code. Browser/Supabase dashboard limits may still apply. Express JSON limit is 1 MB and is **irrelevant** to the file bytes. |
-| 6 | Multiple images | API: yes, many `artwork_images` rows. UI: one file input per save. Saving again with another file **adds** another image. Unique index: at most one `is_primary` per artwork. |
-| 7 | Primary / cover | Yes. Form always sends `isPrimary: true` for a new upload, which clears previous primaries in SQL then inserts the new row. Public UI uses primary, else first by `displayOrder`. |
-| 8 | Previews before upload | **Missing.** Native file picker only. |
+| 4 | Allowed formats | Live bucket allow-list from `GET /admin/storage/artwork-images` (JPEG, PNG, WebP, AVIF on the current development bucket). The admin file input `accept` and Express register both use that list. |
+| 5 | Maximum file size | Live bucket `fileSizeLimitBytes` from the same endpoint. Not hardcoded as 10 MiB in new UI/backend logic. Express JSON limit is 1 MB and is **irrelevant** to the file bytes. |
+| 6 | Multiple images | API and UI: up to **five** `artwork_images` rows. The admin form previews, reorders (drag-and-drop plus move up/down), marks primary, and can remove a saved image after confirmation. Unique index: at most one `is_primary` per artwork. No new table; `display_order` already existed. |
+| 7 | Primary / cover | First image is primary by default. The administrator can choose another; `PATCH .../images/order` can send `primaryImageId`. Removing the primary promotes the next remaining image. Public cards still show only the primary. |
+| 8 | Previews before upload | Local object-URL previews on the admin form before Storage upload. |
 | 9 | Resize / compression | **Missing.** Original bytes are stored. |
 | 10 | What is saved in Postgres | `artwork_images.storage_path` (text), plus `alt_text`, `display_order`, `is_primary`. Not a full URL. |
 | 11 | How the public site loads images | `publicStorageUrl` → `{NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork-images/{storagePath}`. Next.js `<Image>` allows `**.supabase.co` public storage paths (`frontend/next.config.mjs`). Missing image: “Image not catalogued”. |
-| 12 | Replace or delete artwork | Replace: new upload becomes primary; **old Storage objects and old rows are not deleted**. Archive: status change only; files stay. Hard-delete of artwork is not exposed; if a row were deleted, `artwork_images` would CASCADE in SQL but **Storage objects would remain**. |
-| 13 | Auth enforcement | Path registration requires admin Bearer. File upload uses the **signed-in user’s JWT + publishable key**. Whether Storage allows that depends on **dashboard policies** — **Unverified**. Express does not check that the path exists in Storage. |
+| 12 | Replace or delete artwork | Admin can remove a specific image: browser DELETEs the Storage object first (`404` is treated as gone), then Express deletes the `artwork_images` row. A Storage failure keeps the row. A catalogue failure after Storage success also keeps the row for retry. Migration `0008` allows admin DELETE on `artwork-images` via `current_user_is_admin()`; it is not applied from this change. Archive: status change only; remaining files stay. Hard-delete of artwork is not exposed. |
+| 13 | Auth enforcement | Path registration, reorder and removal require admin Bearer (`requireAdmin` via `public.user_roles`). File upload uses the **signed-in user’s JWT + publishable key**. Storage INSERT is `current_user_is_admin()` from `0007`. Storage DELETE on `artwork-images` needs `0008` (not applied to production from this change). Express does not check that the path exists in Storage. |
 | 14 | Orphans | **Yes, possible:** failed register after a successful upload; extra files after a “replace”; archived artworks; anything uploaded with a path the API never recorded. |
 
 **Required manual setup:** create a Storage bucket named exactly `artwork-images` in Supabase, decide public vs private, and attach policies that allow the admin user’s upload. This repository does not create the bucket.

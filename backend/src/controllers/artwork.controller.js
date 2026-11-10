@@ -6,6 +6,8 @@ import {
   createArtwork,
   getArtworkById,
   listArtworks,
+  removeArtworkImage,
+  reorderArtworkImages,
   updateArtwork,
   userHasPurchasedArtwork,
 } from '../services/artwork.service.js';
@@ -50,6 +52,16 @@ export async function addAdminArtworkImage(req, res) {
   return sendSuccess(res, { statusCode: 201, data });
 }
 
+export async function removeAdminArtworkImage(req, res) {
+  const data = await removeArtworkImage(req.params.id, req.params.imageId, req.user.id);
+  return sendSuccess(res, { data });
+}
+
+export async function reorderAdminArtworkImages(req, res) {
+  const data = await reorderArtworkImages(req.params.id, req.body, req.user.id);
+  return sendSuccess(res, { data });
+}
+
 export async function addAdminArtworkMedia(req, res) {
   const data = await addArtworkMedia(req.params.id, req.body, req.user.id);
   return sendSuccess(res, { statusCode: 201, data });
@@ -63,5 +75,7 @@ export default {
   updateAdminArtwork,
   archiveAdminArtwork,
   addAdminArtworkImage,
+  removeAdminArtworkImage,
+  reorderAdminArtworkImages,
   addAdminArtworkMedia,
 };

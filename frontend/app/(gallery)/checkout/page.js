@@ -16,7 +16,8 @@ export default async function CheckoutPage() {
   const items = cart?.items || [];
 
   return (
-    <div className="max-w-3xl mx-auto px-6 md:px-16 py-12 space-y-8">
+    <div className="page-shell py-12">
+    <div className="max-w-3xl space-y-8">
       <h1 className="font-display text-4xl">Reservation checkout</h1>
       <Notice>
         This step creates a pending_payment order and a 15-minute inventory hold. Payment is not enabled. You will not receive a paid receipt, captured settlement, or shipment booking.
@@ -36,6 +37,7 @@ export default async function CheckoutPage() {
           <CheckoutForm addresses={addresses || []} />
         </>
       )}
+    </div>
     </div>
   );
 }

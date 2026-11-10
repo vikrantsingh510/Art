@@ -86,9 +86,15 @@ test('sends profile, wishlist and admin order paths', async () => {
   await api.getWishlist({ token: 't' });
   await api.adminOrders({ q: 'MDA', page: 1 }, { token: 't' });
   await api.adminArtworkImageConstraints({ token: 't' });
+  await api.removeArtworkImage('lot-id', 'image-id', { token: 't' });
+  await api.reorderArtworkImages('lot-id', { imageIds: ['image-id'], primaryImageId: 'image-id' }, { token: 't' });
   assert.match(calls[0].url, /\/api\/v1\/auth\/me$/);
   assert.equal(calls[0].method, 'PATCH');
   assert.match(calls[1].url, /\/api\/v1\/wishlist$/);
   assert.match(calls[2].url, /\/api\/v1\/admin\/orders\?q=MDA&page=1/);
   assert.match(calls[3].url, /\/api\/v1\/admin\/storage\/artwork-images$/);
+  assert.match(calls[4].url, /\/api\/v1\/admin\/artworks\/lot-id\/images\/image-id$/);
+  assert.equal(calls[4].method, 'DELETE');
+  assert.match(calls[5].url, /\/api\/v1\/admin\/artworks\/lot-id\/images\/order$/);
+  assert.equal(calls[5].method, 'PATCH');
 });

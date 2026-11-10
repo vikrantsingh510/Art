@@ -18,7 +18,7 @@ export function SiteHeader({ user, cartCount = 0, wishlistCount = 0 }) {
           100% Authentic Handmade Originals • Verified Provenance &amp; Certificates • White-Glove Architectural Delivery Across India
         </p>
       </div>
-      <div className="relative h-20 max-w-7xl mx-auto px-6 md:px-16 flex items-center justify-between gap-6">
+      <div className="relative h-20 page-shell flex items-center justify-between gap-6">
         <div className="flex items-center gap-3 shrink-0">
           <Link href="/" className="font-display text-[22px] tracking-[0.18em] uppercase text-primary">
             Maison d&apos;Art

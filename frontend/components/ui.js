@@ -22,7 +22,7 @@ export function Notice({ children, tone = 'default' }) {
 
 export function PageIntro({ eyebrow, title, description, actions }) {
   return (
-    <header className="max-w-7xl mx-auto px-6 md:px-16 pt-12 md:pt-20 pb-10 space-y-4">
+    <header className="page-shell pt-12 md:pt-20 pb-10 space-y-4">
       {eyebrow ? <p className="label-sm text-patina">{eyebrow}</p> : null}
       <h1 className="font-display text-4xl md:text-[40px] leading-tight text-ink">{title}</h1>
       {description ? <p className="max-w-2xl text-[15px] leading-6 text-on-surface-variant">{description}</p> : null}
