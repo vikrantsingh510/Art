@@ -4,6 +4,7 @@ import { Pagination } from '@/components/pagination';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
+import { canShowArchiveAction } from '@/lib/artwork-archive';
 import { formatInrFromPaise } from '@/lib/money';
 import { requireAdmin } from '@/lib/session';
 
@@ -74,7 +75,9 @@ export default async function AdminArtworksPage({ searchParams }) {
                   <td>{artwork.status}</td>
                   <td>{formatInrFromPaise(artwork.pricePaise)}</td>
                   <td>
-                    <ArchiveArtworkButton artworkId={artwork.id} title={artwork.title} />
+                    {canShowArchiveAction(artwork) ? (
+                      <ArchiveArtworkButton artworkId={artwork.id} title={artwork.title} />
+                    ) : null}
                   </td>
                 </tr>
               ))}
