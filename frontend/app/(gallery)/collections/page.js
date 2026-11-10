@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { EmptyState, ErrorState } from '@/components/states';
-import { PageIntro } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { publicStorageUrl } from '@/lib/media';
 
@@ -17,11 +16,10 @@ export default async function CollectionsPage() {
 
   return (
     <div>
-      <PageIntro
-        eyebrow="Published hangings"
-        title="Collections"
-        description="Only collections the atelier has published are listed. Lookup is by identifier, not a public slug endpoint."
-      />
+      <header className="page-shell pt-12 md:pt-20 pb-10 space-y-4">
+        <p className="label-sm text-patina">Published hangings</p>
+        <h1 className="font-display text-4xl md:text-[40px] leading-tight text-ink">Collections</h1>
+      </header>
       <div className="page-shell pb-20">
         {error ? <ErrorState error={error} retryHref="/collections" /> : null}
         {!error && collections.length === 0 ? (

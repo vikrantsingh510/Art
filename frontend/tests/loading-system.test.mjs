@@ -29,6 +29,30 @@ test('page-shell is the shared full-width gutter without a 7xl cap', () => {
   assert.doesNotMatch(intro, /max-w-7xl/);
 });
 
+test('PageIntro uses a complementary heading and copy column on desktop', () => {
+  const intro = read('components/ui.js');
+  assert.match(intro, /lg:grid-cols-12/);
+  assert.match(intro, /lg:col-span-5/);
+  assert.match(intro, /lg:col-span-7/);
+});
+
+test('about, contact and sign-in stack a centered column instead of a two-column intro', () => {
+  const login = read('app/(gallery)/auth/login/page.js');
+  const about = read('app/(gallery)/about/page.js');
+  const contact = read('app/(gallery)/contact/page.js');
+  for (const source of [login, about, contact]) {
+    assert.match(source, /page-shell/);
+    assert.match(source, /mx-auto/);
+    assert.doesNotMatch(source, /PageIntro/);
+    assert.doesNotMatch(source, /lg:grid-cols-12|md:grid-cols-2/);
+  }
+  assert.match(about, /max-w-4xl/);
+  assert.match(contact, /max-w-4xl/);
+  assert.match(contact, /mailto:atelier@maisondart\.example/);
+  assert.match(login, /max-w-xl/);
+  assert.match(login, /LoginButton/);
+});
+
 test('quiet luxury loading tokens exist without shimmer or spinner CSS', () => {
   const css = read('app/globals.css');
   assert.match(css, /prefers-reduced-motion/);
