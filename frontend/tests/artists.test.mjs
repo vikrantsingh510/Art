@@ -46,11 +46,20 @@ test('artists listing and detail pages set metadata, canonical URLs and portrait
   assert.equal(fs.existsSync(path.join(frontendRoot, 'app/(gallery)/artists/[slug]/loading.js')), true);
 });
 
-test('artist detail lists published artworks with ArtworkCard', () => {
+test('artist detail lists published artworks and preserves story and works anchors', () => {
   const detail = read('app/(gallery)/artists/[slug]/page.js');
+  const profile = read('components/artist-profile.js');
   const card = read('components/artwork-card.js');
-  assert.match(detail, /ArtworkCard/);
-  assert.match(detail, /artist\.artworks/);
+  assert.match(detail, /ArtistProfile/);
+  assert.match(detail, /listArtists/);
+  assert.match(profile, /artist\.artworks/);
+  assert.match(profile, /href=\{`\/artwork\/\$\{artwork\.id\}`\}/);
+  assert.match(profile, /id="story"/);
+  assert.match(profile, /id="works"/);
+  assert.match(profile, /The story behind the work/);
+  assert.match(profile, /Selected works/);
+  assert.match(profile, /Discover more original art/);
+  assert.doesNotMatch(profile, /Born 1986|Meera Sen-Gupta|Devendra Varma|Ananya Ghosh|VÉRITÉ|#VER-ATELIER/);
   assert.match(card, /href=\{`\/artwork\/\$\{artwork\.id\}`\}/);
 });
 

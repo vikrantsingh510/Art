@@ -403,6 +403,19 @@ body {
   font-style: italic;
 }
 
+.artist-story-body .journal-body {
+  max-width: none;
+}
+
+.artist-story-body .journal-body > p:first-of-type::first-letter {
+  font-family: var(--font-playfair), serif;
+  font-size: 3rem;
+  line-height: 1;
+  float: left;
+  margin-right: 0.75rem;
+  color: var(--color-ink);
+}
+
 .size-guide-scene {
   position: relative;
   width: 100%;

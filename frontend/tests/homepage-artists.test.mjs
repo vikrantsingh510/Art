@@ -119,6 +119,8 @@ test('editorial sections match the split-screen and three-column structure', () 
 
 test('artist profile exposes story and works anchors for homepage links', () => {
   const detail = read('app/(gallery)/artists/[slug]/page.js');
-  assert.match(detail, /id="story"/);
-  assert.match(detail, /id="works"/);
+  const profile = read('components/artist-profile.js');
+  assert.match(detail, /ArtistProfile/);
+  assert.match(profile, /id="story"/);
+  assert.match(profile, /id="works"/);
 });
