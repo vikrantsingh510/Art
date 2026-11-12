@@ -517,6 +517,87 @@ body {
   }
 }
 
+.artist-in-focus-frame {
+  min-height: 0;
+}
+
+.artist-in-focus-portrait {
+  height: 22rem;
+}
+
+.artist-in-focus-copy {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.artist-in-focus-copy-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 36rem;
+  min-height: 0;
+  max-height: 100%;
+  padding: 3rem 2rem;
+  overflow: hidden;
+}
+
+.artist-in-focus-copy-inner h2,
+.artist-in-focus-lede {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.artist-in-focus-copy-inner h2 {
+  -webkit-line-clamp: 5;
+}
+
+.artist-in-focus-lede {
+  -webkit-line-clamp: 4;
+}
+
+@media (min-width: 768px) {
+  .artist-in-focus-portrait {
+    height: 28rem;
+  }
+
+  .artist-in-focus-copy-inner {
+    padding: 4rem 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .artist-in-focus-frame {
+    height: 40rem;
+    overflow: hidden;
+  }
+
+  .artist-in-focus-portrait,
+  .artist-in-focus-copy {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .artist-in-focus-copy-inner {
+    padding: 3.5rem 4rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .artist-in-focus-frame {
+    height: 42rem;
+  }
+
+  .artist-in-focus-copy-inner {
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+}
+
 .explore-filter-chip {
   display: inline-flex;
   align-items: center;

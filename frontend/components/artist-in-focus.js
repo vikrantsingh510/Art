@@ -14,8 +14,8 @@ export function ArtistInFocus({ artist }) {
 
   return (
     <section aria-labelledby="artist-in-focus-heading" className="w-full">
-      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[32rem] lg:min-h-[42rem]">
-        <div className="relative min-h-[22rem] md:min-h-[28rem] lg:min-h-full bg-charcoal overflow-hidden">
+      <div className="artist-in-focus-frame grid grid-cols-1 lg:grid-cols-2">
+        <div className="artist-in-focus-portrait relative bg-charcoal overflow-hidden">
           {portraitUrl ? (
             <Image
               src={portraitUrl}
@@ -29,26 +29,26 @@ export function ArtistInFocus({ artist }) {
             <div className="absolute inset-0 bg-charcoal" aria-hidden="true" />
           )}
         </div>
-        <div className="bg-olive text-ivory flex items-center">
-          <div className="w-full px-8 py-16 md:px-14 md:py-20 lg:px-16 lg:py-24 xl:px-20 space-y-8 max-w-xl">
+        <div className="artist-in-focus-copy bg-olive text-ivory">
+          <div className="artist-in-focus-copy-inner">
             <p className="label-sm text-bronze">Artist in Focus · This month&apos;s discovery</p>
             {headline ? (
               <h2
                 id="artist-in-focus-heading"
-                className="font-display text-[32px] md:text-[40px] lg:text-[44px] leading-[1.2] tracking-[-0.015em] text-ivory"
+                className="font-display text-[28px] md:text-[34px] lg:text-[38px] leading-[1.2] tracking-[-0.015em] text-ivory"
               >
                 {headline}
               </h2>
             ) : (
               <h2
                 id="artist-in-focus-heading"
-                className="font-display text-[32px] md:text-[40px] lg:text-[44px] leading-[1.2] tracking-[-0.015em] text-ivory"
+                className="font-display text-[28px] md:text-[34px] lg:text-[38px] leading-[1.2] tracking-[-0.015em] text-ivory"
               >
                 {artist.name}
               </h2>
             )}
             {body ? (
-              <p className="text-[15px] md:text-[16px] leading-7 text-ivory/75 font-light">
+              <p className="artist-in-focus-lede text-[15px] md:text-[16px] leading-7 text-ivory/75 font-light">
                 {body}
               </p>
             ) : null}

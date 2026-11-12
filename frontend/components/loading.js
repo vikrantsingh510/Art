@@ -150,8 +150,8 @@ export function HomeSalonSkeleton() {
         </div>
         <ArtworkGridSkeleton count={3} />
       </section>
-      <section className="grid grid-cols-1 lg:grid-cols-2 min-h-[32rem]" aria-hidden="true">
-        <div className="min-h-[22rem] bg-olive" />
+      <section className="artist-in-focus-frame grid grid-cols-1 lg:grid-cols-2" aria-hidden="true">
+        <div className="artist-in-focus-portrait bg-olive" />
         <div className="bg-olive p-16 space-y-4">
           <Skeleton className="h-3 w-48 bg-ivory/10" />
           <Skeleton className="h-10 w-3/4 bg-ivory/10" />

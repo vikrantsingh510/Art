@@ -101,6 +101,12 @@ test('editorial sections match the split-screen and three-column structure', () 
   assert.match(focus, /lg:grid-cols-2/);
   assert.match(focus, /bg-olive/);
   assert.match(focus, /Artist in Focus/);
+  assert.match(focus, /artist-in-focus-frame/);
+  assert.match(focus, /object-cover/);
+  assert.doesNotMatch(focus, /min-h-\[42rem\]|min-h-\[32rem\]/);
+  const css = read('app/globals.css');
+  assert.match(css, /\.artist-in-focus-frame[\s\S]*height:\s*40rem/);
+  assert.match(css, /\.artist-in-focus-portrait[\s\S]*height:\s*22rem/);
   assert.match(links, /Explore artist's works/);
   assert.match(know, /lg:grid-cols-3/);
   assert.match(know, /Artists to know/);
