@@ -16,6 +16,13 @@ test('artwork collection stays highlighted on edit and not on the new-lot form',
   assert.equal(isAdminNavActive('/admin/artworks/new', '/admin/artworks/new'), true);
 });
 
+test('journal highlights listing and edit without colliding with artwork routes', () => {
+  assert.equal(isAdminNavActive('/admin/blogs', '/admin/blogs'), true);
+  assert.equal(isAdminNavActive('/admin/blogs/entry-id/edit', '/admin/blogs'), true);
+  assert.equal(isAdminNavActive('/admin/blogs/new', '/admin/blogs'), true);
+  assert.equal(isAdminNavActive('/admin/artworks', '/admin/blogs'), false);
+});
+
 test('orders and customers highlight their nested records', () => {
   assert.equal(isAdminNavActive('/admin/orders', '/admin/orders'), true);
   assert.equal(isAdminNavActive('/admin/orders/order-id', '/admin/orders'), true);
@@ -27,6 +34,6 @@ test('orders and customers highlight their nested records', () => {
 test('console lists the curatorial side-menu destinations', () => {
   assert.deepEqual(
     ADMIN_NAV_LINKS.map((link) => link.label),
-    ['Dashboard', 'Artwork collection', 'Add new artwork', 'Orders', 'Customers'],
+    ['Dashboard', 'Artwork collection', 'Add new artwork', 'Journal', 'Orders', 'Customers'],
   );
 });

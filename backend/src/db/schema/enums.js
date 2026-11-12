@@ -10,6 +10,11 @@ export const artworkStatusEnum = pgEnum('artwork_status', [
   'archived',
 ]);
 
+export const blogStatusEnum = pgEnum('blog_status', [
+  'draft',
+  'published',
+]);
+
 export const mediaTypeEnum = pgEnum('media_type', [
   'video',
   'certificate',

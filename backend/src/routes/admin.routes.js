@@ -20,6 +20,7 @@ import { analyticsQuery, shipmentCreateBody, shipmentUpdateBody } from '../valid
 import { paginationQuery } from '../validators/common.js';
 import { adminOrdersQuery } from '../validators/admin.validators.js';
 import { artworkAdminRouter } from './artwork.routes.js';
+import { blogAdminRouter } from './blog.routes.js';
 import { categoryAdminRouter, collectionAdminRouter } from './catalog.routes.js';
 
 const router = Router();
@@ -47,5 +48,6 @@ router.get('/previews/:id', validate({ params: uuidParam }), asyncHandler(getPre
 router.use('/artworks', artworkAdminRouter);
 router.use('/categories', categoryAdminRouter);
 router.use('/collections', collectionAdminRouter);
+router.use('/blogs', blogAdminRouter);
 
 export default router;

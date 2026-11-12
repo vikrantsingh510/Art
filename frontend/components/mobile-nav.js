@@ -8,6 +8,7 @@ const links = [
   { href: '/', label: 'Exhibition' },
   { href: '/explore', label: 'Explore Art' },
   { href: '/collections', label: 'Collections' },
+  { href: '/journal', label: 'Journal' },
   { href: '/about', label: 'Our Philosophy' },
   { href: '/contact', label: 'Inquiry' },
 ];

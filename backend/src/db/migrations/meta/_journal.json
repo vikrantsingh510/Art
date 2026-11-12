@@ -64,6 +64,13 @@
       "when": 1794310000008,
       "tag": "0008_artwork_images_admin_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794480000009,
+      "tag": "0009_blogs",
+      "breakpoints": true
     }
   ]
 }
