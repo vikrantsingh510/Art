@@ -21,9 +21,10 @@ export default async function EditArtworkPage({ params }) {
     return <ErrorState error={error} />;
   }
 
-  const [categories, collections] = await Promise.all([
+  const [categories, collections, artists] = await Promise.all([
     api.adminCategories({ token }),
     api.adminCollections({ token }),
+    api.adminArtists({ limit: 100 }, { token }),
   ]);
 
   return (
@@ -40,6 +41,7 @@ export default async function EditArtworkPage({ params }) {
         artwork={artwork}
         categories={Array.isArray(categories) ? categories : []}
         collections={Array.isArray(collections) ? collections : []}
+        artists={Array.isArray(artists?.items) ? artists.items : []}
       />
     </div>
   );

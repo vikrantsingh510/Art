@@ -19,6 +19,7 @@ import { uuidParam } from '../validators/common.js';
 import { analyticsQuery, shipmentCreateBody, shipmentUpdateBody } from '../validators/shipment.validators.js';
 import { paginationQuery } from '../validators/common.js';
 import { adminOrdersQuery } from '../validators/admin.validators.js';
+import { artistAdminRouter } from './artist.routes.js';
 import { artworkAdminRouter } from './artwork.routes.js';
 import { blogAdminRouter } from './blog.routes.js';
 import { categoryAdminRouter, collectionAdminRouter } from './catalog.routes.js';
@@ -45,6 +46,7 @@ router.patch(
 router.post('/notifications/process', asyncHandler(adminProcessNotifications));
 router.post('/reservations/expire', asyncHandler(adminExpireReservations));
 router.get('/previews/:id', validate({ params: uuidParam }), asyncHandler(getPreview));
+router.use('/artists', artistAdminRouter);
 router.use('/artworks', artworkAdminRouter);
 router.use('/categories', categoryAdminRouter);
 router.use('/collections', collectionAdminRouter);

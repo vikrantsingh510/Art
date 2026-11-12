@@ -30,6 +30,7 @@ const config = {
         'error-container': '#ffdad6',
         ink: '#111110',
         charcoal: '#1a1918',
+        olive: '#2c2e26',
         patina: '#78746f',
         bronze: '#a38a5e',
         antique: '#8c734b',

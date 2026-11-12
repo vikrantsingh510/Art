@@ -12,6 +12,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { artists } from './artists.schema.js';
 import { artworkStatusEnum } from './enums.js';
 
 /**
@@ -19,7 +20,8 @@ import { artworkStatusEnum } from './enums.js';
  * Later phases compute:
  *   available_quantity = inventory_quantity - SUM(active reservation quantities)
  *   is_purchasable = catalog-visible AND available_quantity >= requested_quantity
- * Artist attribution stays on this table as `artist_name`. No artists table.
+ * Display/checkout attribution stays on `artist_name` (NOT NULL). Optional
+ * `artist_id` is the 1:N Artists-section link (ON DELETE SET NULL).
  */
 export const artworks = pgTable(
   'artworks',
@@ -33,6 +35,7 @@ export const artworks = pgTable(
     medium: varchar('medium', { length: 150 }),
     material: varchar('material', { length: 150 }),
     artistName: varchar('artist_name', { length: 150 }).notNull(),
+    artistId: uuid('artist_id').references(() => artists.id, { onDelete: 'set null' }),
     yearCreated: integer('year_created'),
     width: numeric('width', { precision: 10, scale: 2 }),
     height: numeric('height', { precision: 10, scale: 2 }),
@@ -53,6 +56,7 @@ export const artworks = pgTable(
   },
   (table) => [
     index('artworks_status_idx').on(table.status),
+    index('artworks_artist_id_idx').on(table.artistId),
     check('artworks_price_paise_non_negative', sql`${table.pricePaise} >= 0`),
     check('artworks_inventory_quantity_non_negative', sql`${table.inventoryQuantity} >= 0`),
     check(

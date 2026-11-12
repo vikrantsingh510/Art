@@ -24,7 +24,7 @@ function sanitizeFileName(name) {
   return String(name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
-export function ArtworkForm({ artwork, categories, collections, mode }) {
+export function ArtworkForm({ artwork, categories, collections, artists = [], mode }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -171,6 +171,7 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
     const collectionIds = formData.getAll('collectionIds').filter(Boolean);
     const rupees = formData.get('priceRupees');
     const intendedStatus = String(formData.get('status') || 'draft');
+    const artistId = String(formData.get('artistId') || '').trim() || null;
     const body = {
       title: String(formData.get('title') || '').trim(),
       slug: String(formData.get('slug') || '').trim() || undefined,
@@ -179,7 +180,8 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
       technique: String(formData.get('technique') || '').trim() || null,
       medium: String(formData.get('medium') || '').trim() || null,
       material: String(formData.get('material') || '').trim() || null,
-      artistName: String(formData.get('artistName') || '').trim(),
+      artistId,
+      ...(artistId ? {} : { artistName: artwork?.artistName || undefined }),
       yearCreated: formData.get('yearCreated') ? Number(formData.get('yearCreated')) : null,
       width: String(formData.get('width') || '').trim() || null,
       height: String(formData.get('height') || '').trim() || null,
@@ -194,8 +196,8 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
       collectionIds,
     };
 
-    if (!body.title || !body.artistName || !Number.isFinite(Number(rupees))) {
-      setError('Title, artist and a numeric INR price are required.');
+    if (!body.title || (!body.artistId && !body.artistName) || !Number.isFinite(Number(rupees))) {
+      setError('Title, a published artist and a numeric INR price are required.');
       setPending(false);
       return;
     }
@@ -277,8 +279,20 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
         <Field label="Slug" hint="Optional. Public detail lookup remains UUID-only.">
           <input className="field-input" name="slug" defaultValue={artwork?.slug || ''} />
         </Field>
-        <Field label="Artist / atelier">
-          <input className="field-input" name="artistName" required defaultValue={artwork?.artistName || ''} />
+        <Field
+          label="Artist"
+          hint={artwork?.artistId ? 'Renaming the artist in Artists updates this lot’s displayed name.' : 'Unresolved lots keep their original artist name until a published artist is selected.'}
+        >
+          <select className="field-input" name="artistId" defaultValue={artwork?.artistId || ''} required={mode === 'create'}>
+            <option value="">{artwork?.artistName && !artwork?.artistId ? `Unassigned — ${artwork.artistName}` : 'Select a published artist'}</option>
+            {artists
+              .filter((item) => item.status === 'published' || item.id === artwork?.artistId)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}{item.status !== 'published' ? ' (draft)' : ''}
+                </option>
+              ))}
+          </select>
         </Field>
         <Field label="Year">
           <input className="field-input" name="yearCreated" type="number" min="1000" max="9999" defaultValue={artwork?.yearCreated || ''} />

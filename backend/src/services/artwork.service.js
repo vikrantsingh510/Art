@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import {
+  artists,
   artworkCategories,
   artworkImages,
   artworkMedia,
@@ -9,6 +10,7 @@ import {
   orderItems,
   orders,
 } from '../db/schema/index.js';
+import { mapArtistSummary, resolveArtworkArtistAssociation } from '../lib/artist-association.js';
 import {
   assertCanPublish,
   assertImageCapacity,
@@ -40,6 +42,7 @@ function mapArtworkRow(row) {
     medium: row.medium,
     material: row.material,
     artistName: row.artistName,
+    artistId: row.artistId,
     yearCreated: row.yearCreated,
     width: row.width,
     height: row.height,
@@ -70,8 +73,20 @@ async function attachRelations(artworkRows, { includePrivateMedia = false } = {}
     db.select().from(collectionArtworks).where(inArray(collectionArtworks.artworkId, artworkIds)),
   ]);
 
+  const artistIds = [...new Set(artworkRows.map((row) => row.artistId).filter(Boolean))];
+  const artistRows = artistIds.length > 0
+    ? await db.select().from(artists).where(inArray(artists.id, artistIds))
+    : [];
+  const artistsById = new Map(artistRows.map((row) => [row.id, row]));
+
   return artworkRows.map((row) => {
     const artwork = withAvailability(mapArtworkRow(row), reservedMap.get(row.id) || 0);
+    artwork.artist = mapArtistSummary(artistsById.get(row.artistId), {
+      publicOnly: !includePrivateMedia,
+    });
+    if (!artwork.artist) {
+      artwork.artistId = includePrivateMedia ? row.artistId : null;
+    }
     artwork.images = sortArtworkImages(
       images.filter((image) => image.artworkId === row.id),
     );
@@ -159,6 +174,10 @@ export async function listArtworks(query, { publicOnly = true } = {}) {
       eq(collectionArtworks.artworkId, artworks.id),
     );
     filters.push(eq(collectionArtworks.collectionId, query.collectionId));
+  }
+
+  if (query.artistId) {
+    filters.push(eq(artworks.artistId, query.artistId));
   }
 
   const whereClause = filters.length > 0 ? and(...filters) : undefined;
@@ -262,6 +281,11 @@ async function assertArtworkCanBePublished(artworkId, status) {
 
 export async function createArtwork(payload, actorUserId) {
   assertCanPublish(payload.status || 'draft', 0);
+  const association = await resolveArtworkArtistAssociation(payload);
+  const artistName = association.artistName || payload.artistName;
+  if (!artistName) {
+    throw new ApiError(400, 'An artist name or a published artist is required.');
+  }
   const slug = payload.slug || uniqueSlug(payload.title);
   const [created] = await db.insert(artworks).values({
     title: payload.title,
@@ -271,7 +295,8 @@ export async function createArtwork(payload, actorUserId) {
     technique: payload.technique ?? null,
     medium: payload.medium ?? null,
     material: payload.material ?? null,
-    artistName: payload.artistName,
+    artistName,
+    artistId: association.artistId ?? null,
     yearCreated: payload.yearCreated ?? null,
     width: payload.width ?? null,
     height: payload.height ?? null,
@@ -307,6 +332,15 @@ export async function updateArtwork(artworkId, payload, actorUserId) {
   const updates = { ...payload };
   delete updates.categoryIds;
   delete updates.collectionIds;
+  if (Object.prototype.hasOwnProperty.call(payload, 'artistId')) {
+    const association = await resolveArtworkArtistAssociation(payload, {
+      existingArtistId: existing.artistId,
+    });
+    updates.artistId = association.artistId;
+    if (association.artistName) {
+      updates.artistName = association.artistName;
+    }
+  }
   const nextStatus = updates.status ?? existing.status;
   await assertArtworkCanBePublished(artworkId, nextStatus);
 

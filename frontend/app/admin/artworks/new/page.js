@@ -6,9 +6,10 @@ export const metadata = { title: 'Add artwork' };
 
 export default async function NewArtworkPage() {
   const { token } = await requireAdmin();
-  const [categories, collections] = await Promise.all([
+  const [categories, collections, artists] = await Promise.all([
     api.adminCategories({ token }),
     api.adminCollections({ token }),
+    api.adminArtists({ limit: 100 }, { token }),
   ]);
 
   return (
@@ -21,6 +22,7 @@ export default async function NewArtworkPage() {
         mode="create"
         categories={Array.isArray(categories) ? categories : []}
         collections={Array.isArray(collections) ? collections : []}
+        artists={Array.isArray(artists?.items) ? artists.items : []}
       />
     </div>
   );

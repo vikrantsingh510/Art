@@ -16,6 +16,7 @@ export function SiteFooter() {
             <Link href="/explore" className="block text-sm">Explore Art</Link>
             <Link href="/collections" className="block text-sm">Collections</Link>
             <Link href="/journal" className="block text-sm">Journal</Link>
+            <Link href="/artists" className="block text-sm">Artists</Link>
             <Link href="/about" className="block text-sm">Our Philosophy</Link>
             <Link href="/contact" className="block text-sm">Inquiry</Link>
           </div>

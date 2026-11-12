@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAdmin, requireAuth } from '../middlewares/auth.middleware.js';
 import adminRouter from './admin.routes.js';
 import authRouter from './auth.routes.js';
+import { artistPublicRouter } from './artist.routes.js';
 import { artworkPublicRouter } from './artwork.routes.js';
 import { blogPublicRouter } from './blog.routes.js';
 import { cartRouter, addressRouter, checkoutRouter, orderRouter, wishlistRouter } from './cart.routes.js';
@@ -13,6 +14,7 @@ const apiRouter = Router();
 
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/artists', artistPublicRouter);
 apiRouter.use('/artworks', artworkPublicRouter);
 apiRouter.use('/categories', categoryPublicRouter);
 apiRouter.use('/collections', collectionPublicRouter);

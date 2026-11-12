@@ -14,3 +14,7 @@ export async function journalCanonical(path) {
   const origin = await siteOrigin();
   return origin ? `${origin}${path}` : path;
 }
+
+export async function canonicalFor(path) {
+  return journalCanonical(path);
+}

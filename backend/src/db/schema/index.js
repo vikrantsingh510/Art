@@ -1,5 +1,5 @@
 /**
- * Drizzle schema barrel — 26 tables (24 original + blogs + blog_artworks).
+ * Drizzle schema barrel — 27 tables (26 previous + artists).
  *
  * Identity provisioning:
  *   1. Supabase Auth creates `auth.users`.
@@ -22,6 +22,7 @@
  */
 
 export {
+  artistStatusEnum,
   artworkStatusEnum,
   blogStatusEnum,
   mediaAccessLevelEnum,
@@ -38,6 +39,7 @@ export {
 export { profiles } from './profiles.schema.js';
 export { userRoles } from './user-roles.schema.js';
 export { addresses } from './addresses.schema.js';
+export { artists } from './artists.schema.js';
 export { artworks } from './artworks.schema.js';
 export { categories } from './categories.schema.js';
 export { artworkCategories } from './artwork-categories.schema.js';

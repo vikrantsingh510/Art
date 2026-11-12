@@ -5,6 +5,7 @@ export const ADMIN_NAV_LINKS = [
   { href: '/admin/artworks', label: 'Artwork collection' },
   { href: '/admin/artworks/new', label: 'Add new artwork' },
   { href: '/admin/blogs', label: 'Journal' },
+  { href: '/admin/artists', label: 'Artists' },
   { href: '/admin/orders', label: 'Orders' },
   { href: '/admin/customers', label: 'Customers' },
 ];

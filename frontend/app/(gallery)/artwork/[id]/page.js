@@ -75,7 +75,13 @@ export default async function ArtworkDetailPage({ params }) {
         <aside className="lg:col-span-5 space-y-6">
           <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>
           <h1 className="font-display text-4xl md:text-5xl italic leading-tight">{artwork.title}</h1>
-          <p className="text-lg text-on-surface-variant">{artwork.artistName}</p>
+          {artwork.artist?.slug ? (
+            <p className="text-lg text-on-surface-variant">
+              <Link href={`/artists/${artwork.artist.slug}`} className="text-link">{artwork.artist.name || artwork.artistName}</Link>
+            </p>
+          ) : (
+            <p className="text-lg text-on-surface-variant">{artwork.artistName}</p>
+          )}
           <p className="font-display text-3xl">{formatInrFromPaise(artwork.pricePaise)}</p>
           <p className="text-sm text-patina">INR. Displayed from server paise. Acquisition does not include live payment in this release.</p>
           <AddToCartButton artworkId={artwork.id} purchasable={artwork.isPurchasable} nextPath={`/artwork/${artwork.id}`} />

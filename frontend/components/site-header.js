@@ -7,6 +7,7 @@ const nav = [
   { href: '/explore', label: 'Explore Art' },
   { href: '/collections', label: 'Collections' },
   { href: '/journal', label: 'Journal' },
+  { href: '/artists', label: 'Artists' },
   { href: '/about', label: 'Our Philosophy' },
   { href: '/contact', label: 'Provenance' },
 ];

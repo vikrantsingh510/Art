@@ -1,28 +1,52 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArtistInFocus } from '@/components/artist-in-focus';
+import { ArtistsToKnow } from '@/components/artists-to-know';
 import { ArtworkCard } from '@/components/artwork-card';
 import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
+import { selectHomepageArtworks } from '@/lib/homepage-artworks';
+import { selectHomepageArtists } from '@/lib/homepage-artists';
 
 export const metadata = {
   title: 'Exhibition',
 };
 
+async function loadPublishedArtists() {
+  try {
+    const data = await api.listArtists({ limit: 8 });
+    const { featured, known } = selectHomepageArtists(data?.items || []);
+    if (!featured?.slug) {
+      return { featured: null, known };
+    }
+    try {
+      const detail = await api.getArtist(featured.slug);
+      return { featured: detail, known };
+    } catch {
+      return { featured, known };
+    }
+  } catch {
+    return { featured: null, known: [] };
+  }
+}
+
 async function loadHome() {
   try {
-    const [featured, latest, categories, collections] = await Promise.all([
+    const [featured, latest, categories, collections, artists] = await Promise.all([
       api.listArtworks({ featured: 'true', limit: 8 }),
       api.listArtworks({ limit: 8 }),
       api.listCategories(),
       api.listCollections(),
+      loadPublishedArtists(),
     ]);
-    const featuredItems = featured?.items || [];
     return {
-      artworks: featuredItems.length > 0 ? featuredItems : (latest?.items || []),
+      artworks: selectHomepageArtworks(featured?.items, latest?.items, { limit: 8 }),
       total: latest?.total || 0,
       categories: Array.isArray(categories) ? categories : [],
       collections: Array.isArray(collections) ? collections : [],
+      featuredArtist: artists.featured,
+      knownArtists: artists.known,
       error: null,
     };
   } catch (error) {
@@ -31,13 +55,15 @@ async function loadHome() {
       total: 0,
       categories: [],
       collections: [],
+      featuredArtist: null,
+      knownArtists: [],
       error: error instanceof ApiClientError ? error : new ApiClientError(error.message),
     };
   }
 }
 
 export default async function HomePage() {
-  const { artworks, total, categories, collections, error } = await loadHome();
+  const { artworks, total, categories, collections, featuredArtist, knownArtists, error } = await loadHome();
 
   return (
     <div>
@@ -125,6 +151,9 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      <ArtistInFocus artist={featuredArtist} />
+      <ArtistsToKnow artists={knownArtists} />
 
       <section className="bg-stone py-20">
         <div className="page-shell">
