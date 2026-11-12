@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
   galleryHasControls,
@@ -350,4 +353,13 @@ test('catalogue registration failure surfaces cleanup failure with artwork id an
       return true;
     },
   );
+});
+
+test('storefront catalogue images skip the Next optimizer so Storage originals can render', () => {
+  const source = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/artwork-image.js'),
+    'utf8',
+  );
+  assert.match(source, /unoptimized/);
+  assert.match(source, /\/_next\/image/);
 });

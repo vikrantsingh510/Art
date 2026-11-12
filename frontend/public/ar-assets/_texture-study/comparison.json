@@ -1,0 +1,129 @@
+{
+  "generatedAt": "2026-11-11T08:41:00.382Z",
+  "jpegQuality": 82,
+  "galleryOriginal": {
+    "path": "frontend/public/dev/ar-poc/source.jpg",
+    "bytesBefore": 8653404,
+    "bytesAfter": 8653404,
+    "unchanged": true
+  },
+  "visualContainOfGoldenPainting": {
+    "note": "Same 0.672 image aspect as the gallery JPEG. These files are study outputs only; they are not written back over source.jpg and are not AR-ready meshes (90 × 120 cm still mismatches).",
+    "rows": [
+      {
+        "maxEdge": 1024,
+        "file": "painting-contain-1024.jpg",
+        "sourceBytes": 8653404,
+        "outputBytes": 116556,
+        "reductionPct": 98.7,
+        "width": 688,
+        "height": 1024,
+        "aspect": 0.672,
+        "sourceAspect": 0.672,
+        "downscaled": true
+      },
+      {
+        "maxEdge": 2048,
+        "file": "painting-contain-2048.jpg",
+        "sourceBytes": 8653404,
+        "outputBytes": 496530,
+        "reductionPct": 94.3,
+        "width": 1376,
+        "height": 2048,
+        "aspect": 0.672,
+        "sourceAspect": 0.672,
+        "downscaled": true
+      },
+      {
+        "maxEdge": 4096,
+        "file": "painting-contain-4096.jpg",
+        "sourceBytes": 8653404,
+        "outputBytes": 2069812,
+        "reductionPct": 76.1,
+        "width": 2753,
+        "height": 4096,
+        "aspect": 0.672,
+        "sourceAspect": 0.672,
+        "downscaled": true
+      }
+    ]
+  },
+  "matchingMeshStudy": {
+    "note": "Same gallery JPEG bytes as source.jpg, with a study-only matching rectangle of 67.2 × 100 cm so aspect passes the generate gate. Catalogue size remains 90 × 120 cm, is not rewritten, and is still ineligible.",
+    "catalogueSizeUnchanged": "90 × 120 × 4 cm",
+    "hypotheticalMatchingSize": "67.2 × 100 cm",
+    "sourceBytes": 8653404,
+    "rows": [
+      {
+        "maxEdge": 1024,
+        "generated": true,
+        "ready": true,
+        "assetsValid": true,
+        "widthCm": 67.2,
+        "heightCm": 100,
+        "widthM": 0.672,
+        "heightM": 1,
+        "measuredGlb": {
+          "widthM": 0.672,
+          "heightM": 1
+        },
+        "textureBytes": 116556,
+        "sourceBytes": 8653404,
+        "glbBytes": 117836,
+        "usdzBytes": 118757,
+        "targetWidth": 688,
+        "targetHeight": 1024,
+        "reduced": true,
+        "aspectMatches": true
+      },
+      {
+        "maxEdge": 2048,
+        "generated": true,
+        "ready": true,
+        "assetsValid": true,
+        "widthCm": 67.2,
+        "heightCm": 100,
+        "widthM": 0.672,
+        "heightM": 1,
+        "measuredGlb": {
+          "widthM": 0.672,
+          "heightM": 1
+        },
+        "textureBytes": 496530,
+        "sourceBytes": 8653404,
+        "glbBytes": 497812,
+        "usdzBytes": 498731,
+        "targetWidth": 1376,
+        "targetHeight": 2048,
+        "reduced": true,
+        "aspectMatches": true
+      },
+      {
+        "maxEdge": 4096,
+        "generated": true,
+        "ready": true,
+        "assetsValid": true,
+        "widthCm": 67.2,
+        "heightCm": 100,
+        "widthM": 0.672,
+        "heightM": 1,
+        "measuredGlb": {
+          "widthM": 0.672,
+          "heightM": 1
+        },
+        "textureBytes": 2069812,
+        "sourceBytes": 8653404,
+        "glbBytes": 2071092,
+        "usdzBytes": 2072013,
+        "targetWidth": 2753,
+        "targetHeight": 4096,
+        "reduced": true,
+        "aspectMatches": true
+      }
+    ]
+  },
+  "productionDefault": {
+    "maxEdge": 2048,
+    "rationale": "2048 px long-edge is the production default: GLB/USDZ bytes drop versus 4096 while remaining sharper than 1024 for wall-scale viewing."
+  }
+}

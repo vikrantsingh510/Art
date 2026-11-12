@@ -7,12 +7,14 @@ import { ApiClientError } from '@/lib/api-client';
 import { rupeesToPaise, paiseToRupees } from '@/lib/money';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
 import { validateArtworkImageFile } from '@/lib/artwork-image-constraints';
+import { inspectArtworkImageFile } from '@/lib/artwork-image-inspect';
 import { explainImagePersistError, persistPendingArtworkImage, purgeCatalogueImage } from '@/lib/artwork-image-upload';
 import {
   ArtworkImageManager,
   createManagerItems,
   managerHasBlockingError,
 } from './artwork-image-manager';
+import { ArtworkArReadiness } from './artwork-ar-readiness';
 import { ActionStatus, ButtonLoader } from './loading';
 import { Field } from './ui';
 
@@ -33,6 +35,13 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
   const [constraintsLoading, setConstraintsLoading] = useState(true);
   const [imageItems, setImageItems] = useState(() => createManagerItems(artwork));
   const [progress, setProgress] = useState(null);
+  const [physicalDraft, setPhysicalDraft] = useState({
+    width: artwork?.width || '',
+    height: artwork?.height || '',
+    depth: artwork?.depth || '',
+    dimensionUnit: artwork?.dimensionUnit || 'in',
+    status: artwork?.status || 'draft',
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +95,8 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
     const registered = [];
     const pendingItems = imageItems.filter((item) => item.kind === 'pending');
     for (const [index, item] of pendingItems.entries()) {
-      const validation = validateArtworkImageFile(item.file, constraints);
+      const inspection = await inspectArtworkImageFile(item.file);
+      const validation = validateArtworkImageFile(item.file, constraints, inspection);
       if (!validation.ok) {
         throw new Error(validation.message);
       }
@@ -281,10 +291,38 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
         <Field label="Material"><input className="field-input" name="material" defaultValue={artwork?.material || ''} /></Field>
         <Field label="Technique"><input className="field-input" name="technique" defaultValue={artwork?.technique || ''} /></Field>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Field label="Width"><input className="field-input" name="width" defaultValue={artwork?.width || ''} /></Field>
-          <Field label="Height"><input className="field-input" name="height" defaultValue={artwork?.height || ''} /></Field>
-          <Field label="Depth"><input className="field-input" name="depth" defaultValue={artwork?.depth || ''} /></Field>
-          <Field label="Unit"><input className="field-input" name="dimensionUnit" defaultValue={artwork?.dimensionUnit || 'in'} /></Field>
+          <Field label="Width">
+            <input
+              className="field-input"
+              name="width"
+              defaultValue={artwork?.width || ''}
+              onChange={(event) => setPhysicalDraft((current) => ({ ...current, width: event.target.value }))}
+            />
+          </Field>
+          <Field label="Height">
+            <input
+              className="field-input"
+              name="height"
+              defaultValue={artwork?.height || ''}
+              onChange={(event) => setPhysicalDraft((current) => ({ ...current, height: event.target.value }))}
+            />
+          </Field>
+          <Field label="Depth">
+            <input
+              className="field-input"
+              name="depth"
+              defaultValue={artwork?.depth || ''}
+              onChange={(event) => setPhysicalDraft((current) => ({ ...current, depth: event.target.value }))}
+            />
+          </Field>
+          <Field label="Unit" hint="mm, cm or in. Never inferred from the image.">
+            <input
+              className="field-input"
+              name="dimensionUnit"
+              defaultValue={artwork?.dimensionUnit || 'in'}
+              onChange={(event) => setPhysicalDraft((current) => ({ ...current, dimensionUnit: event.target.value }))}
+            />
+          </Field>
         </div>
       </section>
 
@@ -307,7 +345,12 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
           <input className="field-input" name="inventoryQuantity" type="number" min="0" defaultValue={artwork?.inventoryQuantity ?? 1} />
         </Field>
         <Field label="Status">
-          <select className="field-input" name="status" defaultValue={artwork?.status || 'draft'}>
+          <select
+            className="field-input"
+            name="status"
+            defaultValue={artwork?.status || 'draft'}
+            onChange={(event) => setPhysicalDraft((current) => ({ ...current, status: event.target.value }))}
+          >
             {STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
         </Field>
@@ -342,6 +385,17 @@ export function ArtworkForm({ artwork, categories, collections, mode }) {
         disabled={pending}
         items={imageItems}
         onItemsChange={setImageItems}
+      />
+
+      <ArtworkArReadiness
+        artworkId={savedArtworkId}
+        title={artwork?.title || ''}
+        status={physicalDraft.status}
+        width={physicalDraft.width}
+        height={physicalDraft.height}
+        depth={physicalDraft.depth}
+        unit={physicalDraft.dimensionUnit}
+        primaryItem={imageItems.find((item) => item.isPrimary) || imageItems[0] || null}
       />
 
       <ActionStatus pending={pending} pendingLabel={savingLabel} message={uploadNote} error={error} />

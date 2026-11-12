@@ -19,7 +19,7 @@ export default function AboutPage() {
         Certificates and provenance documents remain atelier-controlled; the storefront does not mint public links to private files.
       </p>
       <section id="ar-preview" className="notice">
-        Artwork pages include View in your space. Live placement uses WebXR on browsers that actually support immersive AR. iOS Safari and unsupported desktops use a labelled photo preview. Camera frames are not uploaded.
+        Artwork pages show actual catalogued dimensions, an illustrative size guide, and a labelled room-photo preview. View on your wall appears only for AR-ready works, using Google Model Viewer at fixed scale. iPhone Quick Look is prepared and not yet physically validated. Camera frames are not uploaded.
       </section>
     </div>
   );

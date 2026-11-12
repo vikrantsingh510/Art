@@ -1,0 +1,84 @@
+{
+  "artworkId": "texture-study-2048",
+  "title": "Texture study 2048",
+  "status": "published",
+  "generatorVersion": "1.1.0",
+  "uvConvention": "gltf-upper-left-v1",
+  "sourceImageSha256": "0e50847b9314beccb5743392a35da477aca1ce9e8286b0a5eb88a59f03dee29e",
+  "contentHash": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b",
+  "width": 67.2,
+  "height": 100,
+  "depth": null,
+  "unit": "cm",
+  "physicalLabel": "67.2 × 100 cm",
+  "widthM": 0.672,
+  "heightM": 1,
+  "depthM": null,
+  "stretched": false,
+  "cropped": false,
+  "catalogueEdited": false,
+  "pixels": {
+    "height": 10000,
+    "width": 6720
+  },
+  "aspect": {
+    "imageAspect": 0.672,
+    "physicalAspect": 0.672,
+    "deltaPct": 0,
+    "matches": true,
+    "tolerancePct": 2
+  },
+  "gltfUvs": [
+    0,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0
+  ],
+  "usdUvs": [
+    0,
+    0,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1
+  ],
+  "texture": {
+    "maxEdge": 2048,
+    "quality": 82,
+    "sourceWidth": 6720,
+    "sourceHeight": 10000,
+    "targetWidth": 1376,
+    "targetHeight": 2048,
+    "downscaled": true,
+    "optimised": true,
+    "sourceBytes": 8653404,
+    "embeddedBytes": 496530,
+    "reduced": true,
+    "note": "Decoded and re-encoded JPEG at long-edge 2048 px, quality 82. Gallery original unchanged."
+  },
+  "textureMaxEdge": 2048,
+  "textureQuality": 82,
+  "reasons": [],
+  "customerCopy": "Actual size 67.2 × 100 cm. AR uses this size, not the on-screen preview.",
+  "generatedAt": "2026-11-11T08:40:57.977Z",
+  "ready": true,
+  "assetsValid": true,
+  "files": {
+    "glb": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/painting.glb",
+    "usdz": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/painting.usdz",
+    "texture": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/texture.jpg"
+  },
+  "glbBytes": 497812,
+  "usdzBytes": 498731,
+  "textureBytes": 496530,
+  "measuredGlb": {
+    "widthM": 0.672,
+    "heightM": 1
+  }
+}

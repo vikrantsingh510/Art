@@ -474,7 +474,7 @@ Source: `backend/src/db/schema/order-items.schema.js`, `backend/src/services/che
 2. Confirm **Status** shows `published` on that page.
 3. Open http://localhost:3000/explore (signed out, or a private window).
 4. You should see the card (title, artist, INR, image or “Image not catalogued”).
-5. Open http://localhost:3000/artwork/{id}. Title, **Add to bag**, **Save to wishlist**, **View in your space** should render.
+5. Open http://localhost:3000/artwork/{id}. Title, **Add to bag**, **Save to wishlist**, and **Preview in a room photo** should render. **View on your wall** appears only when Phase 2 marks the work AR-ready.
 6. If **Featured on the exhibition** was checked, also check `/` “Selected singular acquisitions” (home falls back to latest published if no featured rows).
 7. Optional API check: `GET http://localhost:5000/api/v1/artworks` (no auth) should include the item.
 

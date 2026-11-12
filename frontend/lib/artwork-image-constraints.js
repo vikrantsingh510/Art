@@ -34,9 +34,9 @@ export function isSelectedImageFile(file) {
   return Boolean(file && file.name);
 }
 
-export function validateArtworkImageFile(file, constraints) {
+export function validateArtworkImageFile(file, constraints, inspection = null) {
   if (!isSelectedImageFile(file)) {
-    return { ok: true };
+    return { ok: true, warnings: [] };
   }
 
   if (!constraints || constraints.bucket !== ARTWORK_IMAGES_BUCKET) {
@@ -44,6 +44,7 @@ export function validateArtworkImageFile(file, constraints) {
       ok: false,
       code: 'constraints_unavailable',
       message: 'Upload limits could not be loaded from the artwork-images bucket. The file was not sent.',
+      warnings: [],
     };
   }
 
@@ -53,11 +54,41 @@ export function validateArtworkImageFile(file, constraints) {
 
   if (allowed.length > 0) {
     const mime = String(file.type || '').trim().toLowerCase();
-    if (!allowed.includes(mime)) {
+    const detected = String(inspection?.mime || '').trim().toLowerCase();
+    if (mime && !allowed.includes(mime)) {
       return {
         ok: false,
         code: 'mime',
         message: `This file type is not allowed. The artwork-images bucket accepts: ${allowed.join(', ')}.`,
+        warnings: [],
+      };
+    }
+    if (!mime && detected && !allowed.includes(detected)) {
+      return {
+        ok: false,
+        code: 'mime',
+        message: `This file type is not allowed. The artwork-images bucket accepts: ${allowed.join(', ')}.`,
+        warnings: [],
+      };
+    }
+  }
+
+  if (inspection) {
+    if (inspection.ok === false) {
+      return {
+        ok: false,
+        code: 'invalid_image',
+        message: 'This file is not a valid image. Corrupted or unsupported files are not uploaded.',
+        warnings: [],
+      };
+    }
+    const declared = String(file.type || '').trim().toLowerCase();
+    if (declared && inspection.mime && declared !== inspection.mime) {
+      return {
+        ok: false,
+        code: 'invalid_image',
+        message: `The file contents are ${inspection.mime}, which does not match the selected type ${declared}.`,
+        warnings: [],
       };
     }
   }
@@ -71,10 +102,11 @@ export function validateArtworkImageFile(file, constraints) {
       ok: false,
       code: 'size',
       message: `This file is ${formatFileBytes(file.size)}. The artwork-images bucket allows up to ${formatFileBytes(limit)}.`,
+      warnings: [],
     };
   }
 
-  return { ok: true };
+  return { ok: true, warnings: [] };
 }
 
 export function explainStorageUploadError(error) {

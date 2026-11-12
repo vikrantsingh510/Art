@@ -1,0 +1,14 @@
+{
+  "artworkId": "texture-study-2048",
+  "contentHash": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b",
+  "ready": true,
+  "assetsValid": true,
+  "versionDir": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b",
+  "files": {
+    "glb": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/painting.glb",
+    "usdz": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/painting.usdz",
+    "texture": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/texture.jpg",
+    "manifest": "bb2746a7065b01b5a3df570803c2ab63ff5cd9ffcaf0db6245503d948434d69b/manifest.json"
+  },
+  "updatedAt": "2026-11-11T08:40:58.583Z"
+}

@@ -1,0 +1,17 @@
+{
+  "artworkId": "506b0baa-f6e2-4d19-9922-7979b314fa69",
+  "contentHash": "9e8d07f1736c6011eabe74767ec0041944bac7cd736b141d069336b343c61f4d",
+  "ready": false,
+  "assetsValid": false,
+  "versionDir": null,
+  "files": {
+    "glb": null,
+    "usdz": null,
+    "texture": null,
+    "manifest": "manifest.json"
+  },
+  "reasons": [
+    "aspect-mismatch"
+  ],
+  "updatedAt": "2026-11-11T08:39:42.657Z"
+}

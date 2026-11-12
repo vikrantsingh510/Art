@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { previewAspectRatio } from '@/lib/ar-assets/storefront';
 import { galleryHasControls, orderedGalleryImages, swipeDirection, wrapGalleryIndex } from '@/lib/artwork-gallery';
 import { ArtworkImage } from './artwork-image';
 
@@ -64,8 +65,10 @@ export function ArtworkGallery({ artwork }) {
     }
   }
 
+  const previewAspect = previewAspectRatio(artwork);
+
   if (images.length === 0) {
-    return <ArtworkImage artwork={artwork} priority sizes="(min-width: 1024px) 55vw, 100vw" />;
+    return <ArtworkImage artwork={artwork} fit="physical" priority sizes="(min-width: 1024px) 55vw, 100vw" />;
   }
 
   return (
@@ -97,6 +100,7 @@ export function ArtworkGallery({ artwork }) {
           <ArtworkImage
             artwork={artwork}
             image={selected}
+            fit="physical"
             priority
             sizes="(min-width: 1024px) 55vw, 100vw"
           />
@@ -155,6 +159,7 @@ export function ArtworkGallery({ artwork }) {
         >
           <div
             className="artwork-lightbox-dialog mx-auto my-auto space-y-4 cursor-auto"
+            style={{ '--artwork-aspect': String(previewAspect.width / previewAspect.height) }}
             onClick={(event) => event.stopPropagation()}
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
@@ -171,6 +176,7 @@ export function ArtworkGallery({ artwork }) {
               artwork={artwork}
               image={selected}
               variant="lightbox"
+              fit="physical"
               sizes="90vw"
             />
             {showControls ? (

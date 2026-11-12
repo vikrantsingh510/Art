@@ -23,7 +23,7 @@ export function SiteFooter() {
             <Link href="/account" className="block text-sm">Collector dossier</Link>
             <Link href="/privacy" className="block text-sm">Privacy</Link>
             <Link href="/terms" className="block text-sm">Terms</Link>
-            <p className="text-sm text-patina">View in your space uses WebXR where the browser supports it, otherwise a photo preview.</p>
+            <p className="text-sm text-patina">View on your wall is offered only for AR-ready works, at catalogued size. Room-photo preview remains illustrative.</p>
           </div>
         </div>
         <hr className="hairline mb-6" />

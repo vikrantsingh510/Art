@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArViewer } from '@/components/ar-viewer';
+import { ArtworkArPanel } from '@/components/artwork-ar-panel';
 import { ArtworkGallery } from '@/components/artwork-gallery';
+import { ArtworkSizeGuide } from '@/components/artwork-size-guide';
 import { AddToCartButton, AddToWishlistButton } from '@/components/collection-actions';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
+import { resolveArtworkArAssets } from '@/lib/ar-assets/storefront-storage';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
 import { artworkImageUrl, publicMediaItems, privateMediaItems } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
@@ -47,6 +50,8 @@ export default async function ArtworkDetailPage({ params }) {
   const publicMedia = publicMediaItems(artwork);
   const privateMedia = privateMediaItems(artwork);
   const dimensions = formatDimensions(artwork);
+  const ar = await resolveArtworkArAssets(artwork);
+  const posterUrl = artworkImageUrl(artwork);
 
   return (
     <div className="page-shell py-10 md:py-16">
@@ -56,6 +61,16 @@ export default async function ArtworkDetailPage({ params }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-7 space-y-6">
           <ArtworkGallery key={artwork.id} artwork={artwork} />
+          {dimensions ? (
+            <p className="text-sm text-patina">
+              Actual size {dimensions}. The on-screen photograph is illustrative and is not centimetre-accurate.
+            </p>
+          ) : (
+            <p className="text-sm text-patina">
+              The on-screen photograph is illustrative. Catalogued width, height and unit are required before size can be stated.
+            </p>
+          )}
+          <ArtworkSizeGuide artwork={artwork} />
         </div>
         <aside className="lg:col-span-5 space-y-6">
           <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>
@@ -65,7 +80,10 @@ export default async function ArtworkDetailPage({ params }) {
           <p className="text-sm text-patina">INR. Displayed from server paise. Acquisition does not include live payment in this release.</p>
           <AddToCartButton artworkId={artwork.id} purchasable={artwork.isPurchasable} nextPath={`/artwork/${artwork.id}`} />
           <AddToWishlistButton artworkId={artwork.id} nextPath={`/artwork/${artwork.id}`} />
-          <ArViewer artwork={artwork} imageUrl={artworkImageUrl(artwork)} />
+          {ar.ready ? (
+            <ArtworkArPanel ar={ar} title={artwork.title} posterUrl={posterUrl} />
+          ) : null}
+          <ArViewer artwork={artwork} imageUrl={posterUrl} />
           <div className="space-y-2">
             <Button href="/contact" variant="secondary" className="w-full">Curatorial inquiry</Button>
           </div>

@@ -23,6 +23,7 @@ import {
   isSelectedImageFile,
   validateArtworkImageFile,
 } from '@/lib/artwork-image-constraints';
+import { imageInspectionWarnings, inspectArtworkImageFile } from '@/lib/artwork-image-inspect';
 import {
   MAX_ARTWORK_IMAGES,
   capacityLabel,
@@ -75,6 +76,12 @@ function SortableImageCard({ item, disabled, onPrimary, onMove, onRemove, canMov
         <div className="min-w-0 flex-1 space-y-2">
           <p className="text-sm truncate">{item.label}</p>
           {item.sizeLabel ? <p className="text-xs text-patina">{item.sizeLabel}</p> : null}
+          {item.pixelLabel ? <p className="text-xs text-patina">{item.pixelLabel}</p> : null}
+          {Array.isArray(item.warnings) && item.warnings.length > 0 ? (
+            item.warnings.map((warning) => (
+              <p key={warning} className="text-xs text-patina">{warning}</p>
+            ))
+          ) : null}
           {item.isPrimary ? <p className="label-sm text-bronze">Primary image</p> : null}
           {item.error ? <p className="text-xs text-error">{item.error}</p> : null}
           {typeof item.progress === 'number' ? (
@@ -133,30 +140,45 @@ export function ArtworkImageManager({
     onItemsChange(next.map((item, index) => ({ ...item, displayOrder: index })));
   }
 
-  function onFilesSelected(fileList) {
+  async function onFilesSelected(fileList) {
     setPickerError('');
     const chosen = takeFilesWithinLimit(fileList, remaining);
     if ((fileList?.length || 0) > chosen.length) {
       setPickerError(`Only ${MAX_ARTWORK_IMAGES} images can be catalogued. Extra files were not added.`);
     }
     const additions = [];
-    chosen.forEach((file) => {
+    for (const file of chosen) {
       if (!isSelectedImageFile(file)) {
-        return;
+        continue;
       }
-      const validation = validateArtworkImageFile(file, constraints);
+      const inspection = await inspectArtworkImageFile(file);
+      const validation = validateArtworkImageFile(file, constraints, inspection);
+      const warnings = validation.ok
+        ? imageInspectionWarnings(inspection, {
+          fileSize: file.size,
+          fileSizeLimitBytes: constraints?.fileSizeLimitBytes,
+        })
+        : [];
       additions.push({
-        key: pendingImageKey(`${Date.now()}-${file.name}`),
+        key: pendingImageKey(`${file.lastModified}-${file.size}-${file.name}-${additions.length}`),
         kind: 'pending',
         file,
         label: file.name,
         sizeLabel: formatFileBytes(file.size),
+        pixelLabel: inspection.width && inspection.height
+          ? `${inspection.width} × ${inspection.height} px`
+          : null,
+        pixelWidth: inspection.width || null,
+        pixelHeight: inspection.height || null,
+        imageKind: inspection.kind || null,
+        imageOk: inspection.ok === true,
+        warnings,
         previewUrl: URL.createObjectURL(file),
         isPrimary: items.length + additions.length === 0,
         error: validation.ok ? '' : validation.message,
         progress: null,
       });
-    });
+    }
     if (additions.length === 0) {
       return;
     }
@@ -272,6 +294,23 @@ export function ArtworkImageManager({
   );
 }
 
+function kindFromStoragePath(storagePath) {
+  const lower = String(storagePath || '').toLowerCase();
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    return 'jpeg';
+  }
+  if (lower.endsWith('.png')) {
+    return 'png';
+  }
+  if (lower.endsWith('.webp')) {
+    return 'webp';
+  }
+  if (lower.endsWith('.avif')) {
+    return 'avif';
+  }
+  return null;
+}
+
 export function createManagerItems(artwork) {
   const images = sortArtworkImages(artwork?.images);
   return images.map((image, index) => ({
@@ -285,6 +324,8 @@ export function createManagerItems(artwork) {
     isPrimary: Boolean(image.isPrimary) || (index === 0 && !images.some((item) => item.isPrimary)),
     error: '',
     progress: null,
+    imageKind: kindFromStoragePath(image.storagePath),
+    imageOk: true,
   }));
 }
 
@@ -292,6 +333,9 @@ export function managerHasBlockingError(items, constraints) {
   return items.some((item) => {
     if (item.kind !== 'pending' || !item.file) {
       return false;
+    }
+    if (item.error) {
+      return true;
     }
     const result = validateArtworkImageFile(item.file, constraints);
     return !result.ok;

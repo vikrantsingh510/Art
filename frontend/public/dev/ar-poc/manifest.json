@@ -1,0 +1,35 @@
+{
+  "artworkId": "506b0baa-f6e2-4d19-9922-7979b314fa69",
+  "title": "A Moment of Innocence",
+  "artistName": "Vishal Singh",
+  "width": 90,
+  "height": 120,
+  "unit": "cm",
+  "depthCm": 4,
+  "pixels": {
+    "height": 10000,
+    "width": 6720
+  },
+  "plane": {
+    "widthM": 0.8064,
+    "heightM": 1.2,
+    "depthM": 0.008,
+    "catalogueWidthM": 0.9,
+    "catalogueHeightM": 1.2,
+    "physicalAspect": 0.75,
+    "imageAspect": 0.672,
+    "deltaPct": 10.399999999999993,
+    "stretched": false
+  },
+  "generatedAt": "2026-11-11T08:05:37.078Z",
+  "files": {
+    "glb": "/dev/ar-poc/painting.glb",
+    "usdz": "/dev/ar-poc/painting.usdz",
+    "source": "/dev/ar-poc/source.jpg"
+  },
+  "notes": [
+    "Catalogue unit is explicit cm (not inferred).",
+    "Plane height uses catalogue 120 cm. Plane width uses image aspect to avoid stretching.",
+    "Catalogue width 90 cm vs plane width from image aspect is recorded in plane.catalogueWidthM vs plane.widthM."
+  ]
+}
