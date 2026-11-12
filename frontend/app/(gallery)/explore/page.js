@@ -1,8 +1,9 @@
 import { ArtworkCard } from '@/components/artwork-card';
 import { Pagination } from '@/components/pagination';
 import { EmptyState, ErrorState } from '@/components/states';
+import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
-import { exploreHref, parseExploreQuery } from '@/lib/explore-query';
+import { exploreHasActiveFilters, exploreHref, parseExploreQuery } from '@/lib/explore-query';
 
 export const metadata = {
   title: 'Explore Art',
@@ -38,6 +39,9 @@ export default async function ExplorePage({ searchParams }) {
       <EmptyState
         title="No works match this hanging"
         description="Clear filters or inquire with the atelier. Results are never invented."
+        action={exploreHasActiveFilters(params) ? (
+          <Button href="/explore" variant="secondary">Clear all filters</Button>
+        ) : null}
       />
     );
   }

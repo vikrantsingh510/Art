@@ -3,7 +3,14 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { pendingButtonProps } from '@/lib/pending-action';
-import { exploreHref, parseExploreQuery, PRICE_BANDS } from '@/lib/explore-query';
+import {
+  PRICE_BANDS,
+  clearedExploreQuery,
+  exploreFilterChips,
+  exploreHasActiveFilters,
+  exploreHref,
+  parseExploreQuery,
+} from '@/lib/explore-query';
 import { ButtonLoader } from './loading';
 
 export function ExploreFilters({ categories }) {
@@ -13,6 +20,8 @@ export function ExploreFilters({ categories }) {
   const currentHref = exploreHref(current, current.page);
   const [requestedHref, setRequestedHref] = useState(null);
   const pending = Boolean(requestedHref && requestedHref !== currentHref);
+  const chips = exploreFilterChips(current, { categories });
+  const filtersActive = exploreHasActiveFilters(current);
 
   function update(next) {
     const merged = { ...current, ...next, page: next.page || 1 };
@@ -24,10 +33,15 @@ export function ExploreFilters({ categories }) {
     router.push(href);
   }
 
+  function clearAll() {
+    update(clearedExploreQuery(current));
+  }
+
   return (
     <form
       key={currentHref}
-      className="grid grid-cols-1 md:grid-cols-12 gap-6 border border-fillet bg-stone p-6"
+      className="explore-filters space-y-6 border border-fillet bg-stone p-6"
+      aria-label="Catalogue filters"
       aria-busy={pending}
       onSubmit={(event) => {
         event.preventDefault();
@@ -44,64 +58,106 @@ export function ExploreFilters({ categories }) {
         });
       }}
     >
-      <label className="md:col-span-4">
-        <span className="label-md text-patina">Search</span>
-        <input className="field-input" name="q" defaultValue={current.q || ''} placeholder="Title, artist, monograph" />
-      </label>
-      <label className="md:col-span-3">
-        <span className="label-md text-patina">Category</span>
-        <select className="field-input" name="categoryId" defaultValue={current.categoryId || ''} disabled={pending}>
-          <option value="">All published series</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>{category.name}</option>
-          ))}
-        </select>
-      </label>
-      <label className="md:col-span-3">
-        <span className="label-md text-patina">Acquisition value</span>
-        <select
-          className="field-input"
-          defaultValue={`${current.minPricePaise || ''}:${current.maxPricePaise || ''}`}
-          disabled={pending}
-          onChange={(event) => {
-            const [minPricePaise, maxPricePaise] = event.target.value.split(':');
-            const form = event.currentTarget.form;
-            form.minPricePaise.value = minPricePaise || '';
-            form.maxPricePaise.value = maxPricePaise || '';
-          }}
-        >
-          <option value=":">All valuations</option>
-          {PRICE_BANDS.map((band) => (
-            <option key={band.label} value={`${band.minPricePaise || ''}:${band.maxPricePaise || ''}`}>
-              {band.label}
-            </option>
-          ))}
-        </select>
-        <input type="hidden" name="minPricePaise" defaultValue={current.minPricePaise || ''} />
-        <input type="hidden" name="maxPricePaise" defaultValue={current.maxPricePaise || ''} />
-      </label>
-      <div className="md:col-span-2 flex items-end">
-        <button className="btn-primary w-full" type="submit" {...pendingButtonProps(pending)}>
-          {pending ? <ButtonLoader label="Applying…" /> : 'Apply'}
-        </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 lg:items-end">
+        <label className="sm:col-span-2 lg:col-span-4">
+          <span className="label-md text-patina">Search</span>
+          <input
+            className="field-input"
+            name="q"
+            defaultValue={current.q || ''}
+            placeholder="Title, artist, monograph"
+            autoComplete="off"
+            disabled={pending}
+          />
+        </label>
+        <label className="lg:col-span-3">
+          <span className="label-md text-patina">Category</span>
+          <select className="field-input" name="categoryId" defaultValue={current.categoryId || ''} disabled={pending}>
+            <option value="">All published series</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="lg:col-span-3">
+          <span className="label-md text-patina">Acquisition value</span>
+          <select
+            className="field-input"
+            defaultValue={`${current.minPricePaise || ''}:${current.maxPricePaise || ''}`}
+            disabled={pending}
+            onChange={(event) => {
+              const [minPricePaise, maxPricePaise] = event.target.value.split(':');
+              const form = event.currentTarget.form;
+              form.minPricePaise.value = minPricePaise || '';
+              form.maxPricePaise.value = maxPricePaise || '';
+            }}
+          >
+            <option value=":">All valuations</option>
+            {PRICE_BANDS.map((band) => (
+              <option key={band.label} value={`${band.minPricePaise || ''}:${band.maxPricePaise || ''}`}>
+                {band.label}
+              </option>
+            ))}
+          </select>
+          <input type="hidden" name="minPricePaise" defaultValue={current.minPricePaise || ''} />
+          <input type="hidden" name="maxPricePaise" defaultValue={current.maxPricePaise || ''} />
+        </label>
+        <div className="sm:col-span-2 lg:col-span-2 flex items-end">
+          <button className="btn-primary w-full" type="submit" {...pendingButtonProps(pending)}>
+            {pending ? <ButtonLoader label="Applying…" /> : 'Apply filters'}
+          </button>
+        </div>
       </div>
-      <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-3">
-        {['Medium', 'Scale', 'Movement'].map((label) => (
-          <div key={label} className="border border-fillet px-4 py-3 opacity-60">
-            <p className="label-md text-patina">{label}</p>
-            <p className="text-xs text-on-surface-variant mt-1">Unavailable — the catalog API does not filter by {label.toLowerCase()}.</p>
-          </div>
-        ))}
-      </div>
+
+      {filtersActive ? (
+        <div className="flex flex-wrap items-center gap-4">
+          {chips.length > 0 ? (
+            <ul className="flex flex-wrap gap-3" aria-label="Active filters">
+              {chips.map((chip) => (
+                <li key={chip.id}>
+                  <button
+                    type="button"
+                    className="explore-filter-chip"
+                    aria-label={`Remove ${chip.group} filter ${chip.label}`}
+                    disabled={pending}
+                    onClick={() => update({ ...chip.clear, page: 1 })}
+                  >
+                    <span className="label-md text-patina">{chip.group}</span>
+                    <span className="text-sm text-ink">{chip.label}</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <button
+            className="text-link"
+            type="button"
+            onClick={clearAll}
+            disabled={pending}
+          >
+            Clear all
+          </button>
+        </div>
+      ) : null}
     </form>
   );
 }
 
 export function ExploreFiltersFallback() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 border border-fillet bg-stone p-6" aria-hidden="true">
-      <div className="md:col-span-12">
-        <p className="label-md text-patina">Search, category and valuation</p>
+    <div className="explore-filters grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 border border-fillet bg-stone p-6" aria-hidden="true">
+      <div className="sm:col-span-2 lg:col-span-4">
+        <p className="label-md text-patina">Search</p>
+      </div>
+      <div className="lg:col-span-3">
+        <p className="label-md text-patina">Category</p>
+      </div>
+      <div className="lg:col-span-3">
+        <p className="label-md text-patina">Acquisition value</p>
+      </div>
+      <div className="sm:col-span-2 lg:col-span-2">
+        <p className="label-md text-patina">Apply filters</p>
       </div>
     </div>
   );

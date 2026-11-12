@@ -17,7 +17,7 @@ export default async function ExploreLayout({ children }) {
       <PageIntro
         eyebrow="Authentic canvas & pigment registry"
         title="The permanent collection & recent acquisitions"
-        description="Browse singular, non-reproducible original paintings. Search, category and valuation filters are live. Medium, scale and movement remain unavailable until the catalog API supports them."
+        description="Browse singular, non-reproducible original paintings. Refine the hanging by search, category or acquisition value."
       />
       <div className="page-shell pb-20 space-y-10">
         <Suspense fallback={<ExploreFiltersFallback />}>
