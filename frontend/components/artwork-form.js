@@ -169,6 +169,9 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
     const formData = new FormData(form);
     const categoryIds = formData.getAll('categoryIds').filter(Boolean);
     const collectionIds = formData.getAll('collectionIds').filter(Boolean);
+    const originalCollectionIds = [...(artwork?.collectionIds || [])];
+    const collectionMembershipUnchanged = originalCollectionIds.length === collectionIds.length
+      && originalCollectionIds.every((id) => collectionIds.includes(id));
     const rupees = formData.get('priceRupees');
     const intendedStatus = String(formData.get('status') || 'draft');
     const artistId = String(formData.get('artistId') || '').trim() || null;
@@ -193,8 +196,13 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
       status: intendedStatus,
       isFeatured: formData.get('isFeatured') === 'on',
       categoryIds,
-      collectionIds,
     };
+    const shouldWriteCollections = !savedArtworkId
+      ? true
+      : collections.length > 0 && !collectionMembershipUnchanged;
+    if (shouldWriteCollections) {
+      body.collectionIds = collectionIds;
+    }
 
     if (!body.title || (!body.artistId && !body.artistName) || !Number.isFinite(Number(rupees))) {
       setError('Title, a published artist and a numeric INR price are required.');
@@ -383,7 +391,12 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
             ))}
           </select>
         </Field>
-        <Field label="Collections">
+        <Field
+          label="Collections"
+          hint={collections.length === 0
+            ? 'Create a hanging under Collections before assigning this lot. Existing memberships are left unchanged while this list is empty.'
+            : 'Hold Ctrl or Cmd to select more than one hanging. Saving without a change leaves memberships intact.'}
+        >
           <select className="field-input h-32" name="collectionIds" multiple defaultValue={artwork?.collectionIds || []}>
             {collections.map((collection) => (
               <option key={collection.id} value={collection.id}>{collection.name}</option>

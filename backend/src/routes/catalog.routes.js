@@ -3,17 +3,25 @@ import {
   addAdminCollectionArtwork,
   createAdminCategory,
   createAdminCollection,
+  getAdminCollection,
   getPublicCollection,
   listAdminCategories,
   listAdminCollections,
   listPublicCategories,
   listPublicCollections,
+  replaceAdminCollectionArtworks,
   updateAdminCategory,
   updateAdminCollection,
 } from '../controllers/catalog.controller.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
-import { categoryBody, collectionArtworkBody, collectionBody } from '../validators/catalog.validators.js';
+import {
+  categoryBody,
+  collectionArtworkBody,
+  collectionArtworksBody,
+  collectionBody,
+  collectionUpdateBody,
+} from '../validators/catalog.validators.js';
 import { uuidParam } from '../validators/common.js';
 
 export const categoryPublicRouter = Router();
@@ -31,7 +39,13 @@ categoryAdminRouter.patch('/:id', validate({ params: uuidParam, body: categoryBo
 
 collectionAdminRouter.get('/', asyncHandler(listAdminCollections));
 collectionAdminRouter.post('/', validate({ body: collectionBody }), asyncHandler(createAdminCollection));
-collectionAdminRouter.patch('/:id', validate({ params: uuidParam, body: collectionBody.partial() }), asyncHandler(updateAdminCollection));
+collectionAdminRouter.get('/:id', validate({ params: uuidParam }), asyncHandler(getAdminCollection));
+collectionAdminRouter.patch('/:id', validate({ params: uuidParam, body: collectionUpdateBody }), asyncHandler(updateAdminCollection));
+collectionAdminRouter.put(
+  '/:id/artworks',
+  validate({ params: uuidParam, body: collectionArtworksBody }),
+  asyncHandler(replaceAdminCollectionArtworks),
+);
 collectionAdminRouter.post(
   '/:id/artworks',
   validate({ params: uuidParam, body: collectionArtworkBody }),

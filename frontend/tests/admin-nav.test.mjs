@@ -5,8 +5,15 @@ import { ADMIN_NAV_LINKS, isAdminNavActive } from '../lib/admin-nav.js';
 test('dashboard is active only on the console index', () => {
   assert.equal(isAdminNavActive('/admin', '/admin'), true);
   assert.equal(isAdminNavActive('/admin/artworks', '/admin'), false);
+  assert.equal(isAdminNavActive('/admin/settings', '/admin'), false);
   assert.equal(isAdminNavActive('/admin/orders', '/admin'), false);
   assert.equal(isAdminNavActive('/admin/customers/abc', '/admin'), false);
+});
+
+test('settings highlights without colliding with the dashboard', () => {
+  assert.equal(isAdminNavActive('/admin/settings', '/admin/settings'), true);
+  assert.equal(isAdminNavActive('/admin', '/admin/settings'), false);
+  assert.equal(isAdminNavActive('/admin/artworks', '/admin/settings'), false);
 });
 
 test('artwork collection stays highlighted on edit and not on the new-lot form', () => {
@@ -14,6 +21,14 @@ test('artwork collection stays highlighted on edit and not on the new-lot form',
   assert.equal(isAdminNavActive('/admin/artworks/lot-id/edit', '/admin/artworks'), true);
   assert.equal(isAdminNavActive('/admin/artworks/new', '/admin/artworks'), false);
   assert.equal(isAdminNavActive('/admin/artworks/new', '/admin/artworks/new'), true);
+});
+
+test('collections highlights listing, new and edit without colliding with artwork routes', () => {
+  assert.equal(isAdminNavActive('/admin/collections', '/admin/collections'), true);
+  assert.equal(isAdminNavActive('/admin/collections/entry-id/edit', '/admin/collections'), true);
+  assert.equal(isAdminNavActive('/admin/collections/new', '/admin/collections'), true);
+  assert.equal(isAdminNavActive('/admin/artworks', '/admin/collections'), false);
+  assert.equal(isAdminNavActive('/admin/collections', '/admin/artworks'), false);
 });
 
 test('journal highlights listing and edit without colliding with artwork routes', () => {
@@ -42,6 +57,6 @@ test('orders and customers highlight their nested records', () => {
 test('console lists the curatorial side-menu destinations', () => {
   assert.deepEqual(
     ADMIN_NAV_LINKS.map((link) => link.label),
-    ['Dashboard', 'Artwork collection', 'Add new artwork', 'Journal', 'Artists', 'Orders', 'Customers'],
+    ['Dashboard', 'Settings', 'Artwork collection', 'Add new artwork', 'Journal', 'Collections', 'Artists', 'Orders', 'Customers'],
   );
 });

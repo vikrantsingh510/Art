@@ -27,7 +27,9 @@ export const artworkCreateBody = z.object({
   collectionIds: z.array(z.string().uuid()).default([]),
 });
 
-export const artworkUpdateBody = artworkCreateBody.partial();
+export const artworkUpdateBody = artworkCreateBody.partial().extend({
+  collectionIds: z.array(z.string().uuid()).optional(),
+});
 
 export const artworkListQuery = paginationQuery.extend({
   q: z.string().trim().max(200).optional(),

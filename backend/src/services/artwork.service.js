@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import {
   artists,
@@ -115,16 +115,36 @@ async function replaceArtworkLinks(artworkId, { categoryIds, collectionIds } = {
   }
 
   if (collectionIds) {
-    await db.delete(collectionArtworks).where(eq(collectionArtworks.artworkId, artworkId));
-    if (collectionIds.length > 0) {
-      await db.insert(collectionArtworks).values(
-        collectionIds.map((collectionId, index) => ({
-          artworkId,
-          collectionId,
-          displayOrder: index,
-        })),
-      );
-    }
+    await db.transaction(async (tx) => {
+      const existingRows = await tx
+        .select()
+        .from(collectionArtworks)
+        .where(eq(collectionArtworks.artworkId, artworkId));
+      const existingByCollection = new Map(existingRows.map((row) => [row.collectionId, row]));
+      const nextIds = [...new Set(collectionIds)];
+
+      await tx.delete(collectionArtworks).where(eq(collectionArtworks.artworkId, artworkId));
+      if (nextIds.length === 0) {
+        return;
+      }
+
+      const values = [];
+      for (const collectionId of nextIds) {
+        const existing = existingByCollection.get(collectionId);
+        let displayOrder = existing?.displayOrder;
+        if (displayOrder == null) {
+          const [maxRow] = await tx
+            .select({
+              maxOrder: sql`coalesce(max(${collectionArtworks.displayOrder}), -1)::int`.as('maxOrder'),
+            })
+            .from(collectionArtworks)
+            .where(eq(collectionArtworks.collectionId, collectionId));
+          displayOrder = Number(maxRow?.maxOrder ?? -1) + 1;
+        }
+        values.push({ artworkId, collectionId, displayOrder });
+      }
+      await tx.insert(collectionArtworks).values(values);
+    });
   }
 }
 
@@ -158,7 +178,9 @@ export async function listArtworks(query, { publicOnly = true } = {}) {
     filters.push(eq(artworks.isFeatured, true));
   }
 
-  let source = db.select({ artwork: artworks }).from(artworks);
+  let source = query.collectionId
+    ? db.select({ artwork: artworks, displayOrder: collectionArtworks.displayOrder }).from(artworks)
+    : db.select({ artwork: artworks }).from(artworks);
 
   if (query.categoryId) {
     source = source.innerJoin(
@@ -194,7 +216,11 @@ export async function listArtworks(query, { publicOnly = true } = {}) {
 
   const rows = await source
     .where(whereClause)
-    .orderBy(desc(artworks.createdAt))
+    .orderBy(
+      ...(query.collectionId
+        ? [asc(collectionArtworks.displayOrder), asc(artworks.id)]
+        : [desc(artworks.createdAt)]),
+    )
     .limit(limit)
     .offset(offset);
 

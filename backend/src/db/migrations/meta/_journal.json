@@ -78,6 +78,13 @@
       "when": 1794490000010,
       "tag": "0010_artists",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794500000011,
+      "tag": "0011_app_settings",
+      "breakpoints": true
     }
   ]
 }

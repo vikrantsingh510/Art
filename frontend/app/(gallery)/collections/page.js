@@ -1,4 +1,6 @@
+import Image from 'next/image';
 import Link from 'next/link';
+import { ImagePlaceholder } from '@/components/loading';
 import { EmptyState, ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
 import { publicStorageUrl } from '@/lib/media';
@@ -25,17 +27,34 @@ export default async function CollectionsPage() {
         {!error && collections.length === 0 ? (
           <EmptyState title="No published collections" description="When a hanging is released, it will appear here." />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {collections.map((collection) => (
-              <Link key={collection.id} href={`/collections/${collection.id}`} className="border-t border-fillet pt-6">
-                <p className="label-sm text-patina">{collection.slug}</p>
-                <h2 className="font-display text-3xl mt-2">{collection.name}</h2>
-                <p className="text-sm text-on-surface-variant mt-3">{collection.description || 'View the published works in this hanging.'}</p>
-                {publicStorageUrl(collection.coverImagePath) ? (
-                  <p className="label-sm text-bronze mt-4">Cover catalogued</p>
-                ) : null}
-              </Link>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {collections.map((collection) => {
+              const coverUrl = publicStorageUrl(collection.coverImagePath);
+              return (
+                <Link key={collection.id} href={`/collections/${collection.id}`} className="border-t border-fillet pt-6 space-y-4">
+                  {coverUrl ? (
+                    <div className="relative aspect-[16/9] bg-surface-container-low">
+                      <Image
+                        src={coverUrl}
+                        alt={collection.name}
+                        fill
+                        unoptimized
+                        sizes="(min-width: 1024px) 50vw, 100vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <ImagePlaceholder className="max-w-md" label="No cover" />
+                  )}
+                  <p className="label-sm text-patina">{collection.slug}</p>
+                  <h2 className="font-display text-3xl italic leading-tight">{collection.name}</h2>
+                  <p className="text-sm text-on-surface-variant">
+                    {collection.description || 'View the published works in this hanging.'}
+                  </p>
+                  <p className="label-sm text-bronze">View the hanging</p>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

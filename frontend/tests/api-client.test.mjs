@@ -127,6 +127,11 @@ test('sends profile, wishlist and admin order paths', async () => {
   await api.adminArtworkImageConstraints({ token: 't' });
   await api.removeArtworkImage('lot-id', 'image-id', { token: 't' });
   await api.reorderArtworkImages('lot-id', { imageIds: ['image-id'], primaryImageId: 'image-id' }, { token: 't' });
+  await api.getWhatsappEnquiry();
+  await api.adminWhatsappSettings({ token: 't' });
+  await api.updateAdminWhatsappSettings({ enabled: false }, { token: 't' });
+  await api.createCollection({ name: 'Monsoon studies' }, { token: 't' });
+  await api.replaceCollectionArtworks('col-id', ['lot-id'], { token: 't' });
   assert.match(calls[0].url, /\/api\/v1\/auth\/me$/);
   assert.equal(calls[0].method, 'PATCH');
   assert.match(calls[1].url, /\/api\/v1\/wishlist$/);
@@ -136,4 +141,14 @@ test('sends profile, wishlist and admin order paths', async () => {
   assert.equal(calls[4].method, 'DELETE');
   assert.match(calls[5].url, /\/api\/v1\/admin\/artworks\/lot-id\/images\/order$/);
   assert.equal(calls[5].method, 'PATCH');
+  assert.match(calls[6].url, /\/api\/v1\/enquiry\/whatsapp$/);
+  assert.equal(calls[6].method, 'GET');
+  assert.match(calls[7].url, /\/api\/v1\/admin\/settings\/whatsapp$/);
+  assert.equal(calls[7].method, 'GET');
+  assert.match(calls[8].url, /\/api\/v1\/admin\/settings\/whatsapp$/);
+  assert.equal(calls[8].method, 'PUT');
+  assert.match(calls[9].url, /\/api\/v1\/admin\/collections$/);
+  assert.equal(calls[9].method, 'POST');
+  assert.match(calls[10].url, /\/api\/v1\/admin\/collections\/col-id\/artworks$/);
+  assert.equal(calls[10].method, 'PUT');
 });

@@ -6,13 +6,14 @@ import { ArtworkGallery } from '@/components/artwork-gallery';
 import { ArtworkSizeGuide } from '@/components/artwork-size-guide';
 import { AddToCartButton, AddToWishlistButton } from '@/components/collection-actions';
 import { ErrorState } from '@/components/states';
-import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { resolveArtworkArAssets } from '@/lib/ar-assets/storefront-storage';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
+import { canonicalFor } from '@/lib/journal-origin';
 import { artworkImageUrl, publicMediaItems, privateMediaItems } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
 import { getAccessToken } from '@/lib/session';
+import { buildWhatsappEnquiryHref, DEFAULT_WHATSAPP_BUTTON_LABEL } from '@/lib/whatsapp-enquiry';
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -52,6 +53,21 @@ export default async function ArtworkDetailPage({ params }) {
   const dimensions = formatDimensions(artwork);
   const ar = await resolveArtworkArAssets(artwork);
   const posterUrl = artworkImageUrl(artwork);
+  let enquiry = { enabled: false };
+  try {
+    enquiry = await api.getWhatsappEnquiry();
+  } catch {
+    enquiry = { enabled: false };
+  }
+  const pageUrl = await canonicalFor(`/artwork/${artwork.id}`);
+  const whatsappHref = enquiry?.enabled
+    ? buildWhatsappEnquiryHref({
+      e164: enquiry.e164,
+      title: artwork.title,
+      id: artwork.id,
+      url: pageUrl,
+    })
+    : null;
 
   return (
     <div className="page-shell py-10 md:py-16">
@@ -90,9 +106,16 @@ export default async function ArtworkDetailPage({ params }) {
             <ArtworkArPanel ar={ar} title={artwork.title} posterUrl={posterUrl} />
           ) : null}
           <ArViewer artwork={artwork} imageUrl={posterUrl} />
-          <div className="space-y-2">
-            <Button href="/contact" variant="secondary" className="w-full">Curatorial inquiry</Button>
-          </div>
+          {whatsappHref ? (
+            <a
+              className="btn-primary w-full"
+              href={whatsappHref}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {enquiry.buttonLabel || DEFAULT_WHATSAPP_BUTTON_LABEL}
+            </a>
+          ) : null}
           <dl className="space-y-4 border-t border-fillet pt-6">
             <Spec label="Medium" value={artwork.medium} />
             <Spec label="Material" value={artwork.material} />

@@ -1,5 +1,5 @@
 /**
- * Drizzle schema barrel — 27 tables (26 previous + artists).
+ * Drizzle schema barrel — 28 tables (27 previous + app_settings).
  *
  * Identity provisioning:
  *   1. Supabase Auth creates `auth.users`.
@@ -36,6 +36,7 @@ export {
   userRoleEnum,
   webhookProcessingStatusEnum,
 } from './enums.js';
+export { APP_SETTING_WHATSAPP_ENQUIRY, appSettings } from './app-settings.schema.js';
 export { profiles } from './profiles.schema.js';
 export { userRoles } from './user-roles.schema.js';
 export { addresses } from './addresses.schema.js';

@@ -23,6 +23,7 @@ import { artistAdminRouter } from './artist.routes.js';
 import { artworkAdminRouter } from './artwork.routes.js';
 import { blogAdminRouter } from './blog.routes.js';
 import { categoryAdminRouter, collectionAdminRouter } from './catalog.routes.js';
+import { settingsAdminRouter } from './settings.routes.js';
 
 const router = Router();
 
@@ -51,5 +52,6 @@ router.use('/artworks', artworkAdminRouter);
 router.use('/categories', categoryAdminRouter);
 router.use('/collections', collectionAdminRouter);
 router.use('/blogs', blogAdminRouter);
+router.use('/settings', settingsAdminRouter);
 
 export default router;

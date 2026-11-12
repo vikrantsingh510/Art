@@ -46,6 +46,13 @@ test('client-supplied admin flags do not grant admin access', async () => {
   });
   assert.equal(response.status, 403);
 
+  const settingsResponse = await api('/api/v1/admin/settings/whatsapp', {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer customer-token' },
+    body: { enabled: true, e164: '+919876543210' },
+  });
+  assert.equal(settingsResponse.status, 403);
+
   const createResponse = await api('/api/v1/admin/artworks', {
     method: 'POST',
     headers: { Authorization: 'Bearer customer-token' },

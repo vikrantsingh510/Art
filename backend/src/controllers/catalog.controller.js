@@ -6,6 +6,7 @@ import {
   getCollectionById,
   listCategories,
   listCollections,
+  replaceCollectionArtworks,
   updateCategory,
   updateCollection,
 } from '../services/catalog.service.js';
@@ -41,7 +42,12 @@ export async function updateAdminCategory(req, res) {
 }
 
 export async function listAdminCollections(_req, res) {
-  const data = await listCollections({ publishedOnly: false });
+  const data = await listCollections({ publishedOnly: false, includeCounts: true });
+  return sendSuccess(res, { data });
+}
+
+export async function getAdminCollection(req, res) {
+  const data = await getCollectionById(req.params.id, { publishedOnly: false, includeMembers: true });
   return sendSuccess(res, { data });
 }
 
@@ -60,6 +66,11 @@ export async function addAdminCollectionArtwork(req, res) {
   return sendSuccess(res, { statusCode: 201, data });
 }
 
+export async function replaceAdminCollectionArtworks(req, res) {
+  const data = await replaceCollectionArtworks(req.params.id, req.body.artworkIds, req.user.id);
+  return sendSuccess(res, { data });
+}
+
 export default {
   listPublicCategories,
   listPublicCollections,
@@ -68,7 +79,9 @@ export default {
   createAdminCategory,
   updateAdminCategory,
   listAdminCollections,
+  getAdminCollection,
   createAdminCollection,
   updateAdminCollection,
   addAdminCollectionArtwork,
+  replaceAdminCollectionArtworks,
 };
