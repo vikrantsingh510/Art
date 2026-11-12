@@ -334,7 +334,9 @@ body {
   .page-enter,
   .artwork-image-fade,
   .artwork-image-hover,
-  .upload-progress > span {
+  .upload-progress > span,
+  .size-guide-lightbox-backdrop,
+  .size-guide-lightbox-dialog {
     animation: none;
     transition: none;
   }
@@ -406,25 +408,111 @@ body {
   width: 100%;
   max-width: 100%;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, #f6f0e6 0%, #efe6d6 70%, #e5d6bf 70%, #dccdb8 100%);
+  background: var(--color-stone);
 }
 
-.size-guide-scene[data-size-guide-scene="wall"] {
-  background: #f3eee4;
-}
-
-.size-guide-furniture,
-.size-guide-artwork {
-  position: absolute;
+.size-guide-photo {
+  object-fit: cover;
+  object-position: center;
   pointer-events: none;
 }
 
 .size-guide-artwork {
-  outline: 1px solid color-mix(in srgb, var(--color-bronze) 50%, transparent);
-  background: var(--color-olive);
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  background: transparent;
+  box-shadow:
+    0 14px 32px rgba(28, 24, 18, 0.22),
+    0 2px 6px rgba(28, 24, 18, 0.16);
 }
 
 .size-guide-artwork img {
-  object-fit: contain;
+  object-fit: cover;
+}
+
+.size-guide-scene-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.size-guide-scene-trigger:hover .size-guide-photo,
+.size-guide-scene-trigger:focus-visible .size-guide-photo {
+  filter: brightness(1.06);
+}
+
+.size-guide-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: hidden;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-charcoal) 82%, transparent);
+  animation: size-guide-lightbox-enter 200ms ease-out;
+}
+
+.size-guide-lightbox-dialog {
+  position: relative;
+  cursor: auto;
+  width: min(96vw, calc(86vh * var(--scene-aspect, 1)));
+  max-width: 96vw;
+  max-height: 86vh;
+  animation: size-guide-lightbox-enter 220ms ease-out;
+}
+
+.size-guide-scene-lightbox {
+  max-height: 86vh;
+}
+
+.size-guide-lightbox-close {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 0.85rem;
+  border: 0;
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  color: var(--color-ink);
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .size-guide-lightbox-backdrop {
+    padding: 2.5rem;
+  }
+
+  .size-guide-lightbox-dialog {
+    width: min(92vw, calc(88vh * var(--scene-aspect, 1)));
+    max-height: 88vh;
+  }
+
+  .size-guide-scene-lightbox {
+    max-height: 88vh;
+  }
+}
+
+@keyframes size-guide-lightbox-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

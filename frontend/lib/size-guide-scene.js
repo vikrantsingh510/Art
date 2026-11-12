@@ -3,6 +3,7 @@ import {
   SIZE_GUIDE_REFERENCES,
   sizeGuideArtworkCm,
 } from './ar-assets/storefront.js';
+import { SIZE_GUIDE_PHOTO_FRAMES } from './size-guide-photos.js';
 
 export const SIZE_GUIDE_SCENE_ORDER = ['sofa', 'bed', 'wall'];
 
@@ -109,6 +110,63 @@ export function sizeGuideScene(artworkCm, reference) {
   });
 }
 
+/**
+ * Presentation overlay on a photograph. Artwork size still follows catalogued
+ * centimetres versus the stated furniture width. If that size cannot sit on
+ * the blank wall without covering furniture, it is contained in the mount.
+ */
+export function sizeGuidePhotoOverlay(artworkCm, reference, frame = SIZE_GUIDE_PHOTO_FRAMES[reference?.id]) {
+  const artW = positiveCm(artworkCm?.widthCm);
+  const artH = positiveCm(artworkCm?.heightCm);
+  const refW = positiveCm(reference?.widthCm);
+  if (!artW || !artH || !refW || !frame) {
+    return null;
+  }
+
+  const artAspect = artW / artH;
+  let widthPct = (artW / refW) * frame.furnitureWidthPct;
+  let heightPct = (widthPct / artAspect) * frame.aspect;
+  const mountW = frame.mountWidthPct;
+  const mountH = frame.mountBottomPct - frame.mountTopPct;
+  const fit = Math.min(
+    widthPct > mountW ? mountW / widthPct : 1,
+    heightPct > mountH ? mountH / heightPct : 1,
+  );
+  const clamped = fit < 0.999;
+  widthPct *= fit;
+  heightPct *= fit;
+
+  let leftPct;
+  let topPct;
+  if (frame.anchor === 'wall-center') {
+    leftPct = frame.mountLeftPct + (mountW - widthPct) / 2;
+    topPct = frame.mountTopPct + (mountH - heightPct) / 2;
+  } else {
+    const furnitureCenter = frame.furnitureLeftPct + frame.furnitureWidthPct / 2;
+    leftPct = furnitureCenter - widthPct / 2;
+    const minLeft = frame.mountLeftPct;
+    const maxLeft = frame.mountLeftPct + mountW - widthPct;
+    leftPct = Math.min(Math.max(leftPct, minLeft), maxLeft);
+    const gapPct = frame.hangGapPct ?? 1.2;
+    topPct = frame.furnitureTopPct - gapPct - heightPct;
+    if (topPct < frame.mountTopPct) {
+      topPct = frame.mountTopPct;
+    }
+    if (topPct + heightPct > frame.mountBottomPct) {
+      topPct = frame.mountBottomPct - heightPct;
+    }
+  }
+
+  return {
+    widthPct,
+    heightPct,
+    leftPct,
+    bottomPct: 100 - topPct - heightPct,
+    aspect: artAspect,
+    clamped,
+  };
+}
+
 export function sizeGuideDimensionFields(artwork) {
   const unit = artwork?.dimensionUnit || '';
   return ['width', 'height', 'depth']
@@ -200,10 +258,17 @@ export function sizeGuideComparisons(artwork) {
     if (!scene) {
       return null;
     }
+    const frame = SIZE_GUIDE_PHOTO_FRAMES[id];
+    const overlay = sizeGuidePhotoOverlay(artworkCm, reference, frame);
+    if (!overlay || !frame) {
+      return null;
+    }
     return {
       reference,
       artworkCm,
       scene,
+      overlay,
+      photo: frame,
       copy: sizeGuideComparisonCopy(reference, artwork, artworkCm),
     };
   }).filter(Boolean);

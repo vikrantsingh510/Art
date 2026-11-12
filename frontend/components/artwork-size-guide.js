@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { formatDimensions } from '@/lib/format';
 import { artworkImageUrl, primaryArtworkImage } from '@/lib/media';
 import {
@@ -6,7 +5,8 @@ import {
   sizeGuideComparisons,
   sizeGuideDimensionFields,
 } from '@/lib/size-guide-scene';
-import { SizeGuideDimensionDiagram, SizeGuideFurniture } from './size-guide-furniture';
+import { SizeGuideDimensionDiagram } from './size-guide-furniture';
+import { SizeGuideSceneLightbox } from './size-guide-scene-lightbox';
 
 export function ArtworkSizeGuide({ artwork }) {
   const comparisons = sizeGuideComparisons(artwork);
@@ -57,57 +57,21 @@ export function ArtworkSizeGuide({ artwork }) {
       </div>
 
       <ul className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {comparisons.map(({ reference, scene, copy }) => (
-          <li key={reference.id} className="space-y-4 min-w-0">
-            <div
-              className="size-guide-scene"
-              data-size-guide-scene={reference.id}
-              data-artwork-aspect={String(scene.artwork.aspect)}
-              data-furniture-aspect={String(scene.furniture.aspect)}
-              style={{ aspectRatio: String(scene.sceneAspect) }}
-            >
-              <div
-                className="size-guide-furniture"
-                style={{
-                  width: `${scene.furniture.widthPct}%`,
-                  height: `${scene.furniture.heightPct}%`,
-                  left: `${scene.furniture.leftPct}%`,
-                  bottom: `${scene.furniture.bottomPct}%`,
-                }}
-              >
-                <SizeGuideFurniture id={reference.id} />
-              </div>
-              <div
-                className="size-guide-artwork"
-                style={{
-                  width: `${scene.artwork.widthPct}%`,
-                  height: `${scene.artwork.heightPct}%`,
-                  left: `${scene.artwork.leftPct}%`,
-                  bottom: `${scene.artwork.bottomPct}%`,
-                }}
-              >
-                {imageUrl ? (
-                  <Image
-                    src={imageUrl}
-                    alt={imageAlt}
-                    fill
-                    unoptimized
-                    sizes="(min-width: 1024px) 22vw, 80vw"
-                    className="object-contain"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-olive/80" aria-hidden="true" />
-                )}
-              </div>
-            </div>
+        {comparisons.map((comparison) => (
+          <li key={comparison.reference.id} className="space-y-4 min-w-0">
+            <SizeGuideSceneLightbox
+              comparison={comparison}
+              imageUrl={imageUrl}
+              imageAlt={imageAlt}
+            />
             <div className="space-y-2">
-              <p className="label-md text-bronze">{copy.title}</p>
+              <p className="label-md text-bronze">{comparison.copy.title}</p>
               <p className="text-xs text-patina leading-5">
-                {copy.furnitureLabel}
+                {comparison.copy.furnitureLabel}
                 {' · '}
-                <span data-size-guide-reference={reference.id}>{copy.furnitureSize}</span>
+                <span data-size-guide-reference={comparison.reference.id}>{comparison.copy.furnitureSize}</span>
               </p>
-              <p className="text-sm text-on-surface-variant leading-6">{copy.body}</p>
+              <p className="text-sm text-on-surface-variant leading-6">{comparison.copy.body}</p>
             </div>
           </li>
         ))}

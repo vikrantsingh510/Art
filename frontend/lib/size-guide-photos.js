@@ -1,0 +1,66 @@
+export const SIZE_GUIDE_PHOTO_FILES = {
+  sofa: 'size-guide-sofa',
+  bed: 'size-guide-bedroom',
+  wall: 'size-guide-wall',
+};
+
+export const SIZE_GUIDE_PHOTO_FRAMES = {
+  sofa: {
+    id: 'sofa',
+    file: SIZE_GUIDE_PHOTO_FILES.sofa,
+    src: '/size-guide-media/sofa',
+    width: 1536,
+    height: 1024,
+    aspect: 1536 / 1024,
+    anchor: 'above-furniture',
+    hangGapPct: 1.2,
+    furnitureLeftPct: 26,
+    furnitureWidthPct: 48,
+    furnitureTopPct: 49,
+    mountLeftPct: 18,
+    mountWidthPct: 64,
+    mountTopPct: 7,
+    mountBottomPct: 47.5,
+    alt: 'Interior with a blank wall above the furniture',
+  },
+  bed: {
+    id: 'bed',
+    file: SIZE_GUIDE_PHOTO_FILES.bed,
+    src: '/size-guide-media/bed',
+    width: 1000,
+    height: 667,
+    aspect: 1000 / 667,
+    anchor: 'above-furniture',
+    hangGapPct: 1,
+    furnitureLeftPct: 18,
+    furnitureWidthPct: 64,
+    furnitureTopPct: 37,
+    mountLeftPct: 28,
+    mountWidthPct: 44,
+    mountTopPct: 2,
+    mountBottomPct: 36,
+    alt: 'Bedroom with a queen bed and a blank wall above the headboard',
+  },
+  wall: {
+    id: 'wall',
+    file: SIZE_GUIDE_PHOTO_FILES.wall,
+    src: '/size-guide-media/wall',
+    width: 2048,
+    height: 1366,
+    aspect: 2048 / 1366,
+    anchor: 'wall-center',
+    hangGapPct: 0,
+    furnitureLeftPct: 21,
+    furnitureWidthPct: 77,
+    furnitureTopPct: 14,
+    mountLeftPct: 39,
+    mountWidthPct: 28,
+    mountTopPct: 16.5,
+    mountBottomPct: 55,
+    alt: 'Empty paneled interior wall',
+  },
+};
+
+export function sizeGuidePhotoSrc(id) {
+  return SIZE_GUIDE_PHOTO_FRAMES[id]?.src || null;
+}
