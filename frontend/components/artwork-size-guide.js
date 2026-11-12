@@ -1,66 +1,122 @@
+import Image from 'next/image';
 import { formatDimensions } from '@/lib/format';
+import { artworkImageUrl, primaryArtworkImage } from '@/lib/media';
 import {
-  SIZE_GUIDE_REFERENCES,
-  sizeGuideArtworkCm,
-  sizeGuideLayout,
-} from '@/lib/ar-assets/storefront';
+  sizeGuideAxisLabel,
+  sizeGuideComparisons,
+  sizeGuideDimensionFields,
+} from '@/lib/size-guide-scene';
+import { SizeGuideDimensionDiagram, SizeGuideFurniture } from './size-guide-furniture';
 
 export function ArtworkSizeGuide({ artwork }) {
-  const artworkCm = sizeGuideArtworkCm(artwork);
+  const comparisons = sizeGuideComparisons(artwork);
   const dimensions = formatDimensions(artwork);
-  if (!artworkCm || !dimensions) {
+  const fields = sizeGuideDimensionFields(artwork);
+  const axisLabel = sizeGuideAxisLabel(fields);
+
+  if (!comparisons.length || !dimensions) {
     return null;
   }
 
-  const comparisons = ['sofa', 'bed', 'wall'].map((id) => {
-    const reference = SIZE_GUIDE_REFERENCES[id];
-    return {
-      reference,
-      layout: sizeGuideLayout(artworkCm, reference),
-    };
-  }).filter((row) => row.layout);
-
-  if (comparisons.length === 0) {
-    return null;
-  }
+  const image = primaryArtworkImage(artwork);
+  const imageUrl = artworkImageUrl(artwork, image);
+  const imageAlt = image?.altText || artwork?.title || 'Artwork';
+  const widthField = fields.find((field) => field.id === 'width');
+  const heightField = fields.find((field) => field.id === 'height');
 
   return (
-    <section className="space-y-4" data-size-guide="ready">
-      <div>
-        <p className="label-sm text-patina">Size guide</p>
-        <h2 className="font-display text-2xl mt-2">How large is this work?</h2>
-        <p className="text-sm text-on-surface-variant mt-2">
-          Actual size {dimensions}. Comparisons use stated furniture and wall sizes and are illustrative, not a measured room.
+    <section className="size-guide space-y-10 overflow-x-hidden" data-size-guide="ready">
+      <header className="space-y-4 max-w-2xl">
+        <p className="label-sm text-bronze">Size guide</p>
+        <h2 className="font-display text-[28px] md:text-[36px] leading-tight text-ink">
+          See how this artwork fits your space.
+        </h2>
+        <p className="text-[15px] leading-7 text-on-surface-variant">
+          Understand the actual size of this artwork through familiar furniture and room comparisons.
         </p>
-      </div>
-      <ul className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {comparisons.map(({ reference, layout }) => (
-          <li key={reference.id} className="space-y-3 bg-stone/60 p-4">
-            <div className="relative h-36 flex items-end justify-center gap-2 overflow-hidden">
-              <span
-                className="bg-fillet"
-                style={{
-                  height: `${layout.reference.heightPct}%`,
-                  aspectRatio: String(layout.reference.aspect),
-                }}
-                aria-hidden="true"
-              />
-              <span
-                className="bg-bronze/80"
-                style={{
-                  height: `${layout.artwork.heightPct}%`,
-                  aspectRatio: String(layout.artwork.aspect),
-                }}
-                aria-hidden="true"
-              />
+        <div className="pt-2">
+          <p className="font-display text-[32px] md:text-[40px] leading-none tracking-tight text-olive" data-size-guide-dimensions>
+            {dimensions}
+          </p>
+          {axisLabel ? (
+            <p className="label-sm text-patina mt-3">{axisLabel}</p>
+          ) : null}
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 items-center border-y border-fillet py-8">
+        <SizeGuideDimensionDiagram width={widthField?.value} height={heightField?.value} />
+        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {fields.map((field) => (
+            <div key={field.id} data-size-guide-field={field.id}>
+              <dt className="label-sm text-patina">{field.label}</dt>
+              <dd className="font-display text-2xl text-olive mt-2">{field.display}</dd>
             </div>
-            <p className="label-md text-patina">{reference.label}</p>
-            <p className="text-xs text-on-surface-variant leading-5">
-              {reference.caption}. Artwork {dimensions}.
-            </p>
+          ))}
+        </dl>
+      </div>
+
+      <ul className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {comparisons.map(({ reference, scene, copy }) => (
+          <li key={reference.id} className="space-y-4 min-w-0">
+            <div
+              className="size-guide-scene"
+              data-size-guide-scene={reference.id}
+              data-artwork-aspect={String(scene.artwork.aspect)}
+              data-furniture-aspect={String(scene.furniture.aspect)}
+              style={{ aspectRatio: String(scene.sceneAspect) }}
+            >
+              <div
+                className="size-guide-furniture"
+                style={{
+                  width: `${scene.furniture.widthPct}%`,
+                  height: `${scene.furniture.heightPct}%`,
+                  left: `${scene.furniture.leftPct}%`,
+                  bottom: `${scene.furniture.bottomPct}%`,
+                }}
+              >
+                <SizeGuideFurniture id={reference.id} />
+              </div>
+              <div
+                className="size-guide-artwork"
+                style={{
+                  width: `${scene.artwork.widthPct}%`,
+                  height: `${scene.artwork.heightPct}%`,
+                  left: `${scene.artwork.leftPct}%`,
+                  bottom: `${scene.artwork.bottomPct}%`,
+                }}
+              >
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={imageAlt}
+                    fill
+                    unoptimized
+                    sizes="(min-width: 1024px) 22vw, 80vw"
+                    className="object-contain"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-olive/80" aria-hidden="true" />
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="label-md text-bronze">{copy.title}</p>
+              <p className="text-xs text-patina leading-5">
+                {copy.furnitureLabel}
+                {' · '}
+                <span data-size-guide-reference={reference.id}>{copy.furnitureSize}</span>
+              </p>
+              <p className="text-sm text-on-surface-variant leading-6">{copy.body}</p>
+            </div>
           </li>
         ))}
       </ul>
+
+      <p className="text-xs text-patina leading-5 max-w-2xl">
+        Furniture and wall sizes are representative. Comparisons are illustrative, not a measured room.
+        Catalogued artwork dimensions are unchanged by this guide.
+      </p>
     </section>
   );
 }

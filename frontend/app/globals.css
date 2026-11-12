@@ -400,3 +400,31 @@ body {
 .journal-body em {
   font-style: italic;
 }
+
+.size-guide-scene {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #f6f0e6 0%, #efe6d6 70%, #e5d6bf 70%, #dccdb8 100%);
+}
+
+.size-guide-scene[data-size-guide-scene="wall"] {
+  background: #f3eee4;
+}
+
+.size-guide-furniture,
+.size-guide-artwork {
+  position: absolute;
+  pointer-events: none;
+}
+
+.size-guide-artwork {
+  outline: 1px solid color-mix(in srgb, var(--color-bronze) 50%, transparent);
+  background: var(--color-olive);
+}
+
+.size-guide-artwork img {
+  object-fit: contain;
+}
