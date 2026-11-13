@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { ArtworkForm } from '@/components/artwork-form';
+import { DeleteArtworkButton } from '@/components/delete-artwork-button';
 import { ErrorState } from '@/components/states';
 import { Notice } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
@@ -43,6 +44,7 @@ export default async function EditArtworkPage({ params }) {
         collections={Array.isArray(collections) ? collections : []}
         artists={Array.isArray(artists?.items) ? artists.items : []}
       />
+      <DeleteArtworkButton artworkId={artwork.id} title={artwork.title} />
     </div>
   );
 }

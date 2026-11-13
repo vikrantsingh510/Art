@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArchiveArtworkButton } from '@/components/archive-artwork-button';
+import { DeleteArtworkButton } from '@/components/delete-artwork-button';
 import { Pagination } from '@/components/pagination';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui';
@@ -75,9 +76,12 @@ export default async function AdminArtworksPage({ searchParams }) {
                   <td>{artwork.status}</td>
                   <td>{formatInrFromPaise(artwork.pricePaise)}</td>
                   <td>
-                    {canShowArchiveAction(artwork) ? (
-                      <ArchiveArtworkButton artworkId={artwork.id} title={artwork.title} />
-                    ) : null}
+                    <div className="flex flex-col items-end gap-2">
+                      {canShowArchiveAction(artwork) ? (
+                        <ArchiveArtworkButton artworkId={artwork.id} title={artwork.title} />
+                      ) : null}
+                      <DeleteArtworkButton artworkId={artwork.id} title={artwork.title} />
+                    </div>
                   </td>
                 </tr>
               ))}

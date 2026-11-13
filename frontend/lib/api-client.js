@@ -179,6 +179,7 @@ export function createArtApi(options = {}) {
     createArtwork: (body, options) => client.post('/admin/artworks', body, options),
     updateArtwork: (id, body, options) => client.patch(`/admin/artworks/${id}`, body, options),
     archiveArtwork: (id, options) => client.delete(`/admin/artworks/${id}`, options),
+    deleteArtwork: (id, options) => client.delete(`/admin/artworks/${id}/permanent`, options),
     addArtworkImage: (id, body, options) => client.post(`/admin/artworks/${id}/images`, body, options),
     removeArtworkImage: (id, imageId, options) => client.delete(`/admin/artworks/${id}/images/${imageId}`, options),
     reorderArtworkImages: (id, body, options) => client.patch(`/admin/artworks/${id}/images/order`, body, options),

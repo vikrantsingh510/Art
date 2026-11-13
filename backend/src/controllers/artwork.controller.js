@@ -4,6 +4,7 @@ import {
   addArtworkMedia,
   archiveArtwork,
   createArtwork,
+  deleteArtworkPermanently,
   getArtworkById,
   listArtworks,
   removeArtworkImage,
@@ -47,6 +48,11 @@ export async function archiveAdminArtwork(req, res) {
   return sendSuccess(res, { data });
 }
 
+export async function deleteAdminArtworkPermanently(req, res) {
+  const data = await deleteArtworkPermanently(req.params.id, req.user.id);
+  return sendSuccess(res, { data });
+}
+
 export async function addAdminArtworkImage(req, res) {
   const data = await addArtworkImage(req.params.id, req.body, req.user.id);
   return sendSuccess(res, { statusCode: 201, data });
@@ -74,6 +80,7 @@ export default {
   createAdminArtwork,
   updateAdminArtwork,
   archiveAdminArtwork,
+  deleteAdminArtworkPermanently,
   addAdminArtworkImage,
   removeAdminArtworkImage,
   reorderAdminArtworkImages,

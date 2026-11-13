@@ -5,8 +5,10 @@ import {
   artworkCategories,
   artworkImages,
   artworkMedia,
+  artworkPreviews,
   artworks,
   collectionArtworks,
+  inventoryReservations,
   orderItems,
   orders,
 } from '../db/schema/index.js';
@@ -22,9 +24,12 @@ import {
   replacementPrimaryId,
   sortArtworkImages,
 } from '../lib/artwork-images.js';
+import { ARTWORK_DELETE_BLOCKED_MESSAGE } from '../lib/artwork-owned-paths.js';
 import { ApiError } from '../utils/ApiError.js';
+import { isForeignKeyViolation } from '../utils/pg-error.js';
 import { uniqueSlug } from '../utils/slug.js';
 import { writeAuditLog } from './audit.service.js';
+import { cleanupArtworkStorage } from './artwork-storage-cleanup.js';
 import { getActiveReservedQuantities, withAvailability } from './inventory.service.js';
 import { getArtworkImagesUploadConstraints } from './storage-constraints.service.js';
 
@@ -423,6 +428,93 @@ export async function archiveArtwork(artworkId, actorUserId) {
   return updateArtwork(artworkId, { status: 'archived' }, actorUserId);
 }
 
+async function countReferences(executor, table, artworkId) {
+  const [row] = await executor
+    .select({ value: sql`count(*)::int`.as('value') })
+    .from(table)
+    .where(eq(table.artworkId, artworkId));
+  return Number(row?.value || 0);
+}
+
+export async function deleteArtworkPermanently(artworkId, actorUserId, {
+  runTransaction = (callback) => db.transaction(callback),
+  cleanupStorage = cleanupArtworkStorage,
+  writeAudit = writeAuditLog,
+} = {}) {
+  let storageRefs = { images: [], media: [], previews: [] };
+
+  const deleted = await runTransaction(async (tx) => {
+    const [artwork] = await tx
+      .select()
+      .from(artworks)
+      .where(eq(artworks.id, artworkId))
+      .limit(1)
+      .for('update');
+
+    if (!artwork) {
+      throw new ApiError(404, 'Artwork not found');
+    }
+
+    const [orderCount, reservationCount] = await Promise.all([
+      countReferences(tx, orderItems, artworkId),
+      countReferences(tx, inventoryReservations, artworkId),
+    ]);
+
+    if (orderCount > 0 || reservationCount > 0) {
+      throw new ApiError(409, ARTWORK_DELETE_BLOCKED_MESSAGE);
+    }
+
+    const [images, media, previews] = await Promise.all([
+      tx.select().from(artworkImages).where(eq(artworkImages.artworkId, artworkId)),
+      tx.select().from(artworkMedia).where(eq(artworkMedia.artworkId, artworkId)),
+      tx.select().from(artworkPreviews).where(eq(artworkPreviews.artworkId, artworkId)),
+    ]);
+    storageRefs = { images, media, previews };
+
+    try {
+      await tx.delete(artworks).where(eq(artworks.id, artworkId));
+    } catch (error) {
+      if (isForeignKeyViolation(error)) {
+        throw new ApiError(409, ARTWORK_DELETE_BLOCKED_MESSAGE);
+      }
+      throw error;
+    }
+
+    await writeAudit({
+      actorUserId,
+      action: 'artwork.delete',
+      entityType: 'artwork',
+      entityId: artworkId,
+      metadata: {
+        title: artwork.title,
+        slug: artwork.slug,
+        status: artwork.status,
+      },
+      executor: tx,
+    });
+
+    return { id: artworkId, deleted: true };
+  });
+
+  let storageWarnings = [];
+  try {
+    const cleanup = await cleanupStorage({
+      artworkId,
+      images: storageRefs.images,
+      media: storageRefs.media,
+      previews: storageRefs.previews,
+    });
+    storageWarnings = Array.isArray(cleanup?.warnings) ? cleanup.warnings : [];
+  } catch {
+    storageWarnings = ['Storage cleanup skipped.'];
+  }
+
+  if (storageWarnings.length > 0) {
+    return { ...deleted, storageWarnings };
+  }
+  return deleted;
+}
+
 export async function addArtworkImage(artworkId, payload, actorUserId) {
   assertStoragePathForArtwork(artworkId, payload.storagePath);
   const constraints = await getArtworkImagesUploadConstraints();
@@ -573,6 +665,7 @@ export default {
   createArtwork,
   updateArtwork,
   archiveArtwork,
+  deleteArtworkPermanently,
   addArtworkImage,
   removeArtworkImage,
   reorderArtworkImages,

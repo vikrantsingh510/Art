@@ -8,8 +8,9 @@ export async function writeAuditLog({
   entityId,
   metadata,
   ipAddress,
+  executor = db,
 }) {
-  await db.insert(auditLogs).values({
+  await executor.insert(auditLogs).values({
     actorUserId: actorUserId || null,
     action,
     entityType,

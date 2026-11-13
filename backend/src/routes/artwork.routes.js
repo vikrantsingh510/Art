@@ -4,6 +4,7 @@ import {
   addAdminArtworkMedia,
   archiveAdminArtwork,
   createAdminArtwork,
+  deleteAdminArtworkPermanently,
   getPublicArtwork,
   listAdminArtworks,
   listPublicArtworks,
@@ -48,6 +49,7 @@ publicRouter.post(
 adminRouter.get('/', validate({ query: artworkListQuery }), asyncHandler(listAdminArtworks));
 adminRouter.post('/', validate({ body: artworkCreateBody }), asyncHandler(createAdminArtwork));
 adminRouter.patch('/:id', validate({ params: uuidParam, body: artworkUpdateBody }), asyncHandler(updateAdminArtwork));
+adminRouter.delete('/:id/permanent', validate({ params: uuidParam }), asyncHandler(deleteAdminArtworkPermanently));
 adminRouter.delete('/:id', validate({ params: uuidParam }), asyncHandler(archiveAdminArtwork));
 adminRouter.post(
   '/:id/images',
