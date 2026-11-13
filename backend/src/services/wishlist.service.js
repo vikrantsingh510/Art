@@ -65,7 +65,9 @@ export async function removeWishlistItem(userId, artworkId) {
   return deleted[0];
 }
 
-export async function moveWishlistItemToCart(userId, artworkId) {
+export async function moveWishlistItemToCart(userId, artworkId, {
+  addToCart = addCartItem,
+} = {}) {
   const wishlist = await getOrCreateWishlist(userId);
   const [existing] = await db.select().from(wishlistItems).where(and(
     eq(wishlistItems.wishlistId, wishlist.id),
@@ -76,7 +78,7 @@ export async function moveWishlistItemToCart(userId, artworkId) {
     throw new ApiError(404, 'Wishlist item not found');
   }
 
-  const cartItem = await addCartItem(userId, artworkId);
+  const cartItem = await addToCart(userId, artworkId);
   await db.delete(wishlistItems).where(and(
     eq(wishlistItems.wishlistId, wishlist.id),
     eq(wishlistItems.artworkId, artworkId),

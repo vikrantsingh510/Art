@@ -6,136 +6,49 @@ import { fileURLToPath } from 'node:url';
 import {
   createCheckoutOrder,
   lineItemsFromLockedArtworks,
+  sortedArtworkIds,
 } from '../src/services/checkout.service.js';
 import { expireStaleReservations } from '../src/services/inventory.service.js';
 import { ApiError } from '../src/utils/ApiError.js';
+import {
+  createFakeTx,
+  firstArtworkId as firstId,
+  publishedArtwork,
+  secondArtworkId as secondId,
+  shippingAddress,
+} from './helpers/checkout-lock-harness.js';
 
 const backendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const firstId = '11111111-1111-4111-8111-111111111111';
-const secondId = '22222222-2222-4222-8222-222222222222';
-const shippingAddress = {
-  recipientName: 'Collector',
-  phone: '+919999999999',
-  addressLine1: '1 Atelier Road',
-  city: 'Mumbai',
-  state: 'MH',
-  postalCode: '400001',
-  country: 'IN',
-};
-
-function publishedArtwork(id, extras = {}) {
-  return {
-    id,
-    title: extras.title || `Work ${id.slice(0, 8)}`,
-    slug: extras.slug || `work-${id.slice(0, 8)}`,
-    artistName: 'Artist',
-    pricePaise: extras.pricePaise ?? 250000,
-    currency: 'INR',
-    status: extras.status || 'published',
-    inventoryQuantity: extras.inventoryQuantity ?? 1,
-  };
-}
-
-function thenable(value) {
-  return {
-    then(resolve, reject) {
-      return Promise.resolve(value).then(resolve, reject);
-    },
-  };
-}
-
-function createFakeTx({ lockedArtworks, failAfterReservations = false }) {
-  const calls = [];
-  const state = {
-    locked: false,
-    deletedCart: false,
-  };
-  const inserted = {
-    orders: [],
-    orderItems: [],
-    reservations: [],
-  };
-
-  const tx = {
-    select() {
-      return {
-        from() {
-          return {
-            where() {
-              return {
-                async for(mode) {
-                  calls.push(['lock', mode]);
-                  state.locked = true;
-                  return lockedArtworks;
-                },
-              };
-            },
-          };
-        },
-      };
-    },
-    insert(table) {
-      return {
-        values(values) {
-          const name = table?.[Symbol.for('drizzle:Name')] || table?.name || 'unknown';
-          const record = { table: name, values };
-          if (failAfterReservations && inserted.reservations.length > 0 && name.includes('cart')) {
-            return thenable(null);
-          }
-          if (Array.isArray(values) && values[0]?.artworkTitle !== undefined) {
-            inserted.orderItems.push(record);
-            calls.push(['insert-order-items']);
-            return thenable({ rowCount: values.length });
-          }
-          if (Array.isArray(values) && values[0]?.expiresAt !== undefined) {
-            inserted.reservations.push(record);
-            calls.push(['insert-reservations']);
-            return thenable({ rowCount: values.length });
-          }
-          inserted.orders.push(record);
-          calls.push(['insert-order']);
-          return {
-            async returning() {
-              return [{
-                id: 'order-1',
-                orderNumber: 'MDA-TEST',
-                userId: 'user-1',
-                status: 'pending_payment',
-                totalPaise: 250000,
-              }];
-            },
-          };
-        },
-      };
-    },
-    delete() {
-      return {
-        async where() {
-          if (failAfterReservations) {
-            throw new Error('forced rollback');
-          }
-          state.deletedCart = true;
-          calls.push(['delete-cart']);
-        },
-      };
-    },
-  };
-
-  return { tx, calls, state, inserted };
-}
 
 async function checkoutWith(items, lockedArtworks, extras = {}) {
   const fake = createFakeTx({ lockedArtworks, failAfterReservations: extras.failAfterReservations });
   const reservedCalls = [];
   const expireCalls = [];
   const sequence = [];
+  const cart = extras.cart || { id: 'cart-1', userId: extras.userId || 'user-1' };
 
-  const run = createCheckoutOrder('user-1', { shippingAddress }, {
-    loadCart: async () => ({
-      id: 'cart-1',
-      items,
-      count: items.length,
-    }),
+  const run = createCheckoutOrder(extras.userId || 'user-1', { shippingAddress }, {
+    lockCart: async (userId, executor) => {
+      sequence.push('lock-cart');
+      expireCalls.executor = executor;
+      if (executor !== fake.tx) {
+        throw new Error('cart lock used a different executor than the checkout transaction');
+      }
+      if (extras.lockCart) {
+        return extras.lockCart(userId, executor);
+      }
+      return cart.userId === userId ? cart : null;
+    },
+    loadCartItems: async (cartId, executor) => {
+      sequence.push('read-items');
+      if (executor !== fake.tx) {
+        throw new Error('cart re-read used a different executor than the checkout transaction');
+      }
+      if (cartId !== cart.id) {
+        throw new Error('cart re-read used a different cart id');
+      }
+      return extras.loadCartItems ? extras.loadCartItems(cartId, executor) : items;
+    },
     expireReservations: async (executor) => {
       sequence.push('expire');
       expireCalls.push(executor);
@@ -145,6 +58,9 @@ async function checkoutWith(items, lockedArtworks, extras = {}) {
       reservedCalls.push({ ids, executor });
       if (!fake.state.locked) {
         throw new Error('reservation lookup ran before artwork locks');
+      }
+      if (!fake.state.ordered) {
+        throw new Error('reservation lookup ran before sorted artwork locks');
       }
       return extras.reservedMap || new Map();
     },
@@ -164,33 +80,64 @@ async function checkoutWith(items, lockedArtworks, extras = {}) {
   return { run, fake, reservedCalls, expireCalls, sequence };
 }
 
-test('checkout transaction expires, locks, then batches reserved quantities on the same executor', () => {
+test('checkout transaction expires, locks the cart, then batches reserved quantities on the same executor', () => {
   const source = fs.readFileSync(path.join(backendRoot, 'src/services/checkout.service.js'), 'utf8');
   const start = source.indexOf('export async function createCheckoutOrder');
   const end = source.indexOf('export async function getOrderForUser');
   const body = source.slice(start, end);
+  const captureStart = source.indexOf('export async function convertReservationsForCapturedPayment');
 
   assert.match(body, /await expireReservations\(tx\)/);
+  assert.match(body, /await lockCart\(userId, tx\)/);
+  assert.match(body, /await loadCartItems\(cart\.id, tx\)/);
+  assert.match(body, /sortedArtworkIds\(/);
+  assert.match(body, /orderBy\(asc\(artworks\.id\)\)/);
   assert.match(body, /\.for\('update'\)/);
   assert.match(body, /await loadReservedQuantities\(artworkIds, tx\)/);
+  assert.ok(body.indexOf('expireReservations(tx)') < body.indexOf('lockCart(userId, tx)'));
+  assert.ok(body.indexOf('lockCart(userId, tx)') < body.indexOf('loadCartItems(cart.id, tx)'));
+  assert.ok(body.indexOf('loadCartItems(cart.id, tx)') < body.indexOf('sortedArtworkIds'));
+  assert.ok(body.indexOf("orderBy(asc(artworks.id))") < body.indexOf(".for('update')"));
   assert.ok(body.indexOf(".for('update')") < body.indexOf('loadReservedQuantities(artworkIds, tx)'));
   assert.ok(body.indexOf('loadReservedQuantities(artworkIds, tx)') < body.indexOf('lineItemsFromLockedArtworks'));
   assert.ok(body.indexOf('insert(orders)') < body.indexOf('delete(cartItems)'));
   assert.doesNotMatch(body, /getActiveReservedQuantity\(/);
+  assert.doesNotMatch(body, /loadCart\(/);
+  assert.doesNotMatch(body, /idempotency/i);
+  assert.doesNotMatch(source.slice(captureStart), /carts|cartItems|lockCart/);
 });
 
-test('empty cart still returns 400 and never opens a checkout transaction', async () => {
-  let transactionStarted = false;
+test('sortedArtworkIds is lexicographic and independent of input order', () => {
+  assert.deepEqual(sortedArtworkIds([secondId, firstId]), [firstId, secondId]);
+  assert.deepEqual(sortedArtworkIds([firstId, secondId]), [firstId, secondId]);
+});
+
+test('empty cart after cart lock returns 400 and does not create an order', async () => {
+  const { run, fake, sequence } = await checkoutWith([], [publishedArtwork(firstId)]);
+
   await assert.rejects(
-    () => createCheckoutOrder('user-1', { shippingAddress }, {
-      loadCart: async () => ({ id: 'cart-1', items: [], count: 0 }),
-      runTransaction: async () => {
-        transactionStarted = true;
-      },
-    }),
+    run,
     (error) => error instanceof ApiError && error.statusCode === 400 && error.message === 'Cart is empty',
   );
-  assert.equal(transactionStarted, false);
+  assert.deepEqual(sequence, ['expire', 'lock-cart', 'read-items']);
+  assert.equal(fake.inserted.orders.length, 0);
+  assert.equal(fake.inserted.reservations.length, 0);
+  assert.equal(fake.state.deletedCart, false);
+  assert.equal(fake.state.locked, false);
+});
+
+test('missing cart after lock returns 400 Cart is empty', async () => {
+  const { run, fake } = await checkoutWith(
+    [{ id: 'item-1', artworkId: firstId }],
+    [publishedArtwork(firstId)],
+    { cart: { id: 'cart-1', userId: 'someone-else' } },
+  );
+
+  await assert.rejects(
+    run,
+    (error) => error instanceof ApiError && error.statusCode === 400 && error.message === 'Cart is empty',
+  );
+  assert.equal(fake.inserted.orders.length, 0);
 });
 
 test('a single locked artwork uses one batched reservation lookup on the transaction', async () => {
@@ -204,7 +151,7 @@ test('a single locked artwork uses one batched reservation lookup on the transac
   assert.equal(reservedCalls.length, 1);
   assert.equal(reservedCalls[0].executor, fake.tx);
   assert.deepEqual(reservedCalls[0].ids, [firstId]);
-  assert.deepEqual(sequence, ['expire', 'reserved']);
+  assert.deepEqual(sequence, ['expire', 'lock-cart', 'read-items', 'reserved']);
   assert.equal(expireCalls[0], fake.tx);
   assert.equal(fake.state.deletedCart, true);
   assert.equal(result.items.length, 1);
@@ -212,13 +159,13 @@ test('a single locked artwork uses one batched reservation lookup on the transac
   assert.equal(result.items[0].artworkTitle, artwork.title);
 });
 
-test('multi-item checkout uses exactly one batched reservation lookup', async () => {
+test('multi-item checkout uses exactly one batched reservation lookup of sorted IDs', async () => {
   const { run, fake, reservedCalls } = await checkoutWith(
     [
-      { id: 'item-1', artworkId: firstId },
       { id: 'item-2', artworkId: secondId },
+      { id: 'item-1', artworkId: firstId },
     ],
-    [publishedArtwork(firstId), publishedArtwork(secondId, { title: 'Second' })],
+    [publishedArtwork(secondId, { title: 'Second' }), publishedArtwork(firstId)],
   );
   const result = await run;
 
@@ -226,8 +173,12 @@ test('multi-item checkout uses exactly one batched reservation lookup', async ()
   assert.equal(reservedCalls[0].executor, fake.tx);
   assert.deepEqual(reservedCalls[0].ids, [firstId, secondId]);
   assert.equal(result.items.length, 2);
+  assert.equal(result.items[0].artworkId, firstId);
+  assert.equal(result.items[1].artworkId, secondId);
   assert.equal(fake.inserted.reservations[0].values.length, 2);
   assert.equal(fake.state.deletedCart, true);
+  assert.ok(fake.calls.findIndex((call) => call[0] === 'artwork-order-by')
+    < fake.calls.findIndex((call) => call[0] === 'lock'));
 });
 
 test('missing locked artwork still produces the existing 409', () => {

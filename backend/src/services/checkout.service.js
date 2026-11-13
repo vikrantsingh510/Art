@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { env } from '../config/env.js';
 import { db } from '../config/database.js';
 import {
@@ -12,9 +12,13 @@ import { ApiError } from '../utils/ApiError.js';
 import { isPurchasable, reservationExpiresAt } from '../utils/inventory.js';
 import { lineTotalPaise, orderTotalPaise } from '../utils/money.js';
 import { getAddressForUser, toShippingSnapshot } from './address.service.js';
-import { getCart } from './cart.service.js';
+import { listCartItemsForCart, lockCartForUser } from './cart.service.js';
 import { expireStaleReservations, getActiveReservedQuantities } from './inventory.service.js';
 import { enqueueOrderNotification } from './notification.service.js';
+
+export function sortedArtworkIds(ids) {
+  return [...ids].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
+}
 
 function buildOrderNumber() {
   const stamp = new Date().toISOString().slice(0, 10).replaceAll('-', '');
@@ -62,31 +66,54 @@ export function lineItemsFromLockedArtworks(lockedArtworks, artworkIds, reserved
   return lineItems;
 }
 
+/**
+ * Checkout lock order:
+ * 1. expire stale reservations (no cart lock)
+ * 2. carts row FOR UPDATE
+ * 3. read cart_items
+ * 4. artworks FOR UPDATE ORDER BY id
+ * 5. batched active reservation sum
+ * 6. insert orders, order_items, inventory_reservations
+ * 7. delete this cart's items
+ * 8. notification outbox
+ * 9. commit
+ *
+ * Cart mutations lock the same carts row, then modify cart_items.
+ * Payment capture locks artworks only — never carts.
+ */
 export async function createCheckoutOrder(userId, payload, {
   email,
-  loadCart = getCart,
+  lockCart = lockCartForUser,
+  loadCartItems = listCartItemsForCart,
   loadReservedQuantities = getActiveReservedQuantities,
   expireReservations = expireStaleReservations,
+  loadAddress = getAddressForUser,
   runTransaction = (callback) => db.transaction(callback),
 } = {}) {
-  const cart = await loadCart(userId);
-  if (cart.items.length === 0) {
-    throw new ApiError(400, 'Cart is empty');
-  }
-
-  const shippingAddress = payload.shippingAddress
-    ? payload.shippingAddress
-    : toShippingSnapshot(await getAddressForUser(payload.addressId, userId));
-
-  const artworkIds = cart.items.map((item) => item.artworkId);
-
   return runTransaction(async (tx) => {
     await expireReservations(tx);
+
+    const cart = await lockCart(userId, tx);
+    if (!cart || cart.userId !== userId) {
+      throw new ApiError(400, 'Cart is empty');
+    }
+
+    const items = await loadCartItems(cart.id, tx);
+    if (!items.length) {
+      throw new ApiError(400, 'Cart is empty');
+    }
+
+    const shippingAddress = payload.shippingAddress
+      ? payload.shippingAddress
+      : toShippingSnapshot(await loadAddress(payload.addressId, userId));
+
+    const artworkIds = sortedArtworkIds(items.map((item) => item.artworkId));
 
     const lockedArtworks = await tx
       .select()
       .from(artworks)
       .where(inArray(artworks.id, artworkIds))
+      .orderBy(asc(artworks.id))
       .for('update');
 
     const reservedByArtworkId = await loadReservedQuantities(artworkIds, tx);
@@ -237,6 +264,7 @@ export async function convertReservationsForCapturedPayment(orderId, executor = 
 }
 
 export default {
+  sortedArtworkIds,
   lineItemsFromLockedArtworks,
   createCheckoutOrder,
   getOrderForUser,
