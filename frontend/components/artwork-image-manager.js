@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -124,6 +124,7 @@ export function ArtworkImageManager({
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  const dndContextId = useId();
   const [pickerError, setPickerError] = useState('');
   const savedCount = items.filter((item) => item.kind === 'saved').length;
   const pendingCount = items.filter((item) => item.kind === 'pending').length;
@@ -250,7 +251,7 @@ export function ArtworkImageManager({
           {typesLabel ? ` Allowed types: ${typesLabel}.` : ''}
         </p>
       ) : null}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext id={dndContextId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={items.map((item) => item.key)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
             {items.map((item, index) => (

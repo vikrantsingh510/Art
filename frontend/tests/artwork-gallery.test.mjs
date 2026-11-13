@@ -367,6 +367,15 @@ test('admin image manager never treats a display sibling as an original', () => 
   assert.match(source, /filter\(\(image\) => !isArtworkDisplayDerivativePath\(image\.storagePath\)\)/);
 });
 
+test('admin image manager pins DndContext id so sortable aria ids hydrate', () => {
+  const source = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/artwork-image-manager.js'),
+    'utf8',
+  );
+  assert.match(source, /useId\(\)/);
+  assert.match(source, /<DndContext id=\{dndContextId\}/);
+});
+
 test('artwork save continues after display derivative generation fails', () => {
   const source = fs.readFileSync(
     path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/artwork-form.js'),
