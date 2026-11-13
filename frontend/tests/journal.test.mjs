@@ -36,6 +36,7 @@ test('journal listing and detail pages set metadata, canonical URLs and cover Op
   assert.match(listing, /journalCanonical\('\/journal'\)/);
   assert.match(listing, /openGraph/);
   assert.match(detail, /generateMetadata/);
+  assert.match(detail, /loadBlogBySlug/);
   assert.match(detail, /journalCanonical\(`\/journal\/\$\{slug\}`\)/);
   assert.match(detail, /openGraph/);
   assert.match(detail, /coverUrl/);

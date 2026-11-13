@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SizeGuideScenePreview } from './size-guide-scene-preview';
 
-export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt }) {
+export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt, loading = 'lazy' }) {
   const { photo, overlay, scene, copy } = comparison;
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
@@ -81,6 +81,7 @@ export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt }) {
           scene={scene}
           imageUrl={imageUrl}
           imageAlt={imageAlt}
+          loading={loading}
           sizes="(min-width: 1024px) 30vw, 100vw"
         />
       </button>

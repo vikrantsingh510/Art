@@ -5,12 +5,13 @@ import { ImagePlaceholder } from '@/components/loading';
 import { EmptyState, ErrorState } from '@/components/states';
 import { PageIntro } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
+import { loadCollectionById } from '@/lib/gallery-entity-loaders';
 import { publicStorageUrl } from '@/lib/media';
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
   try {
-    const collection = await api.getCollection(id);
+    const collection = await loadCollectionById(id);
     return { title: collection.name };
   } catch {
     return { title: 'Collection' };
@@ -35,7 +36,7 @@ export default async function CollectionDetailPage({ params }) {
   let collection;
   let artworks = [];
   try {
-    collection = await api.getCollection(id);
+    collection = await loadCollectionById(id);
     const list = await api.listArtworks({ collectionId: id, limit: 100 });
     artworks = sortByCollectionOrder(list.items || [], collection.artworkIds);
   } catch (error) {

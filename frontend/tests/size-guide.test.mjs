@@ -183,6 +183,9 @@ test('size guide UI is editorial, proportional, and does not add customer resizi
   assert.match(preview, /object-cover/);
   assert.match(preview, /overlay\.widthPct/);
   assert.match(preview, /photo\.src/);
+  assert.match(preview, /loading/);
+  assert.match(lightbox, /loading=\{loading\}/);
+  assert.match(component, /loading=\{index === 0 \? 'eager' : 'lazy'\}/);
   assert.doesNotMatch(component, /type="range"|resize|90 × 120 × 4/);
   assert.doesNotMatch(component, /generateArAssets|evaluateArReadiness|WebXR|Quick Look|model-viewer/);
   assert.doesNotMatch(component, /SizeGuideSofa|SizeGuideBed|SizeGuideWall|SizeGuideFurniture/);

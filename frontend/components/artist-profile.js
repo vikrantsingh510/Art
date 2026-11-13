@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { MarkdownBody } from '@/components/markdown-body';
 import { Button } from '@/components/ui';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
-import { artworkImageUrl, primaryArtworkImage, publicStorageUrl } from '@/lib/media';
+import { artworkStorefrontImageUrl, primaryArtworkImage, publicStorageUrl } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
 
 function practiceCards(artist) {
@@ -16,7 +16,7 @@ function practiceCards(artist) {
 
 function FeaturedWork({ artwork }) {
   const image = primaryArtworkImage(artwork);
-  const imageUrl = artworkImageUrl(artwork, image);
+  const imageUrl = artworkStorefrontImageUrl(artwork, image);
   const dimensions = formatDimensions(artwork);
   const available = availabilityLabel(artwork);
 
@@ -84,7 +84,7 @@ function FeaturedWork({ artwork }) {
 
 function ArtistWorkTile({ artwork }) {
   const image = primaryArtworkImage(artwork);
-  const imageUrl = artworkImageUrl(artwork, image);
+  const imageUrl = artworkStorefrontImageUrl(artwork, image);
   const dimensions = formatDimensions(artwork);
   const available = availabilityLabel(artwork);
   const meta = [artwork.medium, dimensions].filter(Boolean).join(' · ');

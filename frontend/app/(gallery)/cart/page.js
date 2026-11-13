@@ -2,15 +2,15 @@ import Link from 'next/link';
 import { RemoveCartItemButton } from '@/components/cart-actions';
 import { EmptyState } from '@/components/states';
 import { Button, Notice } from '@/components/ui';
-import { api } from '@/lib/api';
+import { loadCart } from '@/lib/gallery-entity-loaders';
 import { formatInrFromPaise } from '@/lib/money';
 import { requireUser } from '@/lib/session';
 
 export const metadata = { title: 'Collector bag' };
 
 export default async function CartPage() {
-  const { token } = await requireUser();
-  const cart = await api.getCart({ token });
+  await requireUser();
+  const cart = await loadCart();
   const items = cart?.items || [];
   const total = items.reduce((sum, item) => sum + Number(item.artwork?.pricePaise || 0), 0);
 

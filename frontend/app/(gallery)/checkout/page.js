@@ -2,6 +2,7 @@ import { CheckoutForm } from '@/components/checkout-form';
 import { EmptyState } from '@/components/states';
 import { Button, Notice } from '@/components/ui';
 import { api } from '@/lib/api';
+import { loadCart } from '@/lib/gallery-entity-loaders';
 import { formatInrFromPaise } from '@/lib/money';
 import { requireUser } from '@/lib/session';
 
@@ -10,7 +11,7 @@ export const metadata = { title: 'Checkout' };
 export default async function CheckoutPage() {
   const { token } = await requireUser();
   const [cart, addresses] = await Promise.all([
-    api.getCart({ token }),
+    loadCart(),
     api.listAddresses({ token }),
   ]);
   const items = cart?.items || [];

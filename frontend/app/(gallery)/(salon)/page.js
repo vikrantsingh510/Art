@@ -13,40 +13,23 @@ export const metadata = {
   title: 'Exhibition',
 };
 
-async function loadPublishedArtists() {
-  try {
-    const data = await api.listArtists({ limit: 8 });
-    const { featured, known } = selectHomepageArtists(data?.items || []);
-    if (!featured?.slug) {
-      return { featured: null, known };
-    }
-    try {
-      const detail = await api.getArtist(featured.slug);
-      return { featured: detail, known };
-    } catch {
-      return { featured, known };
-    }
-  } catch {
-    return { featured: null, known: [] };
-  }
-}
-
 async function loadHome() {
   try {
-    const [featured, latest, categories, collections, artists] = await Promise.all([
+    const [featuredLots, latest, categories, collections, artistList] = await Promise.all([
       api.listArtworks({ featured: 'true', limit: 8 }),
       api.listArtworks({ limit: 8 }),
       api.listCategories(),
       api.listCollections(),
-      loadPublishedArtists(),
+      api.listArtists({ limit: 8 }),
     ]);
+    const { featured, known } = selectHomepageArtists(artistList?.items || []);
     return {
-      artworks: selectHomepageArtworks(featured?.items, latest?.items, { limit: 8 }),
+      artworks: selectHomepageArtworks(featuredLots?.items, latest?.items, { limit: 8 }),
       total: latest?.total || 0,
       categories: Array.isArray(categories) ? categories : [],
       collections: Array.isArray(collections) ? collections : [],
-      featuredArtist: artists.featured,
-      knownArtists: artists.known,
+      featuredArtist: featured,
+      knownArtists: known,
       error: null,
     };
   } catch (error) {
@@ -69,7 +52,7 @@ export default async function HomePage() {
     <div>
       <section className="hero-frame relative w-full -mt-[7.5rem] min-h-[34rem] md:min-h-[52rem] flex flex-col justify-end bg-surface-container-low overflow-hidden">
         <Image
-          src="/images/hero-salon.png"
+          src="/images/hero-salon.webp"
           alt="Museum gallery exhibition of large-scale original textured paintings"
           fill
           priority

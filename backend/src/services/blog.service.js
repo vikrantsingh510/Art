@@ -5,7 +5,7 @@ import { assertCoverStoragePathForBlog } from '../lib/blog-cover.js';
 import { ApiError } from '../utils/ApiError.js';
 import { isUniqueViolation } from '../utils/pg-error.js';
 import { slugify, uniqueSlug } from '../utils/slug.js';
-import { getArtworkById } from './artwork.service.js';
+import { getArtworksByIds } from './artwork.service.js';
 import { writeAuditLog } from './audit.service.js';
 
 function mapListItem(row, { includeAdminFields = false } = {}) {
@@ -56,7 +56,10 @@ function resolveSlug(title, requestedSlug) {
   return uniqueSlug(title);
 }
 
-async function hydrateArtworks(blogId, { publicOnly = true } = {}) {
+export async function hydrateArtworks(blogId, {
+  publicOnly = true,
+  loadArtworksByIds = getArtworksByIds,
+} = {}) {
   const links = await db
     .select()
     .from(blogArtworks)
@@ -64,24 +67,17 @@ async function hydrateArtworks(blogId, { publicOnly = true } = {}) {
     .orderBy(asc(blogArtworks.displayOrder));
 
   const artworkIds = links.map((link) => link.artworkId);
-  const items = [];
+  const artworksById = await loadArtworksByIds(artworkIds, {
+    publicOnly,
+    includePrivateMedia: !publicOnly,
+  });
 
-  for (const link of links) {
-    try {
-      const artwork = await getArtworkById(link.artworkId, {
-        publicOnly,
-        includePrivateMedia: !publicOnly,
-      });
-      items.push(artwork);
-    } catch (error) {
-      if (error instanceof ApiError && error.statusCode === 404) {
-        continue;
-      }
-      throw error;
-    }
-  }
-
-  return { artworkIds, artworks: items };
+  return {
+    artworkIds,
+    artworks: links
+      .map((link) => artworksById.get(link.artworkId))
+      .filter(Boolean),
+  };
 }
 
 async function getBlogRow(blogId) {
@@ -351,6 +347,7 @@ export async function replaceBlogArtworks(blogId, artworkIds, actorUserId) {
 }
 
 export default {
+  hydrateArtworks,
   listPublicBlogs,
   getPublicBlogBySlug,
   listAdminBlogs,

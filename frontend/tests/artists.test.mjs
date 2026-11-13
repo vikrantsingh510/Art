@@ -36,6 +36,7 @@ test('artists listing and detail pages set metadata, canonical URLs and portrait
   assert.match(listing, /canonicalFor\('\/artists'\)/);
   assert.match(listing, /openGraph/);
   assert.match(detail, /generateMetadata/);
+  assert.match(detail, /loadArtistBySlug/);
   assert.match(detail, /canonicalFor\(`\/artists\/\$\{slug\}`\)/);
   assert.match(detail, /openGraph/);
   assert.match(detail, /portraitUrl/);
@@ -51,7 +52,12 @@ test('artist detail lists published artworks and preserves story and works ancho
   const profile = read('components/artist-profile.js');
   const card = read('components/artwork-card.js');
   assert.match(detail, /ArtistProfile/);
+  assert.match(detail, /Promise\.all\(/);
+  assert.match(detail, /loadArtistBySlug\(slug\)/);
   assert.match(detail, /listArtists/);
+  assert.match(profile, /artwork\.story/);
+  assert.match(profile, /FeaturedWork/);
+  assert.match(profile, /ArtistWorkTile/);
   assert.match(profile, /artist\.artworks/);
   assert.match(profile, /href=\{`\/artwork\/\$\{artwork\.id\}`\}/);
   assert.match(profile, /id="story"/);

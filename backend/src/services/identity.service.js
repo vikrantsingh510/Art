@@ -3,8 +3,21 @@ import { db } from '../config/database.js';
 import { carts, profiles, userRoles, wishlists } from '../db/schema/index.js';
 import { enqueueNotification } from './notification.service.js';
 
-export async function provisionCustomerIdentity({ userId, fullName, email }) {
-  await db.transaction(async (tx) => {
+export async function provisionCustomerIdentity(
+  { userId, fullName, email },
+  { executor = db } = {},
+) {
+  await executor.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.id, userId))
+      .limit(1);
+
+    if (existing) {
+      return;
+    }
+
     const inserted = await tx.insert(profiles).values({
       id: userId,
       fullName: fullName || null,

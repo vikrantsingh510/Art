@@ -11,6 +11,7 @@ import { resolveArtworkArAssets } from '../lib/ar-assets/storefront-storage.js';
 
 const silentLogger = { error() {}, info() {}, warn() {} };
 const ASSET_ORIGIN = 'https://example.supabase.co/storage/v1/object/public/ar-assets';
+const GALLERY_ORIGIN = 'https://example.supabase.co/storage/v1/object/public/artwork-images';
 
 async function makeJpeg(width, height, tint = { r: 160, g: 120, b: 90 }) {
   return sharp({
@@ -26,16 +27,43 @@ function matchingArtwork(overrides = {}) {
     height: 150,
     depth: 4,
     dimensionUnit: 'cm',
-    images: [{ id: 'img-1', storagePath: 'lot/one.jpg', isPrimary: true }],
+    images: [{
+      id: 'img-1',
+      storagePath: `${GALLERY_ORIGIN}/lot/one.jpg`,
+      isPrimary: true,
+      createdAt: '2020-01-01T00:00:00.000Z',
+    }],
     ...overrides,
   };
 }
 
-function publicFetchFromStorage(storage, { artworkId, requested = null } = {}) {
+function publicFetchFromStorage(storage, { artworkId, requested = null, source = null } = {}) {
   const prefix = `${ASSET_ORIGIN}/`;
-  return async (url) => {
+  const galleryPrefix = `${GALLERY_ORIGIN}/`;
+  return async (url, init = {}) => {
     const href = String(url);
     requested?.push(href);
+    const method = String(init.method || 'GET').toUpperCase();
+    if (source && href.startsWith(galleryPrefix)) {
+      const headers = {
+        'Content-Type': 'image/jpeg',
+        'Content-Length': String(source.length),
+      };
+      if (method === 'HEAD') {
+        return new Response(null, { status: 200, headers });
+      }
+      if (init.headers?.Range === 'bytes=0-0' || init.headers?.range === 'bytes=0-0') {
+        return new Response(source.subarray(0, 1), {
+          status: 206,
+          headers: {
+            ...headers,
+            'Content-Range': `bytes 0-0/${source.length}`,
+            'Content-Length': '1',
+          },
+        });
+      }
+      return new Response(source, { status: 200, headers });
+    }
     if (!href.startsWith(prefix)) {
       return new Response(JSON.stringify({ message: 'Object not found' }), {
         status: 400,
@@ -56,12 +84,16 @@ function publicFetchFromStorage(storage, { artworkId, requested = null } = {}) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    const headers = {
+      'Content-Type': row.contentType,
+      'Content-Length': String(row.body.length),
+    };
+    if (method === 'HEAD') {
+      return new Response(null, { status: 200, headers });
+    }
     return new Response(row.body, {
       status: 200,
-      headers: {
-        'Content-Type': row.contentType,
-        'Content-Length': String(row.body.length),
-      },
+      headers,
     });
   };
 }
@@ -530,4 +562,257 @@ test('AR launch handles synchronous exceptions and promise rejections', async ()
 
   assert.equal(arLaunchFailureCopy(null), AR_LAUNCH_FAILED_COPY);
   assert.match(arLaunchFailureCopy(new Error('boom')), /boom/);
+});
+
+test('storefront resolution does not download GLB, USDZ or catalogue source image bodies', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const generated = await generateMatching(artwork, jpeg);
+  const inner = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  const published = await publishArAssetVersion({
+    artwork,
+    generated,
+    storage: inner,
+    logger: silentLogger,
+  });
+  assert.equal(published.ok, true);
+
+  const storage = wrapStorage(inner, {
+    async download(objectPath) {
+      if (/\.(glb|usdz)$/i.test(String(objectPath))) {
+        throw new Error('storefront must not download model files');
+      }
+      return inner.download(objectPath);
+    },
+  });
+
+  const withBuffer = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    sourceImageBuffer: jpeg,
+  });
+  assert.equal(withBuffer.ready, true);
+
+  const withoutBuffer = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(inner, { artworkId: artwork.id, source: jpeg }),
+  });
+  assert.equal(withoutBuffer.ready, true);
+
+  const requested = [];
+  const publicReady = await resolveArtworkArAssets(artwork, {
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(inner, { artworkId: artwork.id, requested, source: jpeg }),
+  });
+  assert.equal(publicReady.ready, true);
+  assert.ok(requested.some((url) => url.startsWith(GALLERY_ORIGIN)));
+  assert.equal(requested.some((url) => url.includes('painting.glb') || url.includes('painting.usdz')), true);
+});
+
+test('missing GLB hides storefront AR without reading the remaining model body', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  await storage.remove(versionGlbPath(artwork.id, generated.manifest.contentHash));
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    sourceImageBuffer: jpeg,
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('missing-assets'));
+  assert.equal(ar.glbUrl, null);
+});
+
+test('byte-length mismatch against the published manifest hides storefront AR', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const generated = await generateMatching(artwork, jpeg);
+  const inner = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage: inner, logger: silentLogger });
+  const storage = wrapStorage(inner, {
+    async head(objectPath) {
+      const meta = await inner.head(objectPath);
+      if (String(objectPath).endsWith('.glb')) {
+        return { ...meta, size: (meta?.size || 0) + 12 };
+      }
+      return meta;
+    },
+  });
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    sourceImageBuffer: jpeg,
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('invalid-assets'));
+  assert.equal(ar.glbUrl, null);
+});
+
+test('Lotus-style publication stays AR-ready using HEAD source metadata without hashing the file', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  assert.ok(generated.manifest.texture.sourceBytes > 0);
+
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(storage, { artworkId: artwork.id, source: jpeg }),
+  });
+  assert.equal(ar.ready, true);
+  assert.equal(ar.glbUrl.endsWith('/painting.glb'), true);
+});
+
+test('missing catalogue source HEAD hides storefront AR', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: async (url, init) => {
+      if (String(url).startsWith(GALLERY_ORIGIN)) {
+        return new Response(null, { status: 404 });
+      }
+      return publicFetchFromStorage(storage, { artworkId: artwork.id })(url, init);
+    },
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('source-image-unavailable'));
+  assert.equal(ar.glbUrl, null);
+});
+
+test('catalogue Content-Length mismatch hides storefront AR', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const other = await makeJpeg(180, 140);
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(storage, { artworkId: artwork.id, source: other }),
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('stale-source-image'));
+});
+
+test('a newer primary catalogue image hides storefront AR', async () => {
+  const jpeg = await makeJpeg(200, 150);
+  const artwork = matchingArtwork();
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const replaced = matchingArtwork({
+    images: [{
+      id: 'img-new',
+      storagePath: `${GALLERY_ORIGIN}/lot/replacement.jpg`,
+      isPrimary: true,
+      createdAt: new Date(Date.parse(generated.manifest.generatedAt) + 60_000).toISOString(),
+    }],
+  });
+  const ar = await resolveArtworkArAssets(replaced, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(storage, { artworkId: artwork.id, source: jpeg }),
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('stale-source-image'));
+});
+
+test('an older sibling primary with a different byte length hides storefront AR', async () => {
+  const jpeg = await makeJpeg(200, 150);
+  const sibling = await makeJpeg(180, 140);
+  const artwork = matchingArtwork();
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const switched = matchingArtwork({
+    images: [{
+      id: 'img-older',
+      storagePath: `${GALLERY_ORIGIN}/lot/older.jpg`,
+      isPrimary: true,
+      createdAt: '2019-01-01T00:00:00.000Z',
+    }],
+  });
+  const ar = await resolveArtworkArAssets(switched, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(storage, { artworkId: artwork.id, source: sibling }),
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('stale-source-image'));
+});
+
+test('same-sized older sibling primary is a residual createdAt limitation', async () => {
+  const jpeg = await makeJpeg(200, 150);
+  const artwork = matchingArtwork();
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const switched = matchingArtwork({
+    images: [{
+      id: 'img-older',
+      storagePath: `${GALLERY_ORIGIN}/lot/older-same.jpg`,
+      isPrimary: true,
+      createdAt: '2019-01-01T00:00:00.000Z',
+    }],
+  });
+  const ar = await resolveArtworkArAssets(switched, {
+    storage,
+    origin: ASSET_ORIGIN,
+    fetchImpl: publicFetchFromStorage(storage, { artworkId: artwork.id, source: jpeg }),
+  });
+  assert.equal(ar.ready, true);
+});
+
+test('missing sourceBytes fails closed even when a matching buffer is supplied', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150);
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const manifestPath = versionManifestPath(artwork.id, generated.manifest.contentHash);
+  const stored = JSON.parse((await storage.download(manifestPath)).toString('utf8'));
+  stored.texture = { ...(stored.texture || {}), sourceBytes: null };
+  await storage.upload({
+    objectPath: manifestPath,
+    body: Buffer.from(`${JSON.stringify(stored)}\n`),
+    contentType: 'application/json',
+    upsert: true,
+  });
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    sourceImageBuffer: jpeg,
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('source-image-unavailable'));
+  assert.equal(ar.glbUrl, null);
+});
+
+test('supplied source buffer still detects a stale source hash', async () => {
+  const artwork = matchingArtwork();
+  const jpeg = await makeJpeg(200, 150, { r: 160, g: 120, b: 90 });
+  const other = await makeJpeg(200, 150, { r: 12, g: 200, b: 40 });
+  const generated = await generateMatching(artwork, jpeg);
+  const storage = createMemoryArStorage({ publicOrigin: ASSET_ORIGIN });
+  await publishArAssetVersion({ artwork, generated, storage, logger: silentLogger });
+  const ar = await resolveArtworkArAssets(artwork, {
+    storage,
+    origin: ASSET_ORIGIN,
+    sourceImageBuffer: other,
+  });
+  assert.equal(ar.ready, false);
+  assert.ok(ar.reasons.includes('stale-source-image'));
+  assert.equal(ar.glbUrl, null);
 });

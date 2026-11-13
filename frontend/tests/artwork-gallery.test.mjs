@@ -22,9 +22,11 @@ import {
 import {
   deleteArtworkImageFile,
   explainImagePersistError,
+  persistArtworkDisplayDerivative,
   persistPendingArtworkImage,
   purgeCatalogueImage,
 } from '../lib/artwork-image-upload.js';
+import { displayDerivativeStoragePath } from '../lib/media.js';
 
 test('image queue never admits a sixth file', () => {
   assert.equal(MAX_ARTWORK_IMAGES, 5);
@@ -195,7 +197,8 @@ test('retry uses the same image id and storage path after catalogue delete fails
 
   assert.equal(result.removedId, imageId);
   assert.equal(result.storagePath, storagePath);
-  assert.deepEqual(storagePaths, [storagePath, storagePath]);
+  const derivativePath = displayDerivativeStoragePath(storagePath);
+  assert.deepEqual(storagePaths, [derivativePath, storagePath, derivativePath, storagePath]);
   assert.deepEqual(catalogueCalls, [
     { imageId, storagePath },
     { imageId, storagePath },
@@ -355,6 +358,67 @@ test('catalogue registration failure surfaces cleanup failure with artwork id an
   );
 });
 
+test('admin image manager never treats a display sibling as an original', () => {
+  const source = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/artwork-image-manager.js'),
+    'utf8',
+  );
+  assert.match(source, /isArtworkDisplayDerivativePath/);
+  assert.match(source, /filter\(\(image\) => !isArtworkDisplayDerivativePath\(image\.storagePath\)\)/);
+});
+
+test('artwork save continues after display derivative generation fails', () => {
+  const source = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/artwork-form.js'),
+    'utf8',
+  );
+  assert.match(source, /persistArtworkDisplayDerivative/);
+  assert.match(source, /createAdminDisplayDerivative/);
+  assert.doesNotMatch(source, /from '@\/lib\/artwork-display'/);
+});
+
+test('display derivative upload failure does not fail catalogue persistence', async () => {
+  const uploads = [];
+  const result = await persistArtworkDisplayDerivative({
+    originalPath: '33333333-3333-4333-8333-333333333333/file.jpg',
+    file: { name: 'file.jpg' },
+    storageSession: { accessToken: 'token' },
+    createDerivative: async () => {
+      throw new Error('sharp failed');
+    },
+    uploadFile: async (session) => {
+      uploads.push(session.path);
+      return { status: 200 };
+    },
+  });
+  assert.equal(result.ok, false);
+  assert.deepEqual(uploads, []);
+});
+
+test('derivative cleanup failure leaves the original Storage object and catalogue row', async () => {
+  const storagePaths = [];
+  const catalogueCalls = [];
+  await assert.rejects(
+    () => purgeCatalogueImage({
+      storagePath: '33333333-3333-4333-8333-333333333333/file.jpg',
+      deleteStorage: async (session) => {
+        storagePaths.push(session.path);
+        if (String(session.path).endsWith('.display.webp')) {
+          throw new Error('derivative locked');
+        }
+      },
+      removeCatalogue: async () => {
+        catalogueCalls.push('deleted');
+      },
+    }),
+    (error) => error.code === 'STORAGE_DELETE_FAILED'
+      && /catalogue was not changed/.test(error.message)
+      && /file\.jpg\.display\.webp/.test(error.message),
+  );
+  assert.deepEqual(storagePaths, ['33333333-3333-4333-8333-333333333333/file.jpg.display.webp']);
+  assert.deepEqual(catalogueCalls, []);
+});
+
 test('storefront catalogue images skip the Next optimizer so Storage originals can render', () => {
   const source = fs.readFileSync(
     path.join(path.dirname(fileURLToPath(import.meta.url)), '../components/artwork-image.js'),
@@ -362,4 +426,7 @@ test('storefront catalogue images skip the Next optimizer so Storage originals c
   );
   assert.match(source, /unoptimized/);
   assert.match(source, /\/_next\/image/);
+  assert.match(source, /artworkStorefrontImageUrl/);
+  assert.doesNotMatch(source, /'use client'/);
+  assert.doesNotMatch(source, /useState/);
 });

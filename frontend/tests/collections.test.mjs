@@ -106,6 +106,7 @@ test('public listing renders a cover image or fallback and drops catalogue copy'
 
 test('public detail renders published artworks in hanging order', () => {
   const detail = read('app/(gallery)/collections/[id]/page.js');
+  assert.match(detail, /loadCollectionById/);
   assert.match(detail, /listArtworks\(\{ collectionId: id, limit: 100 \}\)/);
   assert.match(detail, /sortByCollectionOrder/);
   assert.match(detail, /collection\.artworkIds/);

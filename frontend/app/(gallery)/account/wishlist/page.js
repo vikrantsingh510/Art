@@ -2,14 +2,14 @@ import { ArtworkCard } from '@/components/artwork-card';
 import { WishlistItemActions } from '@/components/collection-actions';
 import { EmptyState } from '@/components/states';
 import { Button, Notice } from '@/components/ui';
-import { api } from '@/lib/api';
+import { loadWishlist } from '@/lib/gallery-entity-loaders';
 import { requireUser } from '@/lib/session';
 
 export const metadata = { title: 'Wishlist' };
 
 export default async function WishlistPage() {
-  const { token } = await requireUser();
-  const wishlist = await api.getWishlist({ token });
+  await requireUser();
+  const wishlist = await loadWishlist();
   const items = wishlist?.items || [];
 
   return (

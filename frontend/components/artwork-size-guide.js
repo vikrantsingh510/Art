@@ -1,5 +1,5 @@
 import { formatDimensions } from '@/lib/format';
-import { artworkImageUrl, primaryArtworkImage } from '@/lib/media';
+import { artworkStorefrontImageUrl, primaryArtworkImage } from '@/lib/media';
 import {
   sizeGuideAxisLabel,
   sizeGuideComparisons,
@@ -19,7 +19,7 @@ export function ArtworkSizeGuide({ artwork }) {
   }
 
   const image = primaryArtworkImage(artwork);
-  const imageUrl = artworkImageUrl(artwork, image);
+  const imageUrl = artworkStorefrontImageUrl(artwork, image);
   const imageAlt = image?.altText || artwork?.title || 'Artwork';
   const widthField = fields.find((field) => field.id === 'width');
   const heightField = fields.find((field) => field.id === 'height');
@@ -57,12 +57,13 @@ export function ArtworkSizeGuide({ artwork }) {
       </div>
 
       <ul className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {comparisons.map((comparison) => (
+        {comparisons.map((comparison, index) => (
           <li key={comparison.reference.id} className="space-y-4 min-w-0">
             <SizeGuideSceneLightbox
               comparison={comparison}
               imageUrl={imageUrl}
               imageAlt={imageAlt}
+              loading={index === 0 ? 'eager' : 'lazy'}
             />
             <div className="space-y-2">
               <p className="label-md text-bronze">{comparison.copy.title}</p>

@@ -2,7 +2,7 @@ import { PageTransition } from '@/components/page-transition';
 import { ErrorState } from '@/components/states';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { api } from '@/lib/api';
+import { loadCart, loadWishlist } from '@/lib/gallery-entity-loaders';
 import { getCurrentUser } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -33,8 +33,8 @@ export default async function GalleryLayout({ children }) {
   if (user && token) {
     try {
       const [cart, wishlist] = await Promise.all([
-        api.getCart({ token }),
-        api.getWishlist({ token }),
+        loadCart(),
+        loadWishlist(),
       ]);
       cartCount = cart?.count ?? cart?.items?.length ?? 0;
       wishlistCount = wishlist?.count ?? wishlist?.items?.length ?? 0;

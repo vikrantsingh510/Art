@@ -1,6 +1,6 @@
 import { getSupabaseUrl } from '../env.js';
 import { sha256Hex } from './hash.js';
-import { catalogueIntegrityReasons, pointerIsComplete, verifyAssetBuffers } from './integrity.js';
+import { catalogueIntegrityReasons, pointerIsComplete } from './integrity.js';
 import {
   arAssetsPublicOrigin,
   currentPointerPath,
@@ -11,7 +11,6 @@ import {
 } from './storage-paths.js';
 import { evaluateStorefrontAr, serializeStorefrontAr } from './storefront.js';
 
-const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 const GALLERY_IMAGE_BUCKET = 'artwork-images';
 
 /**
@@ -26,10 +25,31 @@ function prefixedObjectPath(artworkId, relativePath) {
   return cleaned.startsWith(`${artworkId}/`) ? cleaned : `${artworkId}/${cleaned}`;
 }
 
-function catalogueImageUrl(artwork) {
+function primaryCatalogueImage(artwork) {
   const images = Array.isArray(artwork?.images) ? [...artwork.images] : [];
   images.sort((a, b) => Number(a.displayOrder || 0) - Number(b.displayOrder || 0));
-  const chosen = images.find((image) => image.isPrimary) || images[0] || null;
+  return images.find((image) => image.isPrimary) || images[0] || null;
+}
+
+function timestampMs(value) {
+  if (!value) {
+    return null;
+  }
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function declaredSourceBytes(manifest) {
+  const bytes = Number(manifest?.texture?.sourceBytes);
+  return Number.isFinite(bytes) && bytes > 0 ? bytes : null;
+}
+
+function catalogueImageUrl(artwork) {
+  const chosen = primaryCatalogueImage(artwork);
   const storagePath = chosen?.storagePath;
   if (!storagePath) {
     return null;
@@ -74,29 +94,6 @@ async function readJsonFromUrl(url, fetchImpl) {
   }
 }
 
-async function readBufferFromUrl(url, fetchImpl, { maxBytes = MAX_SOURCE_BYTES } = {}) {
-  if (!url) {
-    return null;
-  }
-  try {
-    const response = await fetchImpl(url, { cache: 'no-store' });
-    if (!response.ok) {
-      return null;
-    }
-    const length = Number(response.headers.get('content-length'));
-    if (Number.isFinite(length) && length > maxBytes) {
-      return null;
-    }
-    const buffer = Buffer.from(await response.arrayBuffer());
-    if (buffer.length > maxBytes) {
-      return null;
-    }
-    return buffer;
-  } catch {
-    return null;
-  }
-}
-
 async function readJsonFromStorage(storage, objectPath) {
   try {
     const buffer = await storage.download(objectPath);
@@ -104,6 +101,138 @@ async function readJsonFromStorage(storage, objectPath) {
   } catch {
     return null;
   }
+}
+
+function parseContentRangeTotal(contentRange) {
+  const match = /\/(\d+)\s*$/.exec(String(contentRange || ''));
+  return match ? Number(match[1]) : null;
+}
+
+async function cancelBody(response) {
+  try {
+    if (response?.body && typeof response.body.cancel === 'function') {
+      await response.body.cancel();
+    }
+  } catch {
+    // Headers-only probes must not retain a body.
+  }
+}
+
+/**
+ * Confirm a published object exists without buffering it. Publication already
+ * hashed GLB/USDZ and only then wrote current.json. Storefront re-checks
+ * existence and declared byte length, not file contents.
+ */
+async function headRemoteAsset(url, fetchImpl) {
+  if (!url) {
+    return null;
+  }
+  try {
+    const head = await fetchImpl(url, { method: 'HEAD', cache: 'no-store' });
+    if (head.status === 405 || head.status === 501) {
+      const ranged = await fetchImpl(url, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-0' },
+        cache: 'no-store',
+      });
+      await cancelBody(ranged);
+      if (ranged.status !== 200 && ranged.status !== 206) {
+        return null;
+      }
+      const total = parseContentRangeTotal(ranged.headers.get('content-range'));
+      const length = Number(ranged.headers.get('content-length'));
+      return {
+        size: Number.isFinite(total) && total > 0
+          ? total
+          : (Number.isFinite(length) ? length : null),
+        contentType: ranged.headers.get('content-type'),
+      };
+    }
+    await cancelBody(head);
+    if (!head.ok) {
+      return null;
+    }
+    const length = Number(head.headers.get('content-length'));
+    return {
+      size: Number.isFinite(length) ? length : null,
+      contentType: head.headers.get('content-type'),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function headStoredAsset(storage, objectPath) {
+  if (!storage || !objectPath) {
+    return null;
+  }
+  try {
+    if (typeof storage.head === 'function') {
+      const meta = await storage.head(objectPath);
+      if (!meta) {
+        return null;
+      }
+      return {
+        size: Number.isFinite(Number(meta.size)) ? Number(meta.size) : null,
+        contentType: meta.contentType || null,
+      };
+    }
+    await storage.download(objectPath);
+    return { size: null, contentType: null };
+  } catch {
+    return null;
+  }
+}
+
+function remoteAssetLooksValid(meta, expectedBytes) {
+  if (!meta) {
+    return { ok: false, reason: 'missing-assets' };
+  }
+  if (Number.isFinite(meta.size) && meta.size <= 0) {
+    return { ok: false, reason: 'missing-assets' };
+  }
+  if (Number.isFinite(expectedBytes) && expectedBytes > 0 && Number.isFinite(meta.size) && meta.size > 0) {
+    if (meta.size !== expectedBytes) {
+      return { ok: false, reason: 'invalid-assets' };
+    }
+  }
+  return { ok: true };
+}
+
+function catalogueSourceReasons({
+  manifest,
+  primaryImage,
+  sourceMeta,
+  sourceBuffer,
+}) {
+  const reasons = [];
+  const expectedBytes = declaredSourceBytes(manifest);
+  if (!expectedBytes) {
+    reasons.push('source-image-unavailable');
+    return reasons;
+  }
+
+  if (sourceBuffer?.length) {
+    if (sourceBuffer.length !== expectedBytes) {
+      reasons.push('stale-source-image');
+    }
+    return reasons;
+  }
+
+  if (!sourceMeta || !Number.isFinite(sourceMeta.size) || sourceMeta.size <= 0) {
+    reasons.push('source-image-unavailable');
+    return reasons;
+  }
+  if (sourceMeta.size !== expectedBytes) {
+    reasons.push('stale-source-image');
+  }
+
+  const createdAt = timestampMs(primaryImage?.createdAt);
+  const generatedAt = timestampMs(manifest?.generatedAt);
+  if (createdAt != null && generatedAt != null && createdAt > generatedAt) {
+    reasons.push('stale-source-image');
+  }
+  return reasons;
 }
 
 /**
@@ -158,22 +287,29 @@ async function resolveArtworkArAssetsUnsafe(artwork, {
     ? await readJsonFromStorage(storage, manifestPath)
     : await readJsonFromUrl(publicObjectUrl(origin, manifestPath), fetchImpl);
 
-  let sourceBuffer = sourceImageBuffer;
-  const hasCatalogueImage = Boolean(catalogueImageUrl(artwork) || artwork?.images?.length);
-  if (!sourceBuffer && current && hasCatalogueImage) {
-    const imageUrl = catalogueImageUrl(artwork);
-    if (imageUrl) {
-      sourceBuffer = await readBufferFromUrl(imageUrl, fetchImpl);
-    }
-  }
+  const sourceBuffer = sourceImageBuffer;
+  const primaryImage = primaryCatalogueImage(artwork);
+  const imageUrl = catalogueImageUrl(artwork);
+  const hasCatalogueImage = Boolean(imageUrl || primaryImage);
 
   const integrityReasons = catalogueIntegrityReasons(artwork, manifest, {
     sourceImageBuffer: sourceBuffer,
-    sourceImageRequired: Boolean(current && hasCatalogueImage),
+    sourceImageRequired: Boolean(sourceBuffer) && Boolean(current && hasCatalogueImage),
   });
 
-  let glb = null;
-  let usdz = null;
+  let sourceMeta = null;
+  if (current && hasCatalogueImage && !sourceBuffer?.length) {
+    sourceMeta = imageUrl ? await headRemoteAsset(imageUrl, fetchImpl) : null;
+  }
+  if (current && hasCatalogueImage) {
+    integrityReasons.push(...catalogueSourceReasons({
+      manifest,
+      primaryImage,
+      sourceMeta,
+      sourceBuffer,
+    }));
+  }
+
   const contentHash = manifest?.contentHash || current?.contentHash || versionDir;
   const glbRel = manifest?.files?.glb || current?.files?.glb || null;
   const usdzRel = manifest?.files?.usdz || current?.files?.usdz || null;
@@ -183,29 +319,26 @@ async function resolveArtworkArAssetsUnsafe(artwork, {
   const usdzPath = usdzRel
     ? prefixedObjectPath(artworkId, usdzRel)
     : (contentHash ? versionUsdzPath(artworkId, contentHash) : null);
+
+  let remoteVerified = { ok: Boolean(current?.files?.glb && current?.files?.usdz) };
   if (verifyRemoteAssets && glbPath && usdzPath) {
-    if (storage) {
-      try {
-        glb = await storage.download(glbPath);
-        usdz = await storage.download(usdzPath);
-      } catch {
-        glb = null;
-        usdz = null;
-      }
+    const [glbMeta, usdzMeta] = storage
+      ? await Promise.all([
+        headStoredAsset(storage, glbPath),
+        headStoredAsset(storage, usdzPath),
+      ])
+      : await Promise.all([
+        headRemoteAsset(publicObjectUrl(origin, glbPath), fetchImpl),
+        headRemoteAsset(publicObjectUrl(origin, usdzPath), fetchImpl),
+      ]);
+    const glbCheck = remoteAssetLooksValid(glbMeta, manifest?.glbBytes);
+    const usdzCheck = remoteAssetLooksValid(usdzMeta, manifest?.usdzBytes);
+    if (!glbCheck.ok || !usdzCheck.ok) {
+      remoteVerified = { ok: false, reason: glbCheck.reason || usdzCheck.reason || 'missing-assets' };
     } else {
-      glb = await readBufferFromUrl(publicObjectUrl(origin, glbPath), fetchImpl);
-      usdz = await readBufferFromUrl(publicObjectUrl(origin, usdzPath), fetchImpl);
+      remoteVerified = { ok: true };
     }
   }
-
-  const remoteVerified = verifyRemoteAssets
-    ? verifyAssetBuffers({
-      glb,
-      usdz,
-      manifest,
-      physical: manifest,
-    })
-    : { ok: Boolean(current?.files?.glb && current?.files?.usdz) };
 
   if (current && !pointerIsComplete(current)) {
     integrityReasons.push('stale-pointer');

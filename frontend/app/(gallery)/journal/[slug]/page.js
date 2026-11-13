@@ -4,6 +4,7 @@ import { ArtworkCard } from '@/components/artwork-card';
 import { MarkdownBody } from '@/components/markdown-body';
 import { ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
+import { loadBlogBySlug } from '@/lib/gallery-entity-loaders';
 import { journalCanonical } from '@/lib/journal-origin';
 import { publicStorageUrl } from '@/lib/media';
 
@@ -11,7 +12,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const canonical = await journalCanonical(`/journal/${slug}`);
   try {
-    const blog = await api.getBlog(slug);
+    const blog = await loadBlogBySlug(slug);
     const coverUrl = publicStorageUrl(blog.coverImagePath);
     const title = blog.seoTitle || blog.title;
     const description = blog.seoDescription || blog.excerpt || 'A Maison d’Art journal entry.';
@@ -40,7 +41,7 @@ export default async function JournalDetailPage({ params }) {
   const { slug } = await params;
   let blog;
   try {
-    blog = await api.getBlog(slug);
+    blog = await loadBlogBySlug(slug);
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) {
       notFound();

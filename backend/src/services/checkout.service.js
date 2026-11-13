@@ -13,7 +13,7 @@ import { isPurchasable, reservationExpiresAt } from '../utils/inventory.js';
 import { lineTotalPaise, orderTotalPaise } from '../utils/money.js';
 import { getAddressForUser, toShippingSnapshot } from './address.service.js';
 import { getCart } from './cart.service.js';
-import { expireStaleReservations, getActiveReservedQuantity } from './inventory.service.js';
+import { expireStaleReservations, getActiveReservedQuantities } from './inventory.service.js';
 import { enqueueOrderNotification } from './notification.service.js';
 
 function buildOrderNumber() {
@@ -34,8 +34,42 @@ function snapshotArtwork(artwork) {
   };
 }
 
-export async function createCheckoutOrder(userId, payload, { email } = {}) {
-  const cart = await getCart(userId);
+export function lineItemsFromLockedArtworks(lockedArtworks, artworkIds, reservedByArtworkId) {
+  if (lockedArtworks.length !== artworkIds.length) {
+    throw new ApiError(409, 'One or more artworks are no longer available');
+  }
+
+  const lineItems = [];
+  for (const artwork of lockedArtworks) {
+    const reserved = reservedByArtworkId.get(artwork.id) || 0;
+    if (!isPurchasable({
+      status: artwork.status,
+      inventoryQuantity: artwork.inventoryQuantity,
+      activeReservedQuantity: reserved,
+      requestedQuantity: 1,
+    })) {
+      throw new ApiError(409, `Artwork is not available for purchase: ${artwork.title}`);
+    }
+
+    lineItems.push({
+      artwork,
+      quantity: 1,
+      unitPricePaise: artwork.pricePaise,
+      totalPricePaise: lineTotalPaise(1, artwork.pricePaise),
+    });
+  }
+
+  return lineItems;
+}
+
+export async function createCheckoutOrder(userId, payload, {
+  email,
+  loadCart = getCart,
+  loadReservedQuantities = getActiveReservedQuantities,
+  expireReservations = expireStaleReservations,
+  runTransaction = (callback) => db.transaction(callback),
+} = {}) {
+  const cart = await loadCart(userId);
   if (cart.items.length === 0) {
     throw new ApiError(400, 'Cart is empty');
   }
@@ -46,8 +80,8 @@ export async function createCheckoutOrder(userId, payload, { email } = {}) {
 
   const artworkIds = cart.items.map((item) => item.artworkId);
 
-  return db.transaction(async (tx) => {
-    await expireStaleReservations(tx);
+  return runTransaction(async (tx) => {
+    await expireReservations(tx);
 
     const lockedArtworks = await tx
       .select()
@@ -55,29 +89,12 @@ export async function createCheckoutOrder(userId, payload, { email } = {}) {
       .where(inArray(artworks.id, artworkIds))
       .for('update');
 
-    if (lockedArtworks.length !== artworkIds.length) {
-      throw new ApiError(409, 'One or more artworks are no longer available');
-    }
-
-    const lineItems = [];
-    for (const artwork of lockedArtworks) {
-      const reserved = await getActiveReservedQuantity(artwork.id, tx);
-      if (!isPurchasable({
-        status: artwork.status,
-        inventoryQuantity: artwork.inventoryQuantity,
-        activeReservedQuantity: reserved,
-        requestedQuantity: 1,
-      })) {
-        throw new ApiError(409, `Artwork is not available for purchase: ${artwork.title}`);
-      }
-
-      lineItems.push({
-        artwork,
-        quantity: 1,
-        unitPricePaise: artwork.pricePaise,
-        totalPricePaise: lineTotalPaise(1, artwork.pricePaise),
-      });
-    }
+    const reservedByArtworkId = await loadReservedQuantities(artworkIds, tx);
+    const lineItems = lineItemsFromLockedArtworks(
+      lockedArtworks,
+      artworkIds,
+      reservedByArtworkId,
+    );
 
     const subtotalPaise = lineItems.reduce((sum, item) => sum + item.totalPricePaise, 0);
     const shippingPaise = 0;
@@ -220,6 +237,7 @@ export async function convertReservationsForCapturedPayment(orderId, executor = 
 }
 
 export default {
+  lineItemsFromLockedArtworks,
   createCheckoutOrder,
   getOrderForUser,
   listOrdersForUser,

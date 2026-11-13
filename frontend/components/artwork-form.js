@@ -8,7 +8,7 @@ import { rupeesToPaise, paiseToRupees } from '@/lib/money';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
 import { validateArtworkImageFile } from '@/lib/artwork-image-constraints';
 import { inspectArtworkImageFile } from '@/lib/artwork-image-inspect';
-import { explainImagePersistError, persistPendingArtworkImage, purgeCatalogueImage } from '@/lib/artwork-image-upload';
+import { explainImagePersistError, persistArtworkDisplayDerivative, persistPendingArtworkImage, purgeCatalogueImage } from '@/lib/artwork-image-upload';
 import {
   ArtworkImageManager,
   createManagerItems,
@@ -22,6 +22,24 @@ const STATUSES = ['draft', 'published', 'reserved', 'sold', 'archived'];
 
 function sanitizeFileName(name) {
   return String(name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+async function createAdminDisplayDerivative(file, accessToken) {
+  const body = new FormData();
+  body.append('file', file);
+  const response = await fetch('/api/admin/artwork-display', {
+    method: 'POST',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    body,
+  });
+  if (!response.ok) {
+    return null;
+  }
+  const blob = await response.blob();
+  if (!blob?.size) {
+    return null;
+  }
+  return new File([blob], 'display.webp', { type: 'image/webp' });
 }
 
 export function ArtworkForm({ artwork, categories, collections, artists = [], mode }) {
@@ -108,12 +126,13 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
       setImageItems((current) => current.map((entry) => (
         entry.key === item.key ? { ...entry, progress: 0 } : entry
       )));
+      const storageSession = {
+        supabaseUrl: getSupabaseUrl(),
+        publishableKey: getSupabasePublishableKey(),
+        accessToken,
+      };
       const created = await persistPendingArtworkImage({
-        storageSession: {
-          supabaseUrl: getSupabaseUrl(),
-          publishableKey: getSupabasePublishableKey(),
-          accessToken,
-        },
+        storageSession,
         artworkId,
         path,
         file: item.file,
@@ -132,6 +151,12 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
         }),
       });
       registered.push({ key: item.key, id: created.id });
+      await persistArtworkDisplayDerivative({
+        originalPath: path,
+        file: item.file,
+        storageSession,
+        createDerivative: (source) => createAdminDisplayDerivative(source, accessToken),
+      });
     }
 
     const orderKeys = imageItems.map((item) => {

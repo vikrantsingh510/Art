@@ -1,12 +1,17 @@
-import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { db } from '../config/database.js';
-import { artists, artworks } from '../db/schema/index.js';
+import { artists, artworkImages, artworks } from '../db/schema/index.js';
 import { assertPortraitStoragePathForArtist } from '../lib/artist-portrait.js';
+import { sortArtworkImages } from '../lib/artwork-images.js';
 import { ApiError } from '../utils/ApiError.js';
 import { isUniqueViolation } from '../utils/pg-error.js';
 import { slugify, uniqueSlug } from '../utils/slug.js';
 import { listArtworks } from './artwork.service.js';
+import { getActiveReservedQuantities, withAvailability } from './inventory.service.js';
 import { writeAuditLog } from './audit.service.js';
+
+const PUBLIC_ARTWORK_STATUSES = ['published'];
+const ARTIST_PUBLIC_ARTWORK_LIMIT = 100;
 
 function mapListItem(row, { includeAdminFields = false } = {}) {
   const item = {
@@ -66,10 +71,83 @@ async function getArtistRecord(artistId) {
 
 async function hydrateArtworks(artistId, { publicOnly = true } = {}) {
   const data = await listArtworks(
-    { artistId, limit: 100 },
+    { artistId, limit: ARTIST_PUBLIC_ARTWORK_LIMIT },
     { publicOnly },
   );
   return data.items || [];
+}
+
+function toArtistArtworkPreview(artwork, images, { featured = false } = {}) {
+  const preview = {
+    id: artwork.id,
+    title: artwork.title,
+    medium: artwork.medium,
+    width: artwork.width,
+    height: artwork.height,
+    depth: artwork.depth,
+    dimensionUnit: artwork.dimensionUnit,
+    pricePaise: artwork.pricePaise,
+    currency: artwork.currency,
+    status: artwork.status,
+    inventoryQuantity: artwork.inventoryQuantity,
+    reservedQuantity: artwork.reservedQuantity,
+    availableQuantity: artwork.availableQuantity,
+    isPurchasable: artwork.isPurchasable,
+    images,
+  };
+
+  if (featured) {
+    preview.story = artwork.story;
+    preview.yearCreated = artwork.yearCreated;
+  }
+
+  return preview;
+}
+
+async function hydratePublicArtworkPreviews(artistId) {
+  const rows = await db
+    .select({
+      id: artworks.id,
+      title: artworks.title,
+      story: artworks.story,
+      medium: artworks.medium,
+      yearCreated: artworks.yearCreated,
+      width: artworks.width,
+      height: artworks.height,
+      depth: artworks.depth,
+      dimensionUnit: artworks.dimensionUnit,
+      pricePaise: artworks.pricePaise,
+      currency: artworks.currency,
+      inventoryQuantity: artworks.inventoryQuantity,
+      status: artworks.status,
+      createdAt: artworks.createdAt,
+    })
+    .from(artworks)
+    .where(and(
+      eq(artworks.artistId, artistId),
+      inArray(artworks.status, PUBLIC_ARTWORK_STATUSES),
+    ))
+    .orderBy(desc(artworks.createdAt))
+    .limit(ARTIST_PUBLIC_ARTWORK_LIMIT);
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const artworkIds = rows.map((row) => row.id);
+  const [reservedMap, imageRows] = await Promise.all([
+    getActiveReservedQuantities(artworkIds),
+    db.select().from(artworkImages).where(inArray(artworkImages.artworkId, artworkIds)),
+  ]);
+
+  return rows.map((row, index) => {
+    const artwork = withAvailability(row, reservedMap.get(row.id) || 0);
+    return toArtistArtworkPreview(
+      artwork,
+      sortArtworkImages(imageRows.filter((image) => image.artworkId === row.id)),
+      { featured: index === 0 },
+    );
+  });
 }
 
 async function toAdminArtist(row) {
@@ -94,7 +172,7 @@ async function toPublicArtist(row) {
     seoTitle: row.seoTitle,
     seoDescription: row.seoDescription,
     publishedAt: row.publishedAt,
-    artworks: await hydrateArtworks(row.id, { publicOnly: true }),
+    artworks: await hydratePublicArtworkPreviews(row.id),
   };
 }
 

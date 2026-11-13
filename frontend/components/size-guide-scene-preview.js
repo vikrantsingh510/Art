@@ -7,6 +7,7 @@ export function SizeGuideScenePreview({
   imageUrl,
   imageAlt,
   sizes,
+  loading = 'lazy',
   className = '',
 }) {
   return (
@@ -23,6 +24,7 @@ export function SizeGuideScenePreview({
         alt={photo.alt}
         fill
         unoptimized
+        loading={loading}
         sizes={sizes}
         className="size-guide-photo"
       />
@@ -41,6 +43,7 @@ export function SizeGuideScenePreview({
             alt={imageAlt}
             fill
             unoptimized
+            loading={loading}
             sizes={sizes}
             className="object-cover"
           />

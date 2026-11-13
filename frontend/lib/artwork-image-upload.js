@@ -1,4 +1,5 @@
 import { ARTWORK_IMAGES_BUCKET, explainStorageUploadError } from './artwork-image-constraints.js';
+import { displayDerivativeStoragePath } from './media.js';
 
 function encodeObjectPath(path) {
   return String(path)
@@ -54,6 +55,20 @@ export async function purgeCatalogueImage({
   }
   if (typeof removeCatalogue !== 'function') {
     throw new Error('A catalogue delete function is required to remove an image.');
+  }
+
+  const derivativePath = displayDerivativeStoragePath(storagePath);
+  if (derivativePath) {
+    try {
+      await deleteStorage({ ...storageSession, path: derivativePath });
+    } catch (error) {
+      const failure = new Error(
+        `Storage still holds ${derivativePath}. The original ${storagePath} was not deleted. The catalogue was not changed. Retry after resolving: ${error.message}`,
+      );
+      failure.code = 'STORAGE_DELETE_FAILED';
+      failure.cause = error;
+      throw failure;
+    }
   }
 
   try {
@@ -178,6 +193,34 @@ export async function persistPendingArtworkImage({
   }
 }
 
+export async function persistArtworkDisplayDerivative({
+  originalPath,
+  file,
+  storageSession,
+  createDerivative,
+  uploadFile = uploadArtworkImageFile,
+} = {}) {
+  const derivativePath = displayDerivativeStoragePath(originalPath);
+  if (!derivativePath || !file || typeof createDerivative !== 'function') {
+    return { ok: false, skipped: true };
+  }
+
+  try {
+    const derivativeFile = await createDerivative(file);
+    if (!derivativeFile) {
+      return { ok: false, path: derivativePath };
+    }
+    await uploadFile({
+      ...storageSession,
+      path: derivativePath,
+      file: derivativeFile,
+    });
+    return { ok: true, path: derivativePath };
+  } catch {
+    return { ok: false, path: derivativePath };
+  }
+}
+
 export function uploadArtworkImageFile({
   supabaseUrl,
   publishableKey,
@@ -242,6 +285,7 @@ export default {
   deleteArtworkImageFile,
   purgeCatalogueImage,
   persistPendingArtworkImage,
+  persistArtworkDisplayDerivative,
   classifyRegisterAfterUploadError,
   explainImagePersistError,
 };

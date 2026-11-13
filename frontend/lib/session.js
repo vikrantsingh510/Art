@@ -6,7 +6,7 @@ import { readCurrentUser } from './current-user';
 import { canAccessAdmin } from './guards';
 import { createServerSupabaseClient } from './supabase/server';
 
-export async function getAccessToken() {
+export const getAccessToken = cache(async function getAccessToken() {
   const supabase = await createServerSupabaseClient();
   if (!supabase) {
     return null;
@@ -14,7 +14,7 @@ export async function getAccessToken() {
 
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? null;
-}
+});
 
 export const getCurrentUser = cache(function getCurrentUser() {
   return readCurrentUser({

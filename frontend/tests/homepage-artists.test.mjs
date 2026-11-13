@@ -82,6 +82,23 @@ test('homepage catalogue prefers featured lots then fills remaining slots from p
   assert.deepEqual(selected.map((item) => item.id), ['featured', 'latest']);
 });
 
+test('an older featured lot still leads the homepage when it is absent from the latest eight', () => {
+  const featured = [{ id: 'old-featured', title: 'Archival hanging', isFeatured: true }];
+  const latest = Array.from({ length: 8 }, (_, index) => ({
+    id: `new-${index}`,
+    title: `New ${index}`,
+    isFeatured: false,
+  }));
+  const selected = selectHomepageArtworks(featured, latest, { limit: 8 });
+  assert.equal(selected[0].id, 'old-featured');
+  assert.equal(selected.length, 8);
+  assert.deepEqual(
+    selected.slice(1).map((item) => item.id),
+    ['new-0', 'new-1', 'new-2', 'new-3', 'new-4', 'new-5', 'new-6'],
+  );
+  assert.equal(selected.some((item) => item.id === 'new-7'), false);
+});
+
 test('homepage fetches published artists once and renders both editorial sections', () => {
   const page = read('app/(gallery)/(salon)/page.js');
   assert.match(page, /listArtists/);
@@ -89,7 +106,9 @@ test('homepage fetches published artists once and renders both editorial section
   assert.match(page, /selectHomepageArtworks/);
   assert.match(page, /ArtistInFocus/);
   assert.match(page, /ArtistsToKnow/);
-  assert.match(page, /getArtist\(featured\.slug\)/);
+  assert.match(page, /listArtworks\(\{ featured: 'true', limit: 8 \}\)/);
+  assert.match(page, /listArtworks\(\{ limit: 8 \}\)/);
+  assert.doesNotMatch(page, /getArtist\(/);
   assert.doesNotMatch(page, /Elena|Lila|quotation|Lorem|sample artist/i);
 });
 

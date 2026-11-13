@@ -34,7 +34,7 @@ import {
   sortArtworkImages,
   takeFilesWithinLimit,
 } from '@/lib/artwork-image-queue';
-import { publicStorageUrl } from '@/lib/media';
+import { isArtworkDisplayDerivativePath, publicStorageUrl } from '@/lib/media';
 import { InlineLoader } from './loading';
 import { Field } from './ui';
 
@@ -312,7 +312,8 @@ function kindFromStoragePath(storagePath) {
 }
 
 export function createManagerItems(artwork) {
-  const images = sortArtworkImages(artwork?.images);
+  const images = sortArtworkImages(artwork?.images)
+    .filter((image) => !isArtworkDisplayDerivativePath(image.storagePath));
   return images.map((image, index) => ({
     key: savedImageKey(image.id),
     kind: 'saved',

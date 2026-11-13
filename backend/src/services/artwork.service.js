@@ -64,9 +64,8 @@ async function attachRelations(artworkRows, { includePrivateMedia = false } = {}
   }
 
   const artworkIds = artworkRows.map((row) => row.id);
-  const reservedMap = await getActiveReservedQuantities(artworkIds);
-
-  const [images, media, categoryRows, collectionRows] = await Promise.all([
+  const [reservedMap, images, media, categoryRows, collectionRows] = await Promise.all([
+    getActiveReservedQuantities(artworkIds),
     db.select().from(artworkImages).where(inArray(artworkImages.artworkId, artworkIds)),
     db.select().from(artworkMedia).where(inArray(artworkMedia.artworkId, artworkIds)),
     db.select().from(artworkCategories).where(inArray(artworkCategories.artworkId, artworkIds)),
@@ -207,12 +206,25 @@ export async function listArtworks(query, { publicOnly = true } = {}) {
   const limit = query.limit || 20;
   const offset = (page - 1) * limit;
 
-  const [countRow] = await db
+  let countQuery = db
     .select({ count: sql`count(distinct ${artworks.id})::int`.as('count') })
-    .from(artworks)
-    .leftJoin(artworkCategories, eq(artworkCategories.artworkId, artworks.id))
-    .leftJoin(collectionArtworks, eq(collectionArtworks.artworkId, artworks.id))
-    .where(whereClause);
+    .from(artworks);
+
+  if (query.categoryId) {
+    countQuery = countQuery.innerJoin(
+      artworkCategories,
+      eq(artworkCategories.artworkId, artworks.id),
+    );
+  }
+
+  if (query.collectionId) {
+    countQuery = countQuery.innerJoin(
+      collectionArtworks,
+      eq(collectionArtworks.artworkId, artworks.id),
+    );
+  }
+
+  const [countRow] = await countQuery.where(whereClause);
 
   const rows = await source
     .where(whereClause)
@@ -242,6 +254,22 @@ export async function listArtworks(query, { publicOnly = true } = {}) {
     limit,
     total: Number(countRow?.count || 0),
   };
+}
+
+export async function getArtworksByIds(artworkIds, { publicOnly = true, includePrivateMedia = false } = {}) {
+  const uniqueIds = [...new Set((artworkIds || []).filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db.select().from(artworks).where(inArray(artworks.id, uniqueIds));
+  const visible = publicOnly
+    ? rows.filter((row) => PUBLIC_STATUSES.includes(row.status))
+    : rows;
+  const hydrated = await attachRelations(visible, {
+    includePrivateMedia: includePrivateMedia || !publicOnly,
+  });
+  return new Map(hydrated.map((artwork) => [artwork.id, artwork]));
 }
 
 export async function getArtworkById(artworkId, { publicOnly = true, includePrivateMedia = false } = {}) {
@@ -539,6 +567,7 @@ export async function addArtworkMedia(artworkId, payload, actorUserId) {
 
 export default {
   listArtworks,
+  getArtworksByIds,
   getArtworkById,
   userHasPurchasedArtwork,
   createArtwork,

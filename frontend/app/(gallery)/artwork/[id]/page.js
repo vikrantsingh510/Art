@@ -9,17 +9,16 @@ import { ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
 import { resolveArtworkArAssets } from '@/lib/ar-assets/storefront-storage';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
+import { loadArtworkById } from '@/lib/gallery-entity-loaders';
 import { canonicalFor } from '@/lib/journal-origin';
-import { artworkImageUrl, publicMediaItems, privateMediaItems } from '@/lib/media';
+import { artworkStorefrontImageUrl, publicMediaItems, privateMediaItems } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
-import { getAccessToken } from '@/lib/session';
 import { buildWhatsappEnquiryHref, DEFAULT_WHATSAPP_BUTTON_LABEL } from '@/lib/whatsapp-enquiry';
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
   try {
-    const token = await getAccessToken();
-    const artwork = await api.getArtwork(id, { token });
+    const artwork = await loadArtworkById(id);
     return { title: artwork.title };
   } catch {
     return { title: 'Artwork' };
@@ -33,10 +32,9 @@ export default async function ArtworkDetailPage({ params }) {
     notFound();
   }
 
-  const token = await getAccessToken();
   let artwork;
   try {
-    artwork = await api.getArtwork(id, { token });
+    artwork = await loadArtworkById(id);
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) {
       notFound();
@@ -52,7 +50,7 @@ export default async function ArtworkDetailPage({ params }) {
   const privateMedia = privateMediaItems(artwork);
   const dimensions = formatDimensions(artwork);
   const ar = await resolveArtworkArAssets(artwork);
-  const posterUrl = artworkImageUrl(artwork);
+  const posterUrl = artworkStorefrontImageUrl(artwork);
   let enquiry = { enabled: false };
   try {
     enquiry = await api.getWhatsappEnquiry();

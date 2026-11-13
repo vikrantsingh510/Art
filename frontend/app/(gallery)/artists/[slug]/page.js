@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { ArtistProfile } from '@/components/artist-profile';
 import { ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
+import { loadArtistBySlug } from '@/lib/gallery-entity-loaders';
 import { canonicalFor } from '@/lib/journal-origin';
 import { publicStorageUrl } from '@/lib/media';
 
@@ -9,7 +10,7 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const canonical = await canonicalFor(`/artists/${slug}`);
   try {
-    const artist = await api.getArtist(slug);
+    const artist = await loadArtistBySlug(slug);
     const portraitUrl = publicStorageUrl(artist.profileImagePath);
     const title = artist.seoTitle || artist.name;
     const description = artist.seoDescription || artist.shortBio || 'An artist at Maison d’Art.';
@@ -36,8 +37,12 @@ export async function generateMetadata({ params }) {
 export default async function ArtistDetailPage({ params }) {
   const { slug } = await params;
   let artist;
+  let listed = { items: [] };
   try {
-    artist = await api.getArtist(slug);
+    [artist, listed] = await Promise.all([
+      loadArtistBySlug(slug),
+      api.listArtists({ limit: 8 }).catch(() => ({ items: [] })),
+    ]);
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) {
       notFound();
@@ -49,13 +54,7 @@ export default async function ArtistDetailPage({ params }) {
     );
   }
 
-  let peers = [];
-  try {
-    const listed = await api.listArtists({ limit: 8 });
-    peers = (listed?.items || []).filter((item) => item.slug !== artist.slug).slice(0, 3);
-  } catch {
-    peers = [];
-  }
+  const peers = (listed?.items || []).filter((item) => item.slug !== artist.slug).slice(0, 3);
 
   return <ArtistProfile artist={artist} peers={peers} />;
 }
