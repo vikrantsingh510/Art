@@ -1,5 +1,8 @@
 -- Art Marketplace — read-only security verification
--- Run in the Supabase SQL Editor after 0000–0005 are applied.
+-- Migrations 0000–0012 are already applied on the live project.
+-- maison_app LOGIN is enabled. Do not use this file to run or re-run migrations.
+-- After cutover, query 1: maison_app.rolcanlogin is expected true; other
+-- maison_app flags remain false.
 -- Do not put passwords, keys, or connection strings in this file or in the output you share.
 
 -- 1. Role attributes
@@ -296,3 +299,31 @@ SELECT
   confdeltype
 FROM pg_constraint
 WHERE conname = 'profiles_id_auth_users_id_fk';
+
+-- 14. provision_customer_role exists with uuid argument, SECURITY DEFINER, fixed search_path
+SELECT
+  n.nspname AS schema_name,
+  p.proname AS function_name,
+  pg_get_function_identity_arguments(p.oid) AS arguments,
+  p.prosecdef AS security_definer,
+  p.proconfig,
+  pg_get_userbyid(p.proowner) AS owner
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname = 'provision_customer_role';
+
+-- 15. EXECUTE grants (expect maison_app only; not PUBLIC, anon, authenticated, service_role)
+SELECT grantee, privilege_type
+FROM information_schema.routine_privileges
+WHERE routine_schema = 'public'
+  AND routine_name = 'provision_customer_role'
+ORDER BY grantee, privilege_type;
+
+-- 16. maison_app must not have INSERT/UPDATE/DELETE on user_roles
+SELECT privilege_type
+FROM information_schema.role_table_grants
+WHERE table_schema = 'public'
+  AND table_name = 'user_roles'
+  AND grantee = 'maison_app'
+  AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import { carts, profiles, userRoles, wishlists } from '../db/schema/index.js';
 import { enqueueNotification } from './notification.service.js';
@@ -23,10 +23,7 @@ export async function provisionCustomerIdentity(
       fullName: fullName || null,
     }).onConflictDoNothing().returning({ id: profiles.id });
 
-    await tx.insert(userRoles).values({
-      userId,
-      role: 'customer',
-    }).onConflictDoNothing();
+    await tx.execute(sql`SELECT public.provision_customer_role(${userId})`);
 
     await tx.insert(wishlists).values({
       userId,

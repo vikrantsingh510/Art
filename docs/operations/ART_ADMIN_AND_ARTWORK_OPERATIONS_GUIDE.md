@@ -57,13 +57,13 @@ Sources: `frontend/README.md`, `backend/.env.example` (`PORT=5000`, `FRONTEND_UR
 4. The browser lands on `/auth/callback`, which exchanges the OAuth `code` for a session cookie.
 5. The next authenticated call to Express (`GET /api/v1/auth/me` or any `requireAuth` route) runs `provisionCustomerIdentity`:
    - inserts `profiles` with the **same UUID** as `auth.users.id`
-   - inserts `user_roles` with role `customer` (`ON CONFLICT DO NOTHING`)
+   - calls `public.provision_customer_role(uuid)` on the same transaction (literal `'customer'` only; `ON CONFLICT DO NOTHING`)
    - inserts empty `wishlists` and `carts` rows
-6. A welcome notification is queued as `customer.welcome`. Real email delivery is **not** implemented (mock outbox only).
+6. A welcome notification is queued as `customer.welcome`. Real email delivery is **not** implemented (mock outbox only). Existing profiles skip every write, including the function call.
 
 Sources: `frontend/components/login-button.js`, `frontend/app/auth/callback/route.js`, `backend/src/services/identity.service.js`, `backend/src/middlewares/auth.middleware.js`.
 
-**Important environment caveat (Confirmed in code + security docs):** after migration `0005_security_hardening.sql`, the intended runtime database role `maison_app` has **SELECT only** on `user_roles`. The identity service still tries to `INSERT` the `customer` row. That INSERT works today only because the development `DATABASE_URL` user is privileged (see §1.7). After a production cutover to `maison_app`, first login will not be able to write `user_roles` until a reviewed `SECURITY DEFINER` function exists. That function is **Missing**. Documented in `docs/database/ART_DATABASE_SECURITY_HARDENING.md` §8 and `backend/src/db/schema/index.js`.
+**Important environment caveat (Confirmed in code + security docs):** after migration `0005_security_hardening.sql`, `maison_app` has **SELECT only** on `user_roles`. Direct table INSERT remains prohibited. Express calls `public.provision_customer_role` from applied migration `0012_provision_customer_role.sql`. Do **not** re-run `0012`. `auth.uid()` is not used: Express is postgres-js as `maison_app`, not PostgREST. `maison_app` LOGIN **is enabled** and local Express `DATABASE_URL` connects as that role. Documented in `docs/database/ART_DATABASE_SECURITY_HARDENING.md` §8.
 
 Admin is **never** auto-assigned at signup.
 
@@ -182,7 +182,7 @@ Inspection connected as the current Express `DATABASE_URL` user and counted rows
 
 That pattern is one Google identity that already holds **both** `customer` and `admin`. If you sign in with **that same Google account**, `/admin` should open. If you sign in with a different Google account, you will get `/forbidden` even though an admin row exists for someone else.
 
-The runtime database user observed during inspection was `postgres` on a remote host (not `maison_app`). Production is supposed to switch to `maison_app` (`docs/backend/PRODUCTION_READINESS.md`). That switch was **not** performed here.
+The runtime database user is `maison_app` (verified `current_user` / `session_user`). `MIGRATION_DATABASE_URL` remains privileged `postgres`. Do not point Kit or Dashboard table-editor DDL at `maison_app`.
 
 ## 8. If no admin exists, what is the officially intended provisioning process?
 
@@ -421,8 +421,8 @@ Source: `backend/src/db/schema/order-items.schema.js`, `backend/src/services/che
 | 9 | Resize / compression | **Missing.** Original bytes are stored. |
 | 10 | What is saved in Postgres | `artwork_images.storage_path` (text), plus `alt_text`, `display_order`, `is_primary`. Not a full URL. |
 | 11 | How the public site loads images | `publicStorageUrl` → `{NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/artwork-images/{storagePath}`. Next.js `<Image>` allows `**.supabase.co` public storage paths (`frontend/next.config.mjs`). Missing image: “Image not catalogued”. |
-| 12 | Replace or delete artwork | Admin can remove a specific image: browser DELETEs the Storage object first (`404` is treated as gone), then Express deletes the `artwork_images` row. A Storage failure keeps the row. A catalogue failure after Storage success also keeps the row for retry. Migration `0008` allows admin DELETE on `artwork-images` via `current_user_is_admin()`; it is not applied from this change. Archive: status change only; remaining files stay. Hard-delete of artwork is not exposed. |
-| 13 | Auth enforcement | Path registration, reorder and removal require admin Bearer (`requireAdmin` via `public.user_roles`). File upload uses the **signed-in user’s JWT + publishable key**. Storage INSERT is `current_user_is_admin()` from `0007`. Storage DELETE on `artwork-images` needs `0008` (not applied to production from this change). Express does not check that the path exists in Storage. |
+| 12 | Replace or delete artwork | Admin can remove a specific image: browser DELETEs the Storage object first (`404` is treated as gone), then Express deletes the `artwork_images` row. A Storage failure keeps the row. A catalogue failure after Storage success also keeps the row for retry. Migration `0008` (applied) allows admin DELETE on `artwork-images` via `current_user_is_admin()`. Archive: status change only; remaining files stay. Hard-delete of artwork is not exposed. |
+| 13 | Auth enforcement | Path registration, reorder and removal require admin Bearer (`requireAdmin` via `public.user_roles`). File upload uses the **signed-in user’s JWT + publishable key**. Storage INSERT is `current_user_is_admin()` from applied `0007`. Storage DELETE on `artwork-images` uses applied `0008`. Express does not check that the path exists in Storage. |
 | 14 | Orphans | **Yes, possible:** failed register after a successful upload; extra files after a “replace”; archived artworks; anything uploaded with a path the API never recorded. |
 
 **Required manual setup:** create a Storage bucket named exactly `artwork-images` in Supabase, decide public vs private, and attach policies that allow the admin user’s upload. This repository does not create the bucket.
@@ -639,8 +639,8 @@ Work the owner (or a trusted DBA) must do **manually**. This document does not d
 4. **Supabase Storage bucket** `artwork-images`. Create it in the dashboard. Public-read is what the Next.js image URLs expect.
 5. **Storage policies** so a signed-in admin can `upload` and anonymous visitors can `select` public objects. **Unverified** in-repo; if upload fails, the form already explains that the browser cannot invent a policy.
 6. **Categories / collections** if you want Taxonomy or `/collections`. No admin screens; use admin API or SQL.
-7. **Production `maison_app` LOGIN + DATABASE_URL cutover** — documented, not applied in this session (`docs/backend/PRODUCTION_READINESS.md`). Until then, Express may still be using a privileged DB user (observed: `postgres`).
-8. **Customer `user_roles` INSERT after maison_app cutover** — still **Missing** a `SECURITY DEFINER` function. First-login provisioning will break for the customer role if you cut over without it.
+7. **`maison_app` LOGIN + DATABASE_URL cutover** — **done** on the live project. Express connects as `maison_app`. Keep `MIGRATION_DATABASE_URL` as `postgres`. Do not re-run `0005`/`0012` or re-issue `ALTER ROLE … LOGIN`.
+8. **Customer role provisioning function** — `0012_provision_customer_role` (`public.provision_customer_role`) **is applied**. Direct `user_roles` INSERT is still forbidden for `maison_app`. First-login Google registration was tested successfully.
 
 ## Do not do
 

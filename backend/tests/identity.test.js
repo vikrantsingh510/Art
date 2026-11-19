@@ -23,10 +23,12 @@ function thenable(value) {
 function createExecutor({ existingIds = new Set(), failOn = null } = {}) {
   const inserts = [];
   const notifications = [];
+  const executes = [];
 
   const executor = {
     inserts,
     notifications,
+    executes,
     async transaction(callback) {
       const tx = {
         select() {
@@ -78,12 +80,42 @@ function createExecutor({ existingIds = new Set(), failOn = null } = {}) {
           };
           return chain;
         },
+        execute(query) {
+          if (failOn === 'execute') {
+            return Promise.reject(new Error('customer role provision failed'));
+          }
+          executes.push(query);
+          return Promise.resolve({ rows: [] });
+        },
       };
-      return callback(tx);
+
+      try {
+        return await callback(tx);
+      } catch (error) {
+        inserts.length = 0;
+        notifications.length = 0;
+        executes.length = 0;
+        throw error;
+      }
     },
   };
 
   return executor;
+}
+
+function insertKinds(inserts) {
+  return inserts.map((entry) => {
+    if (entry.values?.eventType) {
+      return 'notification';
+    }
+    if (Object.prototype.hasOwnProperty.call(entry.values || {}, 'fullName')) {
+      return 'profile';
+    }
+    if (Object.prototype.hasOwnProperty.call(entry.values || {}, 'role')) {
+      return 'user_role';
+    }
+    return 'companion';
+  });
 }
 
 afterEach(() => {
@@ -108,6 +140,9 @@ test('auth middleware still verifies the access token before provisioning and lo
   assert.doesNotMatch(middleware, /jwt\.verify|jose|jsonwebtoken/);
   assert.match(identity, /if \(existing\) \{\s*return;/);
   assert.match(identity, /onConflictDoNothing\(\)\.returning/);
+  assert.match(identity, /SELECT public\.provision_customer_role\(\$\{userId\}\)/);
+  assert.doesNotMatch(identity, /insert\(userRoles\)/);
+  assert.doesNotMatch(identity, /auth\.uid\(/);
 });
 
 test('an existing profile skips identity inserts but first login still provisions', async () => {
@@ -118,6 +153,7 @@ test('an existing profile skips identity inserts but first login still provision
     email: 'customer@example.com',
   }, { executor: existing });
   assert.equal(existing.inserts.length, 0);
+  assert.equal(existing.executes.length, 0);
   assert.equal(existing.notifications.length, 0);
 
   const firstLogin = createExecutor();
@@ -127,7 +163,11 @@ test('an existing profile skips identity inserts but first login still provision
     email: 'customer@example.com',
   }, { executor: firstLogin });
 
-  assert.equal(firstLogin.inserts.length >= 4, true);
+  const kinds = insertKinds(firstLogin.inserts);
+  assert.equal(kinds.includes('profile'), true);
+  assert.equal(kinds.filter((kind) => kind === 'companion').length, 2);
+  assert.equal(kinds.includes('user_role'), false);
+  assert.equal(firstLogin.executes.length, 1);
   assert.equal(firstLogin.notifications.length, 1);
   assert.equal(firstLogin.notifications[0].eventType, 'customer.welcome');
 });
@@ -149,6 +189,7 @@ test('welcome notification is enqueued at most once when two first logins race',
   ]);
 
   assert.equal(executor.notifications.length, 1);
+  assert.equal(executor.executes.length >= 1, true);
 });
 
 test('provisioning lookup and insert failures fail closed', async () => {
@@ -169,6 +210,57 @@ test('provisioning lookup and insert failures fail closed', async () => {
     }, { executor: createExecutor({ failOn: 'insert' }) }),
     /provision insert failed/,
   );
+});
+
+test('customer-role function failure rolls back the provisioning transaction', async () => {
+  const executor = createExecutor({ failOn: 'execute' });
+  await assert.rejects(
+    () => provisionCustomerIdentity({
+      userId: customerId,
+      fullName: 'Customer',
+      email: 'customer@example.com',
+    }, { executor }),
+    /customer role provision failed/,
+  );
+  assert.equal(executor.inserts.length, 0);
+  assert.equal(executor.executes.length, 0);
+  assert.equal(executor.notifications.length, 0);
+});
+
+test('forward-only 0012 provisions customer role without granting user_roles INSERT', () => {
+  const migrationsDir = path.join(backendRoot, 'src/db/migrations');
+  const sql = fs.readFileSync(path.join(migrationsDir, '0012_provision_customer_role.sql'), 'utf8');
+  const journal = JSON.parse(fs.readFileSync(path.join(migrationsDir, 'meta/_journal.json'), 'utf8'));
+  const snapshot = JSON.parse(fs.readFileSync(path.join(migrationsDir, 'meta/0012_snapshot.json'), 'utf8'));
+  const previous = JSON.parse(fs.readFileSync(path.join(migrationsDir, 'meta/0011_snapshot.json'), 'utf8'));
+  const hardening = fs.readFileSync(path.join(migrationsDir, '0005_security_hardening.sql'), 'utf8');
+  const identity = fs.readFileSync(path.join(backendRoot, 'src/services/identity.service.js'), 'utf8');
+  const verification = fs.readFileSync(
+    path.join(backendRoot, '../docs/database/ART_DATABASE_SECURITY_VERIFICATION.sql'),
+    'utf8',
+  );
+
+  assert.equal(journal.entries.at(-1)?.tag, '0012_provision_customer_role');
+  assert.equal(journal.entries.at(-1)?.idx, 12);
+  assert.equal(snapshot.prevId, previous.id);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.provision_customer_role\(p_user_id uuid\)/);
+  assert.match(sql, /SECURITY DEFINER/);
+  assert.match(sql, /SET search_path = pg_catalog, public/);
+  assert.match(sql, /VALUES \(p_user_id, 'customer'\)/);
+  assert.match(sql, /ON CONFLICT \(user_id, role\) DO NOTHING/);
+  assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.provision_customer_role\(uuid\) TO maison_app/);
+  assert.match(sql, /REVOKE ALL ON FUNCTION public\.provision_customer_role\(uuid\) FROM PUBLIC, anon, authenticated, service_role/);
+  assert.doesNotMatch(sql, /p_role|role argument|auth\.uid\(/);
+  assert.doesNotMatch(sql, /GRANT (INSERT|UPDATE|DELETE) ON TABLE/);
+  assert.doesNotMatch(sql, /BYPASSRLS|ALTER ROLE maison_app/);
+  assert.doesNotMatch(sql, /TO authenticated/);
+  assert.doesNotMatch(sql, /UPDATE public\.user_roles|DELETE FROM public\.user_roles/);
+  assert.match(hardening, /GRANT SELECT ON TABLE "user_roles" TO maison_app/);
+  assert.doesNotMatch(hardening, /GRANT INSERT ON TABLE "user_roles"/);
+  assert.match(identity, /provision_customer_role\(\$\{userId\}\)/);
+  assert.doesNotMatch(identity, /insert\(userRoles\)/);
+  assert.match(verification, /provision_customer_role/);
+  assert.match(verification, /maison_app must not have INSERT\/UPDATE\/DELETE on user_roles/);
 });
 
 test('missing, invalid and expired tokens never reach identity provisioning', async () => {

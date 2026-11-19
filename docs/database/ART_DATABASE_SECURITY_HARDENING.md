@@ -1,15 +1,19 @@
 # Art Marketplace — Database Security Hardening
 
-**Date:** 5 November 2026  
-**Status:** Repository implementation only. Migrations `0000`–`0005` have **not** been applied. Live database privileges are unchanged until a later controlled apply.
+**Date:** 19 November 2026
+**Status:** Live Supabase is hardened through migration `0012`. `maison_app` LOGIN is enabled. Express `DATABASE_URL` connects as `maison_app`. `MIGRATION_DATABASE_URL` remains the privileged `postgres` migrator. Hosted Vercel/Render production has **not** been deployed from this document.
 
-This document describes the target architecture implemented in `backend/src/db/migrations/0005_security_hardening.sql` and the split between `DATABASE_URL` and `MIGRATION_DATABASE_URL`. Generating SQL does not mean Supabase is hardened.
+This document describes the architecture in `backend/src/db/migrations/0005_security_hardening.sql`, customer provisioning in `0012_provision_customer_role.sql`, and the split between `DATABASE_URL` and `MIGRATION_DATABASE_URL`. Do **not** re-run applied migrations `0000`–`0012`.
 
 ---
 
 ## 1. Current verified security findings
 
-From the read-only live inspection (before any application tables existed) and from this repository:
+**Current live project (operator-verified, 19 November 2026):** migrations `0000`–`0012` are applied; `maison_app` has LOGIN with `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOREPLICATION`, `NOINHERIT`, `NOBYPASSRLS`; `maison_app` is not a member of `postgres` / `service_role` / `supabase_admin`; Express runtime `current_user` / `session_user` are `maison_app`; first-login customer registration, Google login, and admin access succeeded. `postgres` remaining an ADMIN member of `maison_app` (grantor `supabase_admin`, INHERIT/SET false) is the expected PostgreSQL 16+ platform membership.
+
+The table below is the **first** pre-table inspection (5 November 2026). It is historical. Do not treat “`maison_app` did not exist” or “`DATABASE_URL` unverified” as the current live state.
+
+From that first read-only live inspection (before any application tables existed) and from this repository:
 
 | Finding | Evidence | Verdict |
 |---|---|---|
@@ -149,7 +153,7 @@ No sequences exist for these UUID tables (`0005` snapshot `"sequences": {}`). De
 - Policy commands match the GRANT matrix (no DELETE policy where DELETE is not granted; `user_roles` SELECT only; `audit_logs` SELECT + INSERT only).
 - `USING (true)` / `WITH CHECK (true)` because Express uses **one shared backend identity**.
 
-**This is a backend trust boundary, not customer-level row isolation.** `maison_app` can read every order, payment, address, and AR preview. Express must enforce ownership and admin checks on every relevant request. Empty `auth.middleware.js` does not provide that yet.
+**This is a backend trust boundary, not customer-level row isolation.** `maison_app` can read every order, payment, address, and AR preview. Express `requireAuth` / `requireAdmin` enforce ownership and admin checks on each request. Client-supplied `isAdmin` / `role` values are ignored.
 
 FORCE ROW LEVEL SECURITY is **not** enabled. The table owner (migration role) bypasses RLS, which is required for `drizzle-kit migrate`. `maison_app` is not the owner and has no `BYPASSRLS`.
 
@@ -184,14 +188,20 @@ VALUES ('00000000-0000-0000-0000-000000000000', 'admin');
 
 Replace the UUID with the existing `profiles.id` / `auth.users.id`. Do not expose this as a public API. Do not grant `maison_app` INSERT later without a new review.
 
-**Customer-role provisioning:** identity comments in `schema/index.js` still describe inserting `user_roles(customer)` during signup. That DML is **not possible** as `maison_app` after `0005`. A future `SECURITY DEFINER` function is allowed only if it:
+**Customer-role provisioning:** `maison_app` remains SELECT-only on `user_roles`. Direct `INSERT` is still prohibited. Express first-login uses `public.provision_customer_role(p_user_id uuid)` from migration `0012_provision_customer_role.sql` (forward-only). That migration **is applied** on the live database. Do **not** re-run it.
 
-- inserts `customer` only (role name literal, not an argument)
-- validates `user_id` exists in `profiles`
-- uses a fixed safe `search_path`
-- has `EXECUTE` granted only to `maison_app`
+The function:
 
-No such function is implemented. Do not ship an insecure definer that accepts arbitrary role names.
+- is `SECURITY DEFINER` with `SET search_path = pg_catalog, public`
+- is owned by the privileged migration role (same model as `current_user_is_admin()`)
+- accepts only a profile UUID — not a role name
+- does **not** use `auth.uid()` because Express connects with postgres-js as `maison_app` and never sets a PostgREST JWT
+- verifies `public.profiles` contains that UUID, then inserts the literal `'customer'` with `ON CONFLICT (user_id, role) DO NOTHING`
+- has `EXECUTE` granted only to `maison_app`; `PUBLIC`, `anon`, `authenticated`, and `service_role` are revoked (no PostgREST RPC)
+
+Required order inside `provisionCustomerIdentity`: profile insert → `provision_customer_role` → wishlist/cart. Existing profiles still skip all writes. Admin assignment remains the SQL Editor insert above.
+
+`maison_app` LOGIN **is enabled**. `0012` is applied. Do not re-run `0005` or `0012`. Do not `GRANT INSERT` on `user_roles` to `maison_app`. Re-running `0005` after LOGIN fails the role-attribute check by design.
 
 ---
 
@@ -233,22 +243,15 @@ Keep `profiles.id → auth.users(id) ON DELETE CASCADE` only in `0000_phase1_ide
 
 ## 11. Manual Supabase configuration steps
 
-Do these **after** a reviewed apply of `0000`–`0005`, in the SQL Editor as the migration administrator. Do not put the password in git.
+**Cutover status:** done on the live project. `0000`–`0012` are applied. `maison_app` LOGIN is enabled. Express `DATABASE_URL` is `maison_app`. `MIGRATION_DATABASE_URL` is the privileged `postgres` connection. Do **not** re-run those migrations. Do **not** re-issue `ALTER ROLE maison_app LOGIN` unless restoring a backup.
 
-1. Confirm `0000`–`0005` applied (`drizzle.__drizzle_migrations` or the Kit migrate output).
-2. Run `docs/database/ART_DATABASE_SECURITY_VERIFICATION.sql`.
-3. Enable login, then set a strong password **outside git** (Dashboard database settings, `psql \password maison_app`, or a secret-manager-backed SQL session). Do not put the password in a file:
+Keep:
 
-   ```sql
-   ALTER ROLE maison_app LOGIN;
-   ```
-
-4. Point Express `DATABASE_URL` at `maison_app` using the username form in §3. Keep `MIGRATION_DATABASE_URL` as the privileged direct connection.
-5. Restart Express. Confirm `/api/v1/health` and `/api/v1/health/db`.
-6. Confirm the frontend has only `SUPABASE_URL` + publishable key.
-7. Do not enable extra PostgREST grants “to make the dashboard work” on these 22 tables.
-
-`0005` does not set LOGIN. Runtime connections as `maison_app` will fail until step 3.
+1. `DATABASE_URL` on `maison_app` (shared pooler username form: `maison_app.PROJECT_REF`).
+2. `MIGRATION_DATABASE_URL` as the privileged **direct** `postgres` connection. Future application DDL must use this migrator, not `maison_app` and not the Dashboard table editor (see §9).
+3. Frontend: `SUPABASE_URL` + publishable key only. No `DATABASE_URL` or service-role in the browser.
+4. No extra PostgREST grants on application tables “to make the dashboard work”.
+5. Re-run `docs/database/ART_DATABASE_SECURITY_VERIFICATION.sql` as **read-only** checks after any later privilege change. Query 1: `maison_app.rolcanlogin` is expected **true**; the other `maison_app` flags remain false.
 
 ---
 
@@ -259,7 +262,7 @@ Do these **after** a reviewed apply of `0000`–`0005`, in the SQL Editor as the
 | `NODE_ENV` | Express | `development` / `production` / `test` |
 | `PORT` | Express | |
 | `FRONTEND_URL` | Express | CORS |
-| `DATABASE_URL` | Express | Runtime. Must become `maison_app` after §11. |
+| `DATABASE_URL` | Express | Runtime. Live local process uses `maison_app`. Must not be `postgres`. |
 | `SUPABASE_URL` | Express env (Auth later) | |
 | `SUPABASE_PUBLISHABLE_KEY` | Express env | Must start with `sb_publishable_` |
 | `MIGRATION_DATABASE_URL` | Drizzle Kit only | Privileged direct connection. **Not** required for Express. |
@@ -297,28 +300,27 @@ If apply fails after `CREATE ROLE` but before GRANTs, the NOLOGIN role may exist
 
 ### Remaining limitations
 
-- **Not applied.** Live `maison_app`, GRANTs, and RLS are **UNVERIFIED** until migrate + verification SQL.
-- RLS policies do not isolate customers. Express authorization is still unbuilt.
-- Table owner bypasses RLS (no FORCE).
-- `supabase_admin` defaults are unchanged.
-- `user_roles` customer INSERT is blocked for runtime until a reviewed function exists.
+- RLS policies do not isolate customers. Express `requireAuth` / `requireAdmin` enforce per-request authorization.
+- Table owner bypasses RLS (no FORCE). Required for `drizzle-kit migrate` as `postgres`.
+- `supabase_admin` default privileges are unchanged (Q9). They affect **future** objects created by `supabase_admin`, not the existing `postgres`-owned application tables. Do not Dashboard-create business tables.
+- `user_roles` stays SELECT-only for `maison_app`. Customer rows go through applied `provision_customer_role`. Admin assignment remains SQL Editor as the migrator.
 - Audit trigger is not proof against a privileged DBA.
-- Snapshot metadata still shows `isRLSEnabled: false` and empty policies by design (custom SQL).
-- Actual current `DATABASE_URL` user is **UNVERIFIED** (secrets not read).
+- Snapshot metadata still shows `isRLSEnabled: false` and empty policies by design (custom SQL in migrations).
+- Hosted Vercel/Render env, production CORS origin, and production OAuth redirects are **not** configured from this document.
 
-### Checklist before production traffic
+### Checklist before hosted production traffic
 
-- [ ] `MIGRATION_DATABASE_URL` is a direct privileged connection, not `maison_app`.
-- [ ] `0000`–`0005` applied in one controlled window.
-- [ ] Verification SQL: no DML for `anon`/`authenticated`/`service_role` on the 22 tables.
-- [ ] Verification SQL: RLS on, policies only for `maison_app`, Auth FK present with CASCADE.
-- [ ] `maison_app` LOGIN + password set outside git.
-- [ ] Express `DATABASE_URL` is `maison_app` with the correct pooler username form.
-- [ ] Express no longer uses `postgres`.
+- [x] `0000`–`0012` applied. Do not re-run them.
+- [x] `0012` function + EXECUTE verified; `maison_app` has no INSERT/UPDATE/DELETE on `user_roles`.
+- [x] `maison_app` LOGIN enabled; other role flags still restrictive.
+- [x] Express `DATABASE_URL` is `maison_app` (verified `current_user` / `session_user`).
+- [x] `MIGRATION_DATABASE_URL` remains privileged `postgres`.
+- [x] Client DML empty on the 28 Express tables; RLS on; policies `maison_app` only.
+- [ ] Hosted `FRONTEND_URL` / `NEXT_PUBLIC_API_BASE_URL` are the real Vercel and Render origins (not localhost).
+- [ ] Production Google OAuth redirect URLs include the Vercel origin.
 - [ ] No `drizzle-kit push`.
 - [ ] Frontend has no database URL or service-role key.
-- [ ] Express ownership/admin checks implemented before exposing business APIs.
-- [ ] Future tables get explicit GRANT + RLS in the same migration that creates them.
+- [ ] Future tables get explicit GRANT + RLS in the same migration, applied only via `MIGRATION_DATABASE_URL`.
 
-**Repository:** ready for a later controlled migration-application step.  
-**Live project:** not hardened until that step succeeds and is verified.
+**Live database role cutover:** complete.
+**Hosted production deploy:** not done from this document.

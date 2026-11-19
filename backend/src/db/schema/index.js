@@ -5,10 +5,11 @@
  *   1. Supabase Auth creates `auth.users`.
  *   2. Express verifies the access token against `/auth/v1/user`.
  *   3. A trusted, idempotent server-side operation inserts `profiles`
- *      (same UUID), `user_roles(customer)`, and `wishlists`.
+ *      (same UUID), then calls `public.provision_customer_role(uuid)`
+ *      (customer only; no `auth.uid()`), then inserts `wishlists` and `carts`.
  *   4. Admin roles are assigned only by trusted admin/operations actions.
  *   5. There is no public admin registration API. `user_roles` is not
- *      client-writable.
+ *      client-writable. Direct INSERT is prohibited for `maison_app`.
  *
  * Availability and checkout:
  *   available_quantity = inventory_quantity - SUM(active reservation quantities)

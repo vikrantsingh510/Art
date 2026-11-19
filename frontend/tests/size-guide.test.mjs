@@ -163,6 +163,17 @@ test('size guide photographs are the supplied extensionless JPEGs', () => {
   assert.match(media, /SIZE_GUIDE_PHOTO_FILES/);
   assert.match(media, /image\/jpeg/);
   assert.match(media, /image\/png/);
+  assert.match(media, /process\.cwd\(\)/);
+  assert.match(media, /assets', 'images'/);
+  const nextConfig = read('next.config.mjs');
+  assert.match(nextConfig, /outputFileTracingRoot: import\.meta\.dirname/);
+  assert.match(nextConfig, /outputFileTracingIncludes/);
+  assert.match(nextConfig, /\/size-guide-media\/\[scene\]/);
+  assert.match(nextConfig, /assets\/images\/size-guide-sofa/);
+  assert.match(nextConfig, /assets\/images\/size-guide-bedroom/);
+  assert.match(nextConfig, /assets\/images\/size-guide-wall/);
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.engines?.node, '24.x');
 });
 
 test('size guide UI is editorial, proportional, and does not add customer resizing', () => {

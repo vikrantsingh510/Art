@@ -2,6 +2,14 @@
 const nextConfig = {
   allowedDevOrigins: ['*.trycloudflare.com', 'trycloudflare.com'],
   transpilePackages: ['@google/model-viewer', 'lit', '@monogrid/gainmap-js'],
+  outputFileTracingRoot: import.meta.dirname,
+  outputFileTracingIncludes: {
+    '/size-guide-media/[scene]': [
+      './assets/images/size-guide-sofa',
+      './assets/images/size-guide-bedroom',
+      './assets/images/size-guide-wall',
+    ],
+  },
   images: {
     remotePatterns: [
       {

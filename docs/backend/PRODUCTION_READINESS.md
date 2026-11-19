@@ -1,7 +1,7 @@
 # Art Backend — Production Readiness
 
-**Date:** 7 November 2026  
-**Status:** Prepared. Production has **not** been deployed.  
+**Date:** 19 November 2026
+**Status:** Database role cutover is complete on the live Supabase project. Hosted Vercel frontend + Render backend have **not** been deployed.
 **Scope:** Express API under `/api/v1`. Payments, shipping-provider integrations, custom domains, and real email delivery are deferred.
 
 This document is the deployment checklist. It does not apply database changes and does not invent credentials.
@@ -13,8 +13,8 @@ This document is the deployment checklist. It does not apply database changes an
 | Concern | Development (now) | Production requirement |
 |---|---|---|
 | `NODE_ENV` | `development` | `production` |
-| `DATABASE_URL` | Session Pooler, `postgres` user | Restricted `maison_app` role |
-| `MIGRATION_DATABASE_URL` | Same pooler/`postgres` user | Separate privileged migrator |
+| `DATABASE_URL` | Live local process: `maison_app` | Keep `maison_app` on Render (shared pooler username `maison_app.PROJECT_REF`) |
+| `MIGRATION_DATABASE_URL` | Privileged `postgres` (Kit only) | Keep separate; never the Render runtime URL |
 | Email | Mock adapter | Mock until a provider is chosen |
 | CORS origin | `FRONTEND_URL` (localhost is acceptable in development) | Storefront HTTPS origin, not localhost |
 | `TRUST_PROXY` | `0` | `1` behind a reverse proxy |
@@ -56,20 +56,25 @@ A non-zero exit means production runtime credentials are not ready. Warnings abo
 
 ## 3. Database permission separation (manual)
 
-Existing migration `0005_security_hardening.sql` is already applied. It created `maison_app` as **NOLOGIN**.
+Live status (verified):
 
-Before production:
+- Migrations `0000`–`0012` are applied. Do **not** re-run them. Do **not** use `drizzle-kit push`.
+- `maison_app` LOGIN is enabled. Restrictive flags (no SUPERUSER / CREATEDB / CREATEROLE / REPLICATION / INHERIT / BYPASSRLS) were verified.
+- Express `DATABASE_URL` connects as `maison_app` (`current_user` and `session_user`).
+- `MIGRATION_DATABASE_URL` remains privileged `postgres`. Future application DDL must use that migrator, not `maison_app` and not the Dashboard table editor.
+- First-login uses `public.provision_customer_role`. `maison_app` still has no table INSERT on `user_roles`.
+- Google login, admin access, and new customer registration were tested successfully against this role.
 
-1. Do **not** rewrite or re-run `0000`–`0005`.
-2. Do **not** use `drizzle-kit push`.
-3. Review `docs/database/ART_PRODUCTION_ROLE_CUTOVER.sql`.
-4. In the Supabase SQL editor, set a password and `LOGIN` for `maison_app` using a password that is **not** stored in this repository.
-5. Point `DATABASE_URL` at `maison_app` (shared pooler username form: `maison_app.PROJECT_REF`).
-6. Keep `MIGRATION_DATABASE_URL` on a privileged migrator, preferably a direct connection.
-7. Re-run `docs/database/ART_DATABASE_SECURITY_VERIFICATION.sql` and `backend/scripts/check-0005-security-hardening.mjs` as a static check.
-8. Confirm Express can start and `GET /api/v1/health/db` returns `200`.
+`docs/database/ART_PRODUCTION_ROLE_CUTOVER.sql` is the historical LOGIN procedure. The `ALTER ROLE` line stays commented. Do not re-issue LOGIN or a password change unless restoring a backup.
 
-Do not apply the cutover SQL from this agent session.
+Before **hosted** production (Render):
+
+1. Keep Render `DATABASE_URL` on `maison_app` (shared pooler username form: `maison_app.PROJECT_REF`).
+2. Do not put `MIGRATION_DATABASE_URL` on the Render runtime service.
+3. Set `FRONTEND_URL` to the Vercel HTTPS origin (not localhost).
+4. Set `TRUST_PROXY=1` on Render.
+5. Confirm `GET /api/v1/health` and `GET /api/v1/health/db`.
+6. Optionally re-run `docs/database/ART_DATABASE_SECURITY_VERIFICATION.sql` as read-only checks. Query 1 expects `maison_app.rolcanlogin = true`.
 
 ---
 
@@ -110,8 +115,8 @@ Abuse protection that remains:
 ## 5. Deployment checklist (manual)
 
 - [ ] Production secrets stored outside git
-- [ ] `maison_app` LOGIN enabled; runtime URL no longer uses `postgres`
-- [ ] Migration credentials remain separate
+- [x] `maison_app` LOGIN enabled; local runtime URL is `maison_app`, not `postgres`
+- [x] Migration credentials remain separate (`MIGRATION_DATABASE_URL` = `postgres`)
 - [ ] `FRONTEND_URL` is the real storefront origin
 - [ ] `TRUST_PROXY` set if a reverse proxy is used
 - [ ] `npm test` passes on the release commit

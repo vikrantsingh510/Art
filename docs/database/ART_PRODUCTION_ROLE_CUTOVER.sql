@@ -1,9 +1,13 @@
 -- Art Marketplace — production runtime role cutover
--- Status: REVIEWED, NOT APPLIED
+-- Status: APPLIED on the live project. maison_app LOGIN is enabled.
+-- Express DATABASE_URL connects as maison_app. Do not re-run this file
+-- to change the password or re-issue LOGIN unless restoring a backup.
 --
--- Purpose: enable LOGIN for the existing maison_app role so Express can
--- connect without using postgres. Migration 0005 already created maison_app
--- as NOLOGIN with grants, RLS policies, and audit protections.
+-- Purpose (historical): enable LOGIN for maison_app so Express can
+-- connect without using postgres. Migration 0005 created maison_app
+-- as NOLOGIN; 0012 (provision_customer_role) was applied before LOGIN.
+-- This file does not apply migrations and does not enable LOGIN by default
+-- (the ALTER ROLE line stays commented).
 --
 -- DO NOT run this file from application code, CI, or an agent session.
 -- DO NOT rewrite or re-apply migrations 0000-0005.
