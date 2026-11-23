@@ -29,7 +29,7 @@ export function SiteFooter() {
           </div>
         </div>
         <hr className="hairline mb-6" />
-        <p className="label-sm text-patina">© {new Date().getFullYear()} Maison d&apos;Art. Atelier-direct originals. Payment capture is not enabled in this release.</p>
+        <p className="label-sm text-patina">© {new Date().getFullYear()} Maison d&apos;Art. Atelier-direct originals.</p>
       </div>
     </footer>
   );
