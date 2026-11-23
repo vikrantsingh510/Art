@@ -27,6 +27,50 @@ test('public artwork page keeps the AR panel and does not unmount Model Viewer',
   assert.match(viewer, /canActivateAR/);
 });
 
+test('artwork detail composes room preview then AR inside Size Guide, not the purchase aside', () => {
+  const page = read('app/(gallery)/artwork/[id]/page.js');
+  const guide = read('components/artwork-size-guide.js');
+  const panel = read('components/artwork-ar-panel.js');
+  const room = read('components/ar-viewer.js');
+  const css = read('app/globals.css');
+  const aside = page.slice(page.indexOf('<aside'), page.indexOf('</aside>'));
+  const slot = page.slice(page.indexOf('const visualization'), page.indexOf('<ArtworkSizeGuide'));
+
+  assert.match(page, /visualization=\{visualization\}/);
+  assert.equal([...page.matchAll(/<ArViewer /g)].length, 1);
+  assert.equal([...page.matchAll(/<ArtworkArPanel /g)].length, 1);
+  assert.ok(slot.indexOf('<ArViewer') < slot.indexOf('<ArtworkArPanel'));
+  assert.match(slot, /ar\.ready/);
+  assert.doesNotMatch(aside, /ArViewer|ArtworkArPanel|size-guide-visualization/);
+  assert.match(aside, /AddToCartButton/);
+  assert.match(aside, /AddToWishlistButton/);
+  assert.match(aside, /whatsappHref/);
+
+  assert.match(guide, /visualization = null/);
+  assert.match(guide, /return visualization \|\| null/);
+  assert.match(guide, /\{visualization\}/);
+  assert.doesNotMatch(guide, /'use client'/);
+  assert.doesNotMatch(guide, /ArViewer|ArtworkArPanel|artwork-model-viewer|WebXR|Quick Look|model-viewer/);
+  assert.doesNotMatch(guide, /size-guide space-y-10 overflow-x-hidden/);
+  assert.match(guide, /lg:grid-cols-3 gap-8 items-start overflow-x-hidden/);
+  assert.ok(guide.indexOf('{visualization}') < guide.indexOf('lg:grid-cols-3'));
+
+  assert.match(panel, /import\('\.\/artwork-model-viewer\.js'\)/);
+  assert.match(panel, /interactive=\{false\}/);
+  assert.doesNotMatch(panel, /border-t border-fillet/);
+  assert.match(room, /Preview in a room photo/);
+  assert.match(room, /if \(event\.key === 'Escape'\)/);
+  assert.match(room, /fixed inset-0 z-\[80\]/);
+  assert.doesNotMatch(room, /createPortal/);
+  assert.equal([...room.matchAll(/export function ArViewer/g)].length, 1);
+
+  assert.match(css, /\.size-guide-visualization\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(css, /\.size-guide-visualization\s*\{[^}]*align-items:\s*start/);
+  assert.match(css, /@media \(min-width: 768px\) \{\s*\.size-guide-visualization\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/);
+  assert.doesNotMatch(css, /\.artwork-ar-runtime[\s\S]{0,180}display:\s*none/);
+  assert.doesNotMatch(css, /\.artwork-ar-runtime[\s\S]{0,180}visibility:\s*hidden/);
+});
+
 test('storefront AR panel drops orbit copy and keeps physical size plus wall CTA', () => {
   const panel = read('components/artwork-ar-panel.js');
   assert.match(panel, /Actual size \{ar\.physicalLabel\}/);

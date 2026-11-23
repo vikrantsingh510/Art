@@ -42,7 +42,7 @@ export function ArtworkArPanel({ ar, title, posterUrl }) {
   const wallVisible = shouldShowViewOnWall(true, arAvailable);
 
   return (
-    <section className="space-y-3 border-t border-fillet pt-6" data-ar-panel="ready">
+    <section className="space-y-3" data-ar-panel="ready">
       <p className="text-sm text-on-surface-variant">
         Actual size {ar.physicalLabel}.
         {wallVisible

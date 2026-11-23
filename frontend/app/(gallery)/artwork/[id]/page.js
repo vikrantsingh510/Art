@@ -63,6 +63,15 @@ export default async function ArtworkDetailPage({ params }) {
     })
     : null;
 
+  const visualization = (
+    <div className="size-guide-visualization">
+      <ArViewer artwork={artwork} imageUrl={posterUrl} />
+      {ar.ready ? (
+        <ArtworkArPanel ar={ar} title={artwork.title} posterUrl={posterUrl} />
+      ) : null}
+    </div>
+  );
+
   return (
     <div className="page-shell py-6 md:py-8">
       <p className="label-sm text-patina mb-4 md:mb-5">
@@ -80,7 +89,7 @@ export default async function ArtworkDetailPage({ params }) {
               The on-screen photograph is illustrative. Catalogued width, height and unit are required before size can be stated.
             </p>
           )}
-          <ArtworkSizeGuide artwork={artwork} />
+          <ArtworkSizeGuide artwork={artwork} visualization={visualization} />
         </div>
         <aside className="md:col-span-5 space-y-5">
           <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>
@@ -96,10 +105,6 @@ export default async function ArtworkDetailPage({ params }) {
           <p className="text-sm text-patina">INR. Displayed from server paise. Acquisition does not include live payment in this release.</p>
           <AddToCartButton artworkId={artwork.id} purchasable={artwork.isPurchasable} nextPath={`/artwork/${artwork.id}`} />
           <AddToWishlistButton artworkId={artwork.id} saved={saved} nextPath={`/artwork/${artwork.id}`} />
-          {ar.ready ? (
-            <ArtworkArPanel ar={ar} title={artwork.title} posterUrl={posterUrl} />
-          ) : null}
-          <ArViewer artwork={artwork} imageUrl={posterUrl} />
           {whatsappHref ? (
             <a
               className="btn-primary w-full"

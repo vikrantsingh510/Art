@@ -213,6 +213,11 @@ test('size guide UI is editorial, proportional, and does not add customer resizi
   assert.match(component, /SizeGuideSceneLightbox/);
   assert.match(component, /illustrative, not a measured room/);
   assert.match(component, /data-size-guide="ready"/);
+  assert.match(component, /visualization=\{visualization\}|visualization = null/);
+  assert.match(component, /return visualization \|\| null/);
+  assert.doesNotMatch(component, /'use client'/);
+  assert.doesNotMatch(component, /size-guide space-y-10 overflow-x-hidden/);
+  assert.match(component, /lg:grid-cols-3 gap-8 items-start overflow-x-hidden/);
   assert.match(preview, /object-cover/);
   assert.match(preview, /overlay\.widthPct/);
   assert.match(preview, /photo\.src/);
@@ -227,7 +232,7 @@ test('size guide UI is editorial, proportional, and does not add customer resizi
   assert.match(scene, /SIZE_GUIDE_REFERENCES/);
   assert.match(scene, /sizeGuideArtworkCm/);
   assert.doesNotMatch(scene, /widthM\s*=|heightM\s*=/);
-  assert.match(page, /ArtworkSizeGuide/);
+  assert.match(page, /ArtworkSizeGuide artwork=\{artwork\} visualization=\{visualization\}/);
   assert.match(lightbox, /role="dialog"/);
   assert.match(lightbox, /aria-modal="true"/);
   assert.match(lightbox, /Escape/);

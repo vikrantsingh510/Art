@@ -7,14 +7,14 @@ import {
 } from '@/lib/size-guide-scene';
 import { SizeGuideSceneLightbox } from './size-guide-scene-lightbox';
 
-export function ArtworkSizeGuide({ artwork }) {
+export function ArtworkSizeGuide({ artwork, visualization = null }) {
   const comparisons = sizeGuideComparisons(artwork);
   const dimensions = formatDimensions(artwork);
   const fields = sizeGuideDimensionFields(artwork);
   const axisLabel = sizeGuideAxisLabel(fields);
 
   if (!comparisons.length || !dimensions) {
-    return null;
+    return visualization || null;
   }
 
   const image = primaryArtworkImage(artwork);
@@ -22,7 +22,7 @@ export function ArtworkSizeGuide({ artwork }) {
   const imageAlt = image?.altText || artwork?.title || 'Artwork';
 
   return (
-    <section className="size-guide space-y-10 overflow-x-hidden" data-size-guide="ready">
+    <section className="size-guide space-y-10" data-size-guide="ready">
       <header className="space-y-4 max-w-2xl">
         <p className="label-sm text-bronze">Size guide</p>
         <h2 className="font-display text-[28px] md:text-[36px] leading-tight text-ink">
@@ -41,7 +41,9 @@ export function ArtworkSizeGuide({ artwork }) {
         </div>
       </header>
 
-      <ul className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      {visualization}
+
+      <ul className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start overflow-x-hidden">
         {comparisons.map((comparison, index) => (
           <li key={comparison.reference.id} className="space-y-4 min-w-0">
             <SizeGuideSceneLightbox
