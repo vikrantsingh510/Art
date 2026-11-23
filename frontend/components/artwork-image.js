@@ -9,6 +9,7 @@ export function ArtworkImage({
   className = '',
   variant = 'frame',
   fit = 'salon',
+  hover = true,
   priority = false,
   sizes = '(min-width: 1024px) 33vw, 100vw',
   onError = undefined,
@@ -23,15 +24,21 @@ export function ArtworkImage({
     className,
   ].filter(Boolean).join(' ');
 
-  if (!url) {
-    return <ImagePlaceholder className={frameClass} label="Image not catalogued" />;
-  }
-
   const aspect = fit === 'physical' ? previewAspectRatio(artwork) : { width: 4, height: 5, source: 'salon' };
   const frameStyle = {
     aspectRatio: `${aspect.width} / ${aspect.height}`,
     '--artwork-aspect': String(aspect.width / aspect.height),
   };
+
+  if (!url) {
+    return (
+      <ImagePlaceholder
+        className={frameClass}
+        label="Image not catalogued"
+        aspectRatio={frameStyle.aspectRatio}
+      />
+    );
+  }
 
   return (
     <div
@@ -49,7 +56,7 @@ export function ArtworkImage({
         priority={priority}
         unoptimized
         {...(onError ? { onError } : {})}
-        className="object-contain artwork-image-fade artwork-image-hover"
+        className={`object-contain artwork-image-fade${hover ? ' artwork-image-hover' : ''}`}
       />
     </div>
   );

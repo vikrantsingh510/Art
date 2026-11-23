@@ -1,11 +1,13 @@
+import { previewAspectRatio } from '@/lib/ar-assets/storefront';
+
 export function Skeleton({ className = '' }) {
   return <div className={`skeleton-block ${className}`} aria-hidden="true" />;
 }
 
-export function ImagePlaceholder({ className = '', label = null }) {
+export function ImagePlaceholder({ className = '', label = null, aspectRatio = '4 / 5' }) {
   return (
-    <div className={`bg-surface-container-low ${className}`}>
-      <div className="aspect-[4/5] flex items-end p-4">
+    <div className={`bg-surface-container-low ${className}`} style={{ aspectRatio }}>
+      <div className="h-full flex items-end p-4">
         {label ? <p className="label-sm text-patina">{label}</p> : null}
       </div>
     </div>
@@ -63,10 +65,13 @@ export function SectionSkeleton({ lines = 3 }) {
   );
 }
 
-export function ArtworkCardSkeleton() {
+export function ArtworkCardSkeleton({ artwork } = {}) {
+  const aspect = artwork
+    ? previewAspectRatio(artwork)
+    : { width: 4, height: 5, source: 'fallback' };
   return (
     <article className="space-y-4" aria-hidden="true">
-      <ImagePlaceholder />
+      <ImagePlaceholder aspectRatio={`${aspect.width} / ${aspect.height}`} />
       <Skeleton className="h-2 w-20" />
       <Skeleton className="h-7 w-3/4" />
       <Skeleton className="h-4 w-1/2" />
@@ -79,12 +84,16 @@ export function ArtworkCardSkeleton() {
 
 export function ArtworkGridSkeleton({
   count = 6,
+  artworks,
   className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16',
 }) {
+  const items = Array.isArray(artworks) && artworks.length > 0
+    ? artworks
+    : Array.from({ length: count }, () => null);
   return (
     <div className={className} role="status" aria-live="polite" aria-label="Loading artworks">
-      {Array.from({ length: count }).map((_, index) => (
-        <ArtworkCardSkeleton key={index} />
+      {items.map((artwork, index) => (
+        <ArtworkCardSkeleton key={artwork?.id || index} artwork={artwork} />
       ))}
     </div>
   );

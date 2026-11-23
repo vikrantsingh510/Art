@@ -98,6 +98,9 @@ test('favourite button toggles the existing wishlist APIs with pending and login
   const styles = read('app/globals.css');
   assert.match(styles, /\.artwork-favourite-button[\s\S]*background:\s*transparent/);
   assert.match(styles, /\.artwork-favourite-icon[\s\S]*drop-shadow/);
+  assert.match(styles, /\.artwork-favourite-button\.is-saved[\s\S]*fill:\s*var\(--color-ivory\)/);
+  assert.match(styles, /\.artwork-favourite-button\.is-saved[\s\S]*stroke:\s*var\(--color-ivory\)/);
+  assert.doesNotMatch(styles, /\.artwork-favourite-button\.is-saved[\s\S]{0,400}fill:\s*var\(--color-secondary\)/);
   assert.doesNotMatch(styles, /\.artwork-favourite-button[\s\S]{0,120}background:\s*#/);
 });
 

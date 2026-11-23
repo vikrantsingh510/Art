@@ -12,7 +12,7 @@ export async function ArtworkCard({ artwork, showFavourite = true }) {
     <article className="space-y-4">
       <div className="relative">
         <Link href={`/artwork/${artwork.id}`} className="block">
-          <ArtworkImage artwork={artwork} />
+          <ArtworkImage artwork={artwork} fit="physical" hover={false} />
         </Link>
         {showFavourite ? (
           <ArtworkFavouriteButton artworkId={artwork.id} saved={saved} />
