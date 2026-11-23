@@ -9,6 +9,7 @@ import {
   rememberArtworkFavourite,
   rememberedArtworkFavourite,
   resolveArtworkFavouriteSaved,
+  wishlistDetailCtaLabel,
   wishlistFavouriteLabel,
   wishlistLoginPath,
 } from '../lib/wishlist-favourite.js';
@@ -47,7 +48,10 @@ test('remembered favourite state stays filled after add even if the server snaps
 test('favourite labels and login next path stay on the approved copy', () => {
   assert.equal(wishlistFavouriteLabel(false), 'Save to wishlist');
   assert.equal(wishlistFavouriteLabel(true), 'Remove from wishlist');
+  assert.equal(wishlistDetailCtaLabel(false), 'Save to wishlist');
+  assert.equal(wishlistDetailCtaLabel(true), 'Already added to wishlist');
   assert.equal(wishlistLoginPath('/explore'), '/auth/login?next=%2Fexplore');
+  assert.equal(wishlistLoginPath('/artwork/8f3171f4-acbf-4024-a8d8-c7471b3644d5'), '/auth/login?next=%2Fartwork%2F8f3171f4-acbf-4024-a8d8-c7471b3644d5');
   assert.equal(wishlistLoginPath(''), '/auth/login?next=%2F');
   assert.equal(isWishlistRemoveNotFound({ status: 404 }), true);
   assert.equal(isWishlistRemoveNotFound({ status: 500 }), false);
@@ -111,21 +115,43 @@ test('wishlist page hides the card heart and keeps Remove / Move to bag', () => 
   const actions = read('components/collection-actions.js');
   assert.match(page, /showFavourite=\{false\}/);
   assert.match(page, /WishlistItemActions/);
-  assert.match(actions, /Save to wishlist/);
+  assert.match(actions, /wishlistDetailCtaLabel/);
   assert.match(actions, /removeWishlistItem/);
   assert.match(actions, /moveWishlistItemToCart/);
   assert.match(actions, /Move to bag/);
   assert.doesNotMatch(actions, /ArtworkFavouriteButton/);
 });
 
-test('artwork detail keeps the add-only wishlist CTA', () => {
+test('artwork detail CTA uses cached membership and toggles add or remove', () => {
   const detail = read('app/(gallery)/artwork/[id]/page.js');
   const actions = read('components/collection-actions.js');
-  assert.match(detail, /AddToWishlistButton/);
+  const loaders = read('lib/gallery-entity-loaders.js');
+
+  assert.match(detail, /loadArtworkFavouriteSaved\(artwork\.id\)/);
+  assert.match(detail, /AddToWishlistButton artworkId=\{artwork\.id\} saved=\{saved\} nextPath=\{`\/artwork\/\$\{artwork\.id\}`\}/);
   assert.doesNotMatch(detail, /ArtworkFavouriteButton/);
-  assert.match(actions, /async function add\(\)/);
+  assert.doesNotMatch(detail, /api\.getWishlist|getWishlist\(/);
+  assert.doesNotMatch(detail, /loadWishlist\(/);
+
+  assert.match(actions, /saved: savedProp = false/);
+  assert.match(actions, /async function toggle\(\)/);
   assert.match(actions, /addWishlistItem\(artworkId\)/);
+  assert.match(actions, /removeWishlistItem\(artworkId\)/);
+  assert.match(actions, /requireSession/);
+  assert.match(actions, /router\.refresh\(\)/);
+  assert.match(actions, /rememberArtworkFavourite/);
+  assert.match(actions, /resolveArtworkFavouriteSaved/);
+  assert.match(actions, /isWishlistRemoveNotFound/);
+  assert.match(actions, /wishlistLoginPath/);
+  assert.match(actions, /wishlistDetailCtaLabel/);
+  assert.match(actions, /IconHeart/);
+  assert.match(actions, /filled=\{saved\}/);
+  assert.match(actions, /artwork-wishlist-cta/);
   assert.doesNotMatch(actions, /ArtworkFavouriteButton/);
+  assert.doesNotMatch(actions, /wishlistFavouriteLabel/);
+  assert.doesNotMatch(actions, /artwork-favourite-button/);
+
+  assert.match(loaders, /export const loadWishlist = cache\(/);
 });
 
 test('listing cards for artists, collections and journal do not gain a heart', () => {

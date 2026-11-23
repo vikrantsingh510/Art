@@ -62,6 +62,10 @@ export function wishlistFavouriteLabel(saved) {
   return saved ? 'Remove from wishlist' : 'Save to wishlist';
 }
 
+export function wishlistDetailCtaLabel(saved) {
+  return saved ? 'Already added to wishlist' : 'Save to wishlist';
+}
+
 export function isWishlistRemoveNotFound(error) {
   return Boolean(error && Number(error.status) === 404);
 }

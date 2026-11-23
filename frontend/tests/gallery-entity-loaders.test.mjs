@@ -31,11 +31,14 @@ test('artwork, artist, collection and journal routes reuse the cached entity loa
   const journal = read('app/(gallery)/journal/[slug]/page.js');
 
   assert.match(artwork, /loadArtworkById\(id\)/);
+  assert.match(artwork, /loadArtworkFavouriteSaved\(artwork\.id\)/);
   assert.match(artwork, /loadWhatsappEnquiry\(\)/);
   assert.match(artwork, /generateMetadata/);
   assert.match(artwork, /notFound\(\)/);
   assert.doesNotMatch(artwork, /api\.getArtwork/);
   assert.doesNotMatch(artwork, /api\.getWhatsappEnquiry/);
+  assert.doesNotMatch(artwork, /api\.getWishlist|getWishlist\(/);
+  assert.doesNotMatch(artwork, /loadWishlist\(/);
 
   assert.match(artist, /loadArtistBySlug\(slug\)/);
   assert.match(artist, /canonicalFor\(`\/artists\/\$\{slug\}`\)/);

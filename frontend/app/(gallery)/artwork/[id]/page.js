@@ -9,7 +9,7 @@ import { ErrorState } from '@/components/states';
 import { ApiClientError } from '@/lib/api';
 import { resolveArtworkArAssets } from '@/lib/ar-assets/storefront-storage';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
-import { loadArtworkById, loadWhatsappEnquiry } from '@/lib/gallery-entity-loaders';
+import { loadArtworkById, loadArtworkFavouriteSaved, loadWhatsappEnquiry } from '@/lib/gallery-entity-loaders';
 import { canonicalFor } from '@/lib/journal-origin';
 import { artworkStorefrontImageUrl, publicMediaItems, privateMediaItems } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
@@ -52,6 +52,7 @@ export default async function ArtworkDetailPage({ params }) {
   const ar = await resolveArtworkArAssets(artwork);
   const posterUrl = artworkStorefrontImageUrl(artwork);
   const enquiry = await loadWhatsappEnquiry();
+  const saved = await loadArtworkFavouriteSaved(artwork.id);
   const pageUrl = await canonicalFor(`/artwork/${artwork.id}`);
   const whatsappHref = enquiry?.enabled
     ? buildWhatsappEnquiryHref({
@@ -94,7 +95,7 @@ export default async function ArtworkDetailPage({ params }) {
           <p className="font-display text-3xl">{formatInrFromPaise(artwork.pricePaise)}</p>
           <p className="text-sm text-patina">INR. Displayed from server paise. Acquisition does not include live payment in this release.</p>
           <AddToCartButton artworkId={artwork.id} purchasable={artwork.isPurchasable} nextPath={`/artwork/${artwork.id}`} />
-          <AddToWishlistButton artworkId={artwork.id} nextPath={`/artwork/${artwork.id}`} />
+          <AddToWishlistButton artworkId={artwork.id} saved={saved} nextPath={`/artwork/${artwork.id}`} />
           {ar.ready ? (
             <ArtworkArPanel ar={ar} title={artwork.title} posterUrl={posterUrl} />
           ) : null}

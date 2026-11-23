@@ -168,6 +168,16 @@ body {
   cursor: not-allowed;
 }
 
+.artwork-wishlist-cta {
+  gap: 0.65rem;
+}
+
+.artwork-wishlist-cta-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
 .text-link {
   font-size: 11px;
   font-weight: 500;
