@@ -46,6 +46,7 @@ export function ArtworkSizeGuide({ artwork }) {
           <li key={comparison.reference.id} className="space-y-4 min-w-0">
             <SizeGuideSceneLightbox
               comparison={comparison}
+              comparisons={comparisons}
               imageUrl={imageUrl}
               imageAlt={imageAlt}
               loading={index === 0 ? 'eager' : 'lazy'}

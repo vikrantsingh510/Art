@@ -214,3 +214,26 @@ test('size guide UI is editorial, proportional, and does not add customer resizi
   assert.match(lightbox, /SizeGuideScenePreview/);
   assert.doesNotMatch(lightbox, /sizeGuideArtworkCm|sizeGuidePhotoOverlay/);
 });
+
+test('size guide lightbox switches sofa bed and wall without closing the modal', () => {
+  const lightbox = read('components/size-guide-scene-lightbox.js');
+  const component = read('components/artwork-size-guide.js');
+  const css = read('app/globals.css');
+
+  assert.match(component, /comparisons=\{comparisons\}/);
+  assert.match(lightbox, /Sofa/);
+  assert.match(lightbox, /Bed/);
+  assert.match(lightbox, /Wall/);
+  assert.match(lightbox, /role="tablist"/);
+  assert.match(lightbox, /aria-selected=\{selected\}/);
+  assert.match(lightbox, /function selectScene/);
+  assert.match(lightbox, /setActiveId\(id\)/);
+  assert.doesNotMatch(lightbox.split('function selectScene')[1].split('function ')[0], /setOpen\(false\)/);
+  assert.match(lightbox, /if \(event\.key === 'Escape'\)/);
+  assert.match(lightbox, /aria-label="Close size comparison"/);
+  assert.match(css, /\.size-guide-lightbox-scene\.is-active/);
+  assert.match(css, /\.size-guide-lightbox-scenes/);
+  assert.match(lightbox, /createPortal\(/);
+  assert.equal([...lightbox.matchAll(/createPortal\(/g)].length, 1);
+  assert.doesNotMatch(lightbox, /window\.location|router\.push|href=\{/);
+});

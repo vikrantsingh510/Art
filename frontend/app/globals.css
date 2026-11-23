@@ -545,15 +545,49 @@ body {
 
 .size-guide-lightbox-dialog {
   position: relative;
+  display: flex;
+  flex-direction: column;
   cursor: auto;
-  width: min(96vw, calc(86vh * var(--scene-aspect, 1)));
+  width: min(96vw, calc(78vh * var(--scene-aspect, 1)));
   max-width: 96vw;
   max-height: 86vh;
   animation: size-guide-lightbox-enter 220ms ease-out;
 }
 
 .size-guide-scene-lightbox {
-  max-height: 86vh;
+  max-height: calc(86vh - 4.75rem);
+}
+
+.size-guide-lightbox-scenes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.size-guide-lightbox-scene {
+  min-height: 44px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-fillet);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  color: var(--color-ink);
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.size-guide-lightbox-scene.is-active,
+.size-guide-lightbox-scene[aria-selected="true"] {
+  border-color: var(--color-bronze);
+  color: var(--color-bronze);
+}
+
+.size-guide-lightbox-scene:focus-visible {
+  outline: 1px solid var(--color-bronze);
+  outline-offset: 2px;
 }
 
 .size-guide-lightbox-close {
@@ -581,12 +615,12 @@ body {
   }
 
   .size-guide-lightbox-dialog {
-    width: min(92vw, calc(88vh * var(--scene-aspect, 1)));
+    width: min(92vw, calc(80vh * var(--scene-aspect, 1)));
     max-height: 88vh;
   }
 
   .size-guide-scene-lightbox {
-    max-height: 88vh;
+    max-height: calc(88vh - 4.75rem);
   }
 }
 

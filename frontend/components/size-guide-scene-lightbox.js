@@ -4,13 +4,28 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SizeGuideScenePreview } from './size-guide-scene-preview';
 
-export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt, loading = 'lazy' }) {
-  const { photo, overlay, scene, copy } = comparison;
+const SCENE_OPTION_LABELS = {
+  sofa: 'Sofa',
+  bed: 'Bed',
+  wall: 'Wall',
+};
+
+export function SizeGuideSceneLightbox({
+  comparison,
+  comparisons = [comparison],
+  imageUrl,
+  imageAlt,
+  loading = 'lazy',
+}) {
+  const scenes = comparisons.length ? comparisons : [comparison];
   const [open, setOpen] = useState(false);
+  const [activeId, setActiveId] = useState(comparison.reference.id);
   const triggerRef = useRef(null);
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
   const titleId = useId();
+  const active = scenes.find((item) => item.reference.id === activeId) || comparison;
+  const { photo, overlay, scene, copy } = active;
 
   useEffect(() => {
     if (!open) {
@@ -64,6 +79,17 @@ export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt, loading
     setOpen(false);
   }
 
+  function openScene() {
+    setActiveId(comparison.reference.id);
+    setOpen(true);
+  }
+
+  function selectScene(event, id) {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveId(id);
+  }
+
   return (
     <>
       <button
@@ -72,13 +98,13 @@ export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt, loading
         className="size-guide-scene-trigger"
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`Enlarge size comparison: ${copy.title}`}
-        onClick={() => setOpen(true)}
+        aria-label={`Enlarge size comparison: ${comparison.copy.title}`}
+        onClick={openScene}
       >
         <SizeGuideScenePreview
-          photo={photo}
-          overlay={overlay}
-          scene={scene}
+          photo={comparison.photo}
+          overlay={comparison.overlay}
+          scene={comparison.scene}
           imageUrl={imageUrl}
           imageAlt={imageAlt}
           loading={loading}
@@ -120,6 +146,26 @@ export function SizeGuideSceneLightbox({ comparison, imageUrl, imageAlt, loading
               sizes="92vw"
               className="size-guide-scene-lightbox"
             />
+            {scenes.length > 1 ? (
+              <div className="size-guide-lightbox-scenes" role="tablist" aria-label="Size comparison scenes">
+                {scenes.map((item) => {
+                  const selected = item.reference.id === active.reference.id;
+                  return (
+                    <button
+                      key={item.reference.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-label={item.copy.title}
+                      className={`size-guide-lightbox-scene${selected ? ' is-active' : ''}`}
+                      onClick={(event) => selectScene(event, item.reference.id)}
+                    >
+                      {SCENE_OPTION_LABELS[item.reference.id] || item.copy.title}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         </div>,
         document.body,
