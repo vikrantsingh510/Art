@@ -66,8 +66,7 @@ export function ArtworkArPanel({ ar, title, posterUrl }) {
         <p className="notice" role="status">Preparing AR…</p>
       )}
       <p className="text-xs text-patina">
-        Android Chrome uses WebXR first. iPhone Quick Look is prepared and not yet physically validated.
-        Scene Viewer remains a secondary, unverified route.
+        Experience this artwork in your own space with augmented reality. See how it complements your walls and interiors before making it yours.
       </p>
     </section>
   );

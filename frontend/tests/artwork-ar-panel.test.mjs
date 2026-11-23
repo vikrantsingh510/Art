@@ -76,8 +76,10 @@ test('storefront AR panel drops orbit copy and keeps physical size plus wall CTA
   assert.match(panel, /Actual size \{ar\.physicalLabel\}/);
   assert.match(panel, /View on your wall places this size on a vertical surface/);
   assert.match(panel, /View on your wall appears on devices that can start AR/);
-  assert.match(panel, /Android Chrome uses WebXR first/);
-  assert.match(panel, /iPhone Quick Look/);
+  assert.match(panel, /Experience this artwork in your own space with augmented reality/);
+  assert.match(panel, /See how it complements your walls and interiors before making it yours/);
+  assert.doesNotMatch(panel, /Android Chrome uses WebXR first/);
+  assert.doesNotMatch(panel, /Scene Viewer remains a secondary/);
   assert.doesNotMatch(panel, /True-to-scale preview/);
   assert.doesNotMatch(panel, /Interactive 3D/);
   assert.doesNotMatch(panel, /Drag to orbit/);
