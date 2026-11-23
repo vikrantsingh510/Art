@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { api } from './api';
 import { getAccessToken } from './session';
+import { isArtworkInWishlist } from './wishlist-favourite';
 
 /**
  * Request-scoped entity loaders. React.cache deduplicates generateMetadata
@@ -38,6 +39,15 @@ export const loadWishlist = cache(async function loadWishlist() {
   }
   return api.getWishlist({ token });
 });
+
+export async function loadArtworkFavouriteSaved(artworkId) {
+  try {
+    const wishlist = await loadWishlist();
+    return isArtworkInWishlist(wishlist, artworkId);
+  } catch {
+    return false;
+  }
+}
 
 export const loadWhatsappEnquiry = cache(async function loadWhatsappEnquiry() {
   try {

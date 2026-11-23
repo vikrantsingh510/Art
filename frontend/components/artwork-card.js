@@ -1,14 +1,23 @@
 import Link from 'next/link';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
+import { loadArtworkFavouriteSaved } from '@/lib/gallery-entity-loaders';
 import { formatInrFromPaise } from '@/lib/money';
+import { ArtworkFavouriteButton } from './artwork-favourite-button';
 import { ArtworkImage } from './artwork-image';
 
-export function ArtworkCard({ artwork }) {
+export async function ArtworkCard({ artwork, showFavourite = true }) {
+  const saved = showFavourite ? await loadArtworkFavouriteSaved(artwork.id) : false;
+
   return (
     <article className="space-y-4">
-      <Link href={`/artwork/${artwork.id}`} className="block">
-        <ArtworkImage artwork={artwork} />
-      </Link>
+      <div className="relative">
+        <Link href={`/artwork/${artwork.id}`} className="block">
+          <ArtworkImage artwork={artwork} />
+        </Link>
+        {showFavourite ? (
+          <ArtworkFavouriteButton artworkId={artwork.id} saved={saved} />
+        ) : null}
+      </div>
       <div className="space-y-2">
         <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>
         <h3 className="font-display text-[22px] italic leading-8">

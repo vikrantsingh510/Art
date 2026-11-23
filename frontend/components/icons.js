@@ -7,9 +7,16 @@ export function IconSearch({ className = 'h-5 w-5 shrink-0' }) {
   );
 }
 
-export function IconHeart({ className = 'h-5 w-5 shrink-0' }) {
+export function IconHeart({ className = 'h-5 w-5 shrink-0', filled = false }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill={filled ? 'currentColor' : 'none'}
+      aria-hidden="true"
+    >
       <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10Z" stroke="currentColor" strokeWidth="1.2" />
     </svg>
   );

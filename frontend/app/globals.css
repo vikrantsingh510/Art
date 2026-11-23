@@ -658,3 +658,60 @@ body {
     bottom: max(1.75rem, env(safe-area-inset-bottom, 0px));
   }
 }
+
+.artwork-favourite-button {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  color: var(--color-ivory);
+}
+
+.artwork-favourite-icon {
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+  transition: transform 200ms ease-out, filter 200ms ease-out;
+}
+
+.artwork-favourite-icon path {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.artwork-favourite-button:not(.is-saved) .artwork-favourite-icon,
+.artwork-favourite-button[data-saved='false'] .artwork-favourite-icon {
+  filter:
+    drop-shadow(0 1px 2px rgba(17, 17, 16, 0.78))
+    drop-shadow(0 0 1px rgba(17, 17, 16, 0.5));
+}
+
+.artwork-favourite-button:not(.is-saved) .artwork-favourite-icon path,
+.artwork-favourite-button[data-saved='false'] .artwork-favourite-icon path {
+  fill: none;
+  stroke: var(--color-ivory);
+  stroke-width: 2.15;
+}
+
+.artwork-favourite-button.is-saved .artwork-favourite-icon,
+.artwork-favourite-button[data-saved='true'] .artwork-favourite-icon {
+  filter:
+    drop-shadow(0 0 1.75px rgba(250, 248, 245, 0.95))
+    drop-shadow(0 1px 2px rgba(17, 17, 16, 0.55));
+}
+
+.artwork-favourite-button.is-saved .artwork-favourite-icon path,
+.artwork-favourite-button[data-saved='true'] .artwork-favourite-icon path {
+  fill: var(--color-secondary);
+  stroke: var(--color-ivory);
+  stroke-width: 1.85;
+}
+
+.artwork-favourite-button:hover:not(:disabled) .artwork-favourite-icon {
+  transform: scale(1.06);
+}
+
+.artwork-favourite-button:focus-visible {
+  outline: 2px solid var(--color-antique);
+  outline-offset: 3px;
+}

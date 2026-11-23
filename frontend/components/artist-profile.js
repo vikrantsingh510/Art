@@ -1,8 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArtworkFavouriteButton } from '@/components/artwork-favourite-button';
 import { MarkdownBody } from '@/components/markdown-body';
 import { Button } from '@/components/ui';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
+import { loadArtworkFavouriteSaved } from '@/lib/gallery-entity-loaders';
 import { artworkStorefrontImageUrl, primaryArtworkImage, publicStorageUrl } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
 
@@ -14,31 +16,35 @@ function practiceCards(artist) {
   ].filter(Boolean);
 }
 
-function FeaturedWork({ artwork }) {
+async function FeaturedWork({ artwork }) {
   const image = primaryArtworkImage(artwork);
   const imageUrl = artworkStorefrontImageUrl(artwork, image);
   const dimensions = formatDimensions(artwork);
   const available = availabilityLabel(artwork);
+  const saved = await loadArtworkFavouriteSaved(artwork.id);
 
   return (
     <div className="bg-surface border border-fillet p-6 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        <Link href={`/artwork/${artwork.id}`} className="lg:col-span-7 bg-surface-container relative overflow-hidden block min-w-0">
-          <div className="relative aspect-[16/11] w-full">
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={image?.altText || artwork.title}
-                fill
-                unoptimized
-                sizes="(min-width: 1024px) 55vw, 100vw"
-                className="object-contain artwork-image-hover"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-surface-container-low" />
-            )}
-          </div>
-        </Link>
+        <div className="lg:col-span-7 relative min-w-0">
+          <Link href={`/artwork/${artwork.id}`} className="bg-surface-container relative overflow-hidden block min-w-0">
+            <div className="relative aspect-[16/11] w-full">
+              {imageUrl ? (
+                <Image
+                  src={imageUrl}
+                  alt={image?.altText || artwork.title}
+                  fill
+                  unoptimized
+                  sizes="(min-width: 1024px) 55vw, 100vw"
+                  className="object-contain artwork-image-hover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-surface-container-low" />
+              )}
+            </div>
+          </Link>
+          <ArtworkFavouriteButton artworkId={artwork.id} saved={saved} />
+        </div>
         <div className="lg:col-span-5 flex flex-col justify-between h-full space-y-6 min-w-0">
           <div>
             <p className="label-sm text-bronze mb-2">{available}</p>
@@ -82,31 +88,35 @@ function FeaturedWork({ artwork }) {
   );
 }
 
-function ArtistWorkTile({ artwork }) {
+async function ArtistWorkTile({ artwork }) {
   const image = primaryArtworkImage(artwork);
   const imageUrl = artworkStorefrontImageUrl(artwork, image);
   const dimensions = formatDimensions(artwork);
   const available = availabilityLabel(artwork);
   const meta = [artwork.medium, dimensions].filter(Boolean).join(' · ');
+  const saved = await loadArtworkFavouriteSaved(artwork.id);
 
   return (
     <article className="bg-surface border border-fillet flex flex-col justify-between min-w-0">
       <div>
-        <Link href={`/artwork/${artwork.id}`} className="block relative aspect-[4/3] bg-surface-container overflow-hidden">
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={image?.altText || artwork.title}
-              fill
-              unoptimized
-              sizes="(min-width: 1024px) 30vw, 100vw"
-              className="object-contain artwork-image-hover"
-            />
-          ) : null}
-          <span className="absolute top-3 right-3 bg-surface/90 label-sm text-ink uppercase tracking-widest px-2.5 py-1">
-            {available}
-          </span>
-        </Link>
+        <div className="relative">
+          <Link href={`/artwork/${artwork.id}`} className="block relative aspect-[4/3] bg-surface-container overflow-hidden">
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={image?.altText || artwork.title}
+                fill
+                unoptimized
+                sizes="(min-width: 1024px) 30vw, 100vw"
+                className="object-contain artwork-image-hover"
+              />
+            ) : null}
+            <span className="absolute top-3 left-3 bg-surface/90 label-sm text-ink uppercase tracking-widest px-2.5 py-1">
+              {available}
+            </span>
+          </Link>
+          <ArtworkFavouriteButton artworkId={artwork.id} saved={saved} />
+        </div>
         <div className="p-6 space-y-2">
           {dimensions ? (
             <p className="label-sm text-outline uppercase tracking-wider">{dimensions}</p>

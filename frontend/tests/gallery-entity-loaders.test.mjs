@@ -19,6 +19,7 @@ test('gallery entity loaders are request-scoped React.cache wrappers', () => {
   assert.match(loaders, /loadBlogBySlug/);
   assert.match(loaders, /loadCart/);
   assert.match(loaders, /loadWishlist/);
+  assert.match(loaders, /loadArtworkFavouriteSaved/);
   assert.match(loaders, /loadWhatsappEnquiry/);
   assert.doesNotMatch(loaders, /unstable_cache|revalidate/);
 });
@@ -71,6 +72,7 @@ test('gallery layout and cart routes reuse request-scoped cart and wishlist load
   assert.match(cart, /loadCart\(\)/);
   assert.doesNotMatch(cart, /api\.getCart/);
   assert.match(wishlist, /loadWishlist\(\)/);
+  assert.match(wishlist, /showFavourite=\{false\}/);
   assert.doesNotMatch(wishlist, /api\.getWishlist/);
   assert.match(checkout, /loadCart\(\)/);
   assert.match(checkout, /listAddresses/);

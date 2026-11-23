@@ -29,7 +29,7 @@ export default async function WishlistPage() {
           {items.map((item) => (
             item.artwork ? (
               <div key={item.id} className="space-y-4">
-                <ArtworkCard artwork={item.artwork} />
+                <ArtworkCard artwork={item.artwork} showFavourite={false} />
                 <WishlistItemActions artworkId={item.artworkId} purchasable={item.artwork.isPurchasable} />
               </div>
             ) : (

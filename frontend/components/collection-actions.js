@@ -4,23 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiClientError } from '@/lib/api-client';
 import { createBrowserArtApi } from '@/lib/browser-api';
-import { isSupabaseConfigured } from '@/lib/env';
 import { pendingButtonProps } from '@/lib/pending-action';
-import { createBrowserSupabaseClient } from '@/lib/supabase/browser';
+import { requireSession } from '@/lib/require-browser-session';
 import { ActionStatus, ButtonLoader } from './loading';
-
-async function requireSession(router, nextPath) {
-  if (!isSupabaseConfigured()) {
-    throw new Error('Authentication is not configured in this environment.');
-  }
-  const supabase = createBrowserSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    router.push(`/auth/login?next=${encodeURIComponent(nextPath)}`);
-    return null;
-  }
-  return session;
-}
 
 export function AddToCartButton({ artworkId, purchasable, nextPath }) {
   const router = useRouter();

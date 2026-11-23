@@ -58,6 +58,8 @@ test('artist detail lists published artworks and preserves story and works ancho
   assert.match(profile, /artwork\.story/);
   assert.match(profile, /FeaturedWork/);
   assert.match(profile, /ArtistWorkTile/);
+  assert.match(profile, /ArtworkFavouriteButton/);
+  assert.match(profile, /absolute top-3 left-3 bg-surface\/90/);
   assert.match(profile, /artist\.artworks/);
   assert.match(profile, /href=\{`\/artwork\/\$\{artwork\.id\}`\}/);
   assert.match(profile, /id="story"/);
