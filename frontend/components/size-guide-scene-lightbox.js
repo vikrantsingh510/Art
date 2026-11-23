@@ -167,9 +167,11 @@ export function SizeGuideSceneLightbox({
                           photo={item.photo}
                           overlay={item.overlay}
                           scene={item.scene}
+                          imageUrl={imageUrl}
+                          imageAlt=""
                           sizes="180px"
                           framed={false}
-                          showOverlay={false}
+                          showOverlay={true}
                           className="size-guide-lightbox-thumb-preview"
                         />
                       </span>

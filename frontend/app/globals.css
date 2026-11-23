@@ -506,8 +506,10 @@ body {
   overflow: hidden;
   background: transparent;
   box-shadow:
-    0 14px 32px rgba(28, 24, 18, 0.22),
-    0 2px 6px rgba(28, 24, 18, 0.16);
+    0 0 0 clamp(0.75px, 0.32cqi, 1.35px) var(--color-olive),
+    0 0 0 calc(clamp(0.75px, 0.32cqi, 1.35px) + clamp(0.2px, 0.1cqi, 0.4px))
+      color-mix(in srgb, var(--color-antique) 70%, var(--color-ink)),
+    0 1px 1px rgba(28, 24, 18, 0.2);
 }
 
 .size-guide-artwork img {
@@ -522,6 +524,7 @@ body {
   background: transparent;
   cursor: pointer;
   text-align: left;
+  container-type: inline-size;
 }
 
 .size-guide-scene-trigger:hover .size-guide-photo,
@@ -564,6 +567,15 @@ body {
   height: auto;
   aspect-ratio: var(--scene-aspect, 1.5);
   margin-inline: auto;
+  container-type: inline-size;
+}
+
+.size-guide-scene-lightbox .size-guide-artwork {
+  box-shadow:
+    0 0 0 clamp(2px, 0.26cqi, 3px) var(--color-olive),
+    0 0 0 calc(clamp(2px, 0.26cqi, 3px) + clamp(0.45px, 0.065cqi, 0.75px))
+      color-mix(in srgb, var(--color-antique) 70%, var(--color-ink)),
+    0 1px 2px rgba(28, 24, 18, 0.22);
 }
 
 .size-guide-lightbox-scenes {
@@ -607,8 +619,9 @@ body {
 .size-guide-lightbox-thumb {
   position: relative;
   aspect-ratio: 3 / 2;
-  overflow: hidden;
+  overflow: visible;
   background: var(--color-stone);
+  container-type: inline-size;
 }
 
 .size-guide-lightbox-thumb-preview {
@@ -616,6 +629,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
 .size-guide-lightbox-scene-label {

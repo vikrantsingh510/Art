@@ -276,21 +276,32 @@ test('size guide lightbox fits the viewport without cropping scene photos', () =
   assert.match(css, /\.size-guide-photo\s*\{[^}]*object-fit:\s*cover/);
 });
 
-test('size guide lightbox uses 3:2 image thumbnails without artwork overlays', () => {
+test('size guide lightbox uses 3:2 image thumbnails with scene-specific artwork overlays', () => {
   const lightbox = read('components/size-guide-scene-lightbox.js');
   const preview = read('components/size-guide-scene-preview.js');
   const css = read('app/globals.css');
+  const thumbPreview = lightbox.split('size-guide-lightbox-thumb')[1].split('size-guide-lightbox-scene-label')[0];
 
-  assert.match(lightbox, /framed=\{false\}/);
-  assert.match(lightbox, /showOverlay=\{false\}/);
+  assert.match(thumbPreview, /framed=\{false\}/);
+  assert.match(thumbPreview, /showOverlay=\{true\}/);
+  assert.match(thumbPreview, /imageUrl=\{imageUrl\}/);
+  assert.match(thumbPreview, /imageAlt=""/);
+  assert.match(thumbPreview, /overlay=\{item\.overlay\}/);
+  assert.match(thumbPreview, /photo=\{item\.photo\}/);
+  assert.match(thumbPreview, /scene=\{item\.scene\}/);
+  assert.doesNotMatch(thumbPreview, /showOverlay=\{false\}/);
   assert.match(lightbox, /size-guide-lightbox-thumb/);
   assert.match(lightbox, /size-guide-lightbox-scene-label/);
   assert.match(preview, /showOverlay = true/);
   assert.match(preview, /framed = true/);
   assert.match(preview, /showOverlay && overlay/);
   assert.match(css, /\.size-guide-lightbox-thumb\s*\{[^}]*aspect-ratio:\s*3\s*\/\s*2/);
+  assert.match(css, /\.size-guide-lightbox-thumb\s*\{[^}]*container-type:\s*inline-size/);
   assert.match(css, /\.size-guide-lightbox-scenes\s*\{[^}]*grid-template-columns:\s*repeat\(3/);
   assert.match(css, /\.size-guide-lightbox-scene\s*\{[^}]*min-height:\s*44px/);
+  assert.match(css, /\.size-guide-scene-lightbox \.size-guide-artwork\s*\{/);
+  assert.doesNotMatch(css, /\.size-guide-lightbox-thumb[^{]*\.size-guide-artwork/);
+  assert.doesNotMatch(css, /\.size-guide-lightbox-thumb-preview[^{]*\.size-guide-artwork/);
 });
 
 test('sofa keeps a 3:2 presentation frame while bed and wall match served pixels', () => {
@@ -315,4 +326,59 @@ test('sofa keeps a 3:2 presentation frame while bed and wall match served pixels
   const sofaOverlay = sizeGuidePhotoOverlay(portrait, SIZE_GUIDE_REFERENCES.sofa, SIZE_GUIDE_PHOTO_FRAMES.sofa);
   assert.equal(Number(sofaOverlay.widthPct.toFixed(8)), Number(((90 / 220) * 48).toFixed(8)));
   assert.equal(Number((sofaOverlay.heightPct / sofaOverlay.widthPct).toFixed(8)), Number((SIZE_GUIDE_PHOTO_FRAMES.sofa.aspect / (90 / 120)).toFixed(8)));
+});
+
+test('size guide artwork overlay uses a thin outer moulding without changing placement', () => {
+  const css = read('app/globals.css');
+  const preview = read('components/size-guide-scene-preview.js');
+  const lightbox = read('components/size-guide-scene-lightbox.js');
+  const component = read('components/artwork-size-guide.js');
+  const scene = read('lib/size-guide-scene.js');
+  const photos = read('lib/size-guide-photos.js');
+  const artworkBlock = css.slice(css.indexOf('.size-guide-artwork {'), css.indexOf('.size-guide-artwork img'));
+  const lightboxArtworkBlock = css.slice(css.indexOf('.size-guide-scene-lightbox .size-guide-artwork'));
+  const photoBlock = css.slice(css.indexOf('.size-guide-photo'), css.indexOf('.size-guide-artwork {'));
+  const triggerBlock = css.slice(css.indexOf('.size-guide-scene-trigger {'), css.indexOf('.size-guide-scene-trigger:hover'));
+  const lightboxSceneBlock = css.slice(css.indexOf('.size-guide-scene-lightbox {'), css.indexOf('.size-guide-scene-lightbox .size-guide-artwork'));
+
+  assert.match(triggerBlock, /container-type:\s*inline-size/);
+  assert.match(lightboxSceneBlock, /container-type:\s*inline-size/);
+  assert.doesNotMatch(artworkBlock, /container-type:\s*inline-size/);
+  assert.match(artworkBlock, /0 0 0 clamp\(0\.75px, 0\.32cqi, 1\.35px\) var\(--color-olive\)/);
+  assert.match(artworkBlock, /clamp\(0\.2px, 0\.1cqi, 0\.4px\)/);
+  assert.match(lightboxArtworkBlock, /0 0 0 clamp\(2px, 0\.26cqi, 3px\) var\(--color-olive\)/);
+  assert.match(lightboxArtworkBlock, /clamp\(0\.45px, 0\.065cqi, 0\.75px\)/);
+  assert.match(css, /color-mix\(in srgb, var\(--color-antique\) 70%, var\(--color-ink\)\)/);
+  assert.doesNotMatch(artworkBlock, /clamp\(1\.5px, 1\.15cqi, 3\.5px\)/);
+  assert.doesNotMatch(artworkBlock, /\+ 1px\)/);
+  assert.doesNotMatch(artworkBlock, /0 14px 32px/);
+  assert.doesNotMatch(artworkBlock, /0 2px 6px/);
+  assert.doesNotMatch(photoBlock, /container-type:\s*inline-size/);
+  assert.doesNotMatch(photoBlock, /0\.32cqi|0\.26cqi/);
+  assert.match(preview, /className="size-guide-artwork"/);
+  assert.match(preview, /overlay\.widthPct/);
+  assert.match(preview, /overlay\.heightPct/);
+  assert.match(preview, /overlay\.leftPct/);
+  assert.match(preview, /overlay\.bottomPct/);
+  assert.doesNotMatch(preview, /perspective|rotateX|rotateY/);
+  assert.doesNotMatch(artworkBlock, /perspective|rotate/);
+  assert.match(lightbox, /showOverlay=\{true\}/);
+  assert.match(lightbox, /imageAlt=""/);
+  assert.match(component, /lg:grid-cols-3/);
+  assert.match(photos, /\/size-guide-media\/sofa/);
+  assert.match(photos, /\/size-guide-media\/bed/);
+  assert.match(photos, /\/size-guide-media\/wall/);
+  assert.doesNotMatch(scene, /perspective|rotateX|rotateY/);
+
+  const portrait = sizeGuideArtworkCm({ width: 90, height: 120, depth: 4, dimensionUnit: 'cm' });
+  const sofa = sizeGuidePhotoOverlay(portrait, SIZE_GUIDE_REFERENCES.sofa, SIZE_GUIDE_PHOTO_FRAMES.sofa);
+  const bed = sizeGuidePhotoOverlay(portrait, SIZE_GUIDE_REFERENCES.bed, SIZE_GUIDE_PHOTO_FRAMES.bed);
+  const wall = sizeGuidePhotoOverlay(portrait, SIZE_GUIDE_REFERENCES.wall, SIZE_GUIDE_PHOTO_FRAMES.wall);
+  assert.equal(Number(sofa.widthPct.toFixed(8)), Number(((90 / 220) * 48).toFixed(8)));
+  assert.equal(Number(sofa.leftPct.toFixed(8)), 40.18181818);
+  assert.equal(Number(sofa.bottomPct.toFixed(8)), 52.5);
+  assert.equal(bed.clamped, true);
+  assert.equal(Number(wall.widthPct.toFixed(8)), Number(((90 / 400) * 77).toFixed(8)));
+  assert.equal(Number(wall.leftPct.toFixed(4)), 44.3375);
+  assert.equal(Number(wall.heightPct.toFixed(4)), 34.6392);
 });
