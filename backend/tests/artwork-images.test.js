@@ -240,6 +240,7 @@ test('image register fails closed when artwork-images bucket constraints are una
   });
   assert.equal(response.status, 503);
   assert.match(response.json?.error?.message || '', /unavailable/i);
+  assert.doesNotMatch(JSON.stringify(response.json), /42501|permission denied|storage\.buckets/i);
 });
 
 test('image register fails closed when the artwork-images bucket is missing', async () => {

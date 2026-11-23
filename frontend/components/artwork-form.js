@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserArtApi, getBrowserAccessToken } from '@/lib/browser-api';
 import { ApiClientError } from '@/lib/api-client';
+import { useArtworkImageConstraints } from '@/lib/use-artwork-image-constraints';
 import { rupeesToPaise, paiseToRupees } from '@/lib/money';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
 import { validateArtworkImageFile } from '@/lib/artwork-image-constraints';
@@ -48,9 +49,12 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
   const [error, setError] = useState('');
   const [uploadNote, setUploadNote] = useState('');
   const [savedArtworkId, setSavedArtworkId] = useState(artwork?.id || null);
-  const [constraints, setConstraints] = useState(null);
-  const [constraintsError, setConstraintsError] = useState('');
-  const [constraintsLoading, setConstraintsLoading] = useState(true);
+  const {
+    constraints,
+    constraintsError,
+    constraintsLoading,
+    retryConstraints,
+  } = useArtworkImageConstraints();
   const [imageItems, setImageItems] = useState(() => createManagerItems(artwork));
   const [progress, setProgress] = useState(null);
   const [physicalDraft, setPhysicalDraft] = useState({
@@ -60,34 +64,6 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
     dimensionUnit: artwork?.dimensionUnit || 'in',
     status: artwork?.status || 'draft',
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const client = await createBrowserArtApi();
-        const data = await client.adminArtworkImageConstraints();
-        if (!cancelled) {
-          setConstraints(data);
-          setConstraintsError('');
-        }
-      } catch (caught) {
-        if (!cancelled) {
-          setConstraints(null);
-          setConstraintsError(caught instanceof ApiClientError
-            ? caught.message
-            : 'Upload limits could not be loaded from the artwork-images bucket.');
-        }
-      } finally {
-        if (!cancelled) {
-          setConstraintsLoading(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function persistImages(client, artworkId) {
     const original = createManagerItems(artwork);
@@ -434,6 +410,7 @@ export function ArtworkForm({ artwork, categories, collections, artists = [], mo
         constraints={constraints}
         constraintsError={constraintsError}
         constraintsLoading={constraintsLoading}
+        onRetryConstraints={retryConstraints}
         disabled={pending}
         items={imageItems}
         onItemsChange={setImageItems}

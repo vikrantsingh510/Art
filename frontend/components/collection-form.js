@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserArtApi, getBrowserAccessToken } from '@/lib/browser-api';
 import { ApiClientError } from '@/lib/api-client';
+import { useArtworkImageConstraints } from '@/lib/use-artwork-image-constraints';
 import { collectionCoverStoragePath } from '@/lib/collection-cover';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
 import { explainStorageUploadError } from '@/lib/artwork-image-constraints';
@@ -51,27 +52,12 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [message, setMessage] = useState('');
-  const [constraints, setConstraints] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const client = await createBrowserArtApi();
-        const data = await client.adminArtworkImageConstraints();
-        if (!cancelled) {
-          setConstraints(data);
-        }
-      } catch {
-        if (!cancelled) {
-          setConstraints(null);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    constraints,
+    constraintsError,
+    constraintsLoading,
+    retryConstraints,
+  } = useArtworkImageConstraints();
 
   function updateField(name, value) {
     if (name === 'slug') {
@@ -246,6 +232,9 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
         <CollectionCoverUpload
           coverImagePath={coverPath}
           constraints={constraints}
+          constraintsError={constraintsError}
+          constraintsLoading={constraintsLoading}
+          onRetryConstraints={retryConstraints}
           onPendingFile={setPendingFile}
           onRemove={() => {
             setPendingFile(null);

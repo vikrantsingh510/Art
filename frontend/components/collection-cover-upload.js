@@ -4,11 +4,18 @@ import { useState } from 'react';
 import { inspectArtworkImageFile } from '@/lib/artwork-image-inspect';
 import { acceptAttributeFromConstraints, validateArtworkImageFile } from '@/lib/artwork-image-constraints';
 import { publicStorageUrl } from '@/lib/media';
+import {
+  ArtworkImageConstraintsStatus,
+  isArtworkImagePickerBlocked,
+} from './artwork-image-constraints-status';
 import { Field } from './ui';
 
 export function CollectionCoverUpload({
   coverImagePath,
   constraints,
+  constraintsError,
+  constraintsLoading,
+  onRetryConstraints,
   onPendingFile,
   onRemove,
 }) {
@@ -40,13 +47,22 @@ export function CollectionCoverUpload({
     }
   }
 
+  const pickerBlocked = isArtworkImagePickerBlocked({ constraints, constraintsLoading });
+
   return (
     <div className="space-y-4">
+      <ArtworkImageConstraintsStatus
+        constraints={constraints}
+        constraintsError={constraintsError}
+        constraintsLoading={constraintsLoading}
+        onRetry={onRetryConstraints}
+      />
       <Field label="Cover image" hint="Optional. Stored as collections/{id}/cover.{ext} in artwork-images." error={error}>
         <input
           className="field-input"
           type="file"
           accept={acceptAttributeFromConstraints(constraints)}
+          disabled={pickerBlocked}
           onChange={onFileChange}
         />
       </Field>

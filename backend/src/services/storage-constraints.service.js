@@ -1,4 +1,5 @@
 import { client } from '../config/database.js';
+import { logger, toSafeErrorLog } from '../config/logger.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const ARTWORK_IMAGES_BUCKET = 'artwork-images';
@@ -21,9 +22,7 @@ async function defaultLoadArtworkImagesBucket() {
       id,
       file_size_limit,
       allowed_mime_types
-    FROM storage.buckets
-    WHERE id = ${ARTWORK_IMAGES_BUCKET}
-    LIMIT 1
+    FROM public.artwork_images_bucket_constraints()
   `;
   return row || null;
 }
@@ -52,7 +51,12 @@ export async function getArtworkImagesUploadConstraints() {
   let row;
   try {
     row = await loadArtworkImagesBucket();
-  } catch {
+  } catch (error) {
+    logger.error({
+      err: toSafeErrorLog(error),
+      operation: 'artwork_images_bucket_constraints',
+      sqlState: error?.code || null,
+    }, 'Artwork-images bucket constraints query failed');
     throw new ApiError(503, 'Artwork-images bucket constraints are unavailable.');
   }
 

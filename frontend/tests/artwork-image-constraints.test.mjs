@@ -1,12 +1,25 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   ARTWORK_IMAGES_BUCKET,
   acceptAttributeFromConstraints,
   formatFileBytes,
   validateArtworkImageFile,
 } from '../lib/artwork-image-constraints.js';
+import {
+  ARTWORK_IMAGE_CONSTRAINTS_UNAVAILABLE_MESSAGE,
+  ARTWORK_IMAGE_CONSTRAINTS_UNAVAILABLE_TITLE,
+} from '../lib/artwork-image-constraints-copy.js';
 import { artworkImagesUploadUrl, uploadArtworkImageFile } from '../lib/artwork-image-upload.js';
+
+const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+function read(relativePath) {
+  return fs.readFileSync(path.join(frontendRoot, relativePath), 'utf8');
+}
 
 /**
  * Copied from the development `storage.buckets` row for `artwork-images`
@@ -145,4 +158,48 @@ test('reports upload progress and does not send a service-role header', async ()
   assert.equal(headers.apikey, 'sb_publishable_test');
   assert.equal(headers['x-upsert'], 'false');
   assert.equal(Object.values(headers).some((value) => String(value).includes('service_role')), false);
+});
+
+test('admin upload forms share a blocking constraints notice with retry', () => {
+  const status = read('components/artwork-image-constraints-status.js');
+  const hook = read('lib/use-artwork-image-constraints.js');
+  const manager = read('components/artwork-image-manager.js');
+  const artworkForm = read('components/artwork-form.js');
+  const artistForm = read('components/artist-form.js');
+  const collectionForm = read('components/collection-form.js');
+  const blogForm = read('components/blog-form.js');
+  const portrait = read('components/artist-portrait-upload.js');
+  const collectionCover = read('components/collection-cover-upload.js');
+  const blogCover = read('components/blog-cover-upload.js');
+
+  assert.equal(ARTWORK_IMAGE_CONSTRAINTS_UNAVAILABLE_TITLE, 'Image upload temporarily unavailable');
+  assert.equal(
+    ARTWORK_IMAGE_CONSTRAINTS_UNAVAILABLE_MESSAGE,
+    'Upload requirements could not be loaded. New images cannot be added right now. Your existing images are unchanged.',
+  );
+  assert.match(status, /ARTWORK_IMAGE_CONSTRAINTS_UNAVAILABLE_TITLE/);
+  assert.match(status, /Retrying…/);
+  assert.match(status, /onRetry/);
+  assert.match(hook, /inflightRef/);
+  assert.match(hook, /adminArtworkImageConstraints/);
+  assert.match(hook, /ARTWORK_IMAGES_BUCKET/);
+  assert.doesNotMatch(hook, /10_485_760|10 MiB|image\/jpeg/);
+  assert.doesNotMatch(status, /10_485_760|10 MiB/);
+
+  for (const form of [artworkForm, artistForm, collectionForm, blogForm]) {
+    assert.match(form, /useArtworkImageConstraints/);
+    assert.match(form, /retryConstraints/);
+    assert.doesNotMatch(form, /catch \{\s*if \(!cancelled\) \{\s*setConstraints\(null\);/);
+    assert.doesNotMatch(form, /service_role|SERVICE_ROLE/);
+  }
+
+  assert.match(manager, /ArtworkImageConstraintsStatus/);
+  assert.match(manager, /isArtworkImagePickerBlocked/);
+  assert.match(manager, /onRetryConstraints/);
+  assert.match(portrait, /disabled=\{pickerBlocked\}/);
+  assert.match(collectionCover, /disabled=\{pickerBlocked\}/);
+  assert.match(blogCover, /disabled=\{pickerBlocked\}/);
+  assert.match(portrait, /ArtworkImageConstraintsStatus/);
+  assert.match(collectionCover, /ArtworkImageConstraintsStatus/);
+  assert.match(blogCover, /ArtworkImageConstraintsStatus/);
 });

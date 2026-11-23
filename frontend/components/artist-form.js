@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserArtApi, getBrowserAccessToken } from '@/lib/browser-api';
 import { ApiClientError } from '@/lib/api-client';
+import { useArtworkImageConstraints } from '@/lib/use-artwork-image-constraints';
 import { artistPortraitStoragePath } from '@/lib/artist-portrait';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
 import { explainStorageUploadError } from '@/lib/artwork-image-constraints';
@@ -50,28 +51,13 @@ export function ArtistForm({ artist = null, mode = 'create' }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [constraints, setConstraints] = useState(null);
+  const {
+    constraints,
+    constraintsError,
+    constraintsLoading,
+    retryConstraints,
+  } = useArtworkImageConstraints();
   const associated = Array.isArray(artist?.artworks) ? artist.artworks : [];
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const client = await createBrowserArtApi();
-        const data = await client.adminArtworkImageConstraints();
-        if (!cancelled) {
-          setConstraints(data);
-        }
-      } catch {
-        if (!cancelled) {
-          setConstraints(null);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   function updateField(name, value) {
     setFields((current) => {
@@ -282,6 +268,9 @@ export function ArtistForm({ artist = null, mode = 'create' }) {
             profileImagePath={portraitPath}
             profileImageAlt={fields.profileImageAlt}
             constraints={constraints}
+            constraintsError={constraintsError}
+            constraintsLoading={constraintsLoading}
+            onRetryConstraints={retryConstraints}
             onPendingFile={setPendingFile}
             onAltChange={(value) => updateField('profileImageAlt', value)}
             onRemove={clearPortrait}

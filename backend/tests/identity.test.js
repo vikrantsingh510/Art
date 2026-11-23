@@ -240,8 +240,8 @@ test('forward-only 0012 provisions customer role without granting user_roles INS
     'utf8',
   );
 
-  assert.equal(journal.entries.at(-1)?.tag, '0012_provision_customer_role');
-  assert.equal(journal.entries.at(-1)?.idx, 12);
+  const entry0012 = journal.entries.find((entry) => entry.tag === '0012_provision_customer_role');
+  assert.equal(entry0012?.idx, 12);
   assert.equal(snapshot.prevId, previous.id);
   assert.match(sql, /CREATE OR REPLACE FUNCTION public\.provision_customer_role\(p_user_id uuid\)/);
   assert.match(sql, /SECURITY DEFINER/);

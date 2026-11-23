@@ -61,6 +61,8 @@ test('cover upload uses the artwork-images blogs/{blogId}/cover.{ext} prefix', (
   const upload = read('lib/artwork-image-upload.js');
   assert.match(form, /blogCoverStoragePath/);
   assert.match(form, /uploadArtworkImageFile/);
+  assert.match(form, /useArtworkImageConstraints/);
+  assert.match(form, /retryConstraints/);
   assert.match(upload, /ARTWORK_IMAGES_BUCKET/);
   assert.doesNotMatch(form, /service_role|SERVICE_ROLE/);
   assert.doesNotMatch(read('lib/blog-cover.js'), /service_role|SERVICE_ROLE/);

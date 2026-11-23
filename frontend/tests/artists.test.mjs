@@ -93,6 +93,8 @@ test('portrait upload uses the artwork-images artists/{artistId}/portrait.{ext} 
   const upload = read('lib/artwork-image-upload.js');
   assert.match(form, /artistPortraitStoragePath/);
   assert.match(form, /uploadArtworkImageFile/);
+  assert.match(form, /useArtworkImageConstraints/);
+  assert.match(form, /retryConstraints/);
   assert.match(upload, /ARTWORK_IMAGES_BUCKET/);
   assert.doesNotMatch(form, /service_role|SERVICE_ROLE/);
   assert.doesNotMatch(read('lib/artist-portrait.js'), /service_role|SERVICE_ROLE/);

@@ -88,6 +88,8 @@ test('cover upload uses the artwork-images collections/{collectionId}/cover.{ext
   const upload = read('lib/artwork-image-upload.js');
   assert.match(form, /collectionCoverStoragePath/);
   assert.match(form, /uploadArtworkImageFile/);
+  assert.match(form, /useArtworkImageConstraints/);
+  assert.match(form, /retryConstraints/);
   assert.match(upload, /ARTWORK_IMAGES_BUCKET/);
   assert.doesNotMatch(read('lib/collection-cover.js'), /service_role|SERVICE_ROLE/);
   assert.doesNotMatch(read('components/collection-cover-upload.js'), /service_role|SERVICE_ROLE/);

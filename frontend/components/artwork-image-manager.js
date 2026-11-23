@@ -25,6 +25,10 @@ import {
 } from '@/lib/artwork-image-constraints';
 import { imageInspectionWarnings, inspectArtworkImageFile } from '@/lib/artwork-image-inspect';
 import {
+  ArtworkImageConstraintsStatus,
+  isArtworkImagePickerBlocked,
+} from './artwork-image-constraints-status';
+import {
   MAX_ARTWORK_IMAGES,
   capacityLabel,
   moveImageItem,
@@ -35,7 +39,6 @@ import {
   takeFilesWithinLimit,
 } from '@/lib/artwork-image-queue';
 import { isArtworkDisplayDerivativePath, publicStorageUrl } from '@/lib/media';
-import { InlineLoader } from './loading';
 import { Field } from './ui';
 
 function SortableImageCard({ item, disabled, onPrimary, onMove, onRemove, canMoveUp, canMoveDown }) {
@@ -116,6 +119,7 @@ export function ArtworkImageManager({
   constraints,
   constraintsError,
   constraintsLoading,
+  onRetryConstraints,
   disabled = false,
   items,
   onItemsChange,
@@ -130,12 +134,7 @@ export function ArtworkImageManager({
   const pendingCount = items.filter((item) => item.kind === 'pending').length;
   const remaining = remainingImageSlots(savedCount, pendingCount);
   const accept = acceptAttributeFromConstraints(constraints);
-  const limitLabel = Number.isFinite(Number(constraints?.fileSizeLimitBytes))
-    ? formatFileBytes(constraints.fileSizeLimitBytes)
-    : null;
-  const typesLabel = Array.isArray(constraints?.allowedMimeTypes) && constraints.allowedMimeTypes.length > 0
-    ? constraints.allowedMimeTypes.join(', ')
-    : null;
+  const pickerBlocked = isArtworkImagePickerBlocked({ constraints, constraintsLoading });
 
   function updateItems(next) {
     onItemsChange(next.map((item, index) => ({ ...item, displayOrder: index })));
@@ -241,16 +240,12 @@ export function ArtworkImageManager({
         </div>
         <p className="label-md text-patina">{capacityLabel(savedCount, pendingCount)}</p>
       </div>
-      {constraintsLoading ? (
-        <InlineLoader label="Loading artwork-images bucket limits…" />
-      ) : null}
-      {constraintsError ? <p className="notice notice-error">{constraintsError}</p> : null}
-      {limitLabel || typesLabel ? (
-        <p className="text-sm text-on-surface-variant">
-          {limitLabel ? `Maximum size: ${limitLabel}.` : 'This bucket does not publish a file size limit.'}
-          {typesLabel ? ` Allowed types: ${typesLabel}.` : ''}
-        </p>
-      ) : null}
+      <ArtworkImageConstraintsStatus
+        constraints={constraints}
+        constraintsError={constraintsError}
+        constraintsLoading={constraintsLoading}
+        onRetry={onRetryConstraints}
+      />
       <DndContext id={dndContextId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={items.map((item) => item.key)} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
@@ -279,7 +274,7 @@ export function ArtworkImageManager({
           type="file"
           multiple
           accept={accept}
-          disabled={disabled || remaining === 0 || constraintsLoading || Boolean(constraintsError && remaining > 0 && !constraints)}
+          disabled={disabled || remaining === 0 || pickerBlocked}
           onChange={(event) => {
             onFilesSelected(event.target.files);
             event.target.value = '';
