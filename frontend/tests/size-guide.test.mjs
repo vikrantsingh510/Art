@@ -178,7 +178,6 @@ test('size guide photographs are the supplied extensionless JPEGs', () => {
 
 test('size guide UI is editorial, proportional, and does not add customer resizing', () => {
   const component = read('components/artwork-size-guide.js');
-  const furniture = read('components/size-guide-furniture.js');
   const preview = read('components/size-guide-scene-preview.js');
   const lightbox = read('components/size-guide-scene-lightbox.js');
   const scene = read('lib/size-guide-scene.js');
@@ -199,9 +198,9 @@ test('size guide UI is editorial, proportional, and does not add customer resizi
   assert.match(component, /loading=\{index === 0 \? 'eager' : 'lazy'\}/);
   assert.doesNotMatch(component, /type="range"|resize|90 × 120 × 4/);
   assert.doesNotMatch(component, /generateArAssets|evaluateArReadiness|WebXR|Quick Look|model-viewer/);
-  assert.doesNotMatch(component, /SizeGuideSofa|SizeGuideBed|SizeGuideWall|SizeGuideFurniture/);
-  assert.doesNotMatch(furniture, /SizeGuideSofa|viewBox="0 0 220 85"/);
-  assert.match(furniture, /SizeGuideDimensionDiagram/);
+  assert.doesNotMatch(component, /SizeGuideSofa|SizeGuideBed|SizeGuideWall|SizeGuideFurniture|SizeGuideDimensionDiagram/);
+  assert.doesNotMatch(component, /data-size-guide-field|border-y border-fillet/);
+  assert.equal(fs.existsSync(path.join(frontendRoot, 'components/size-guide-furniture.js')), false);
   assert.match(scene, /SIZE_GUIDE_REFERENCES/);
   assert.match(scene, /sizeGuideArtworkCm/);
   assert.doesNotMatch(scene, /widthM\s*=|heightM\s*=/);

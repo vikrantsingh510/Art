@@ -5,7 +5,6 @@ import {
   sizeGuideComparisons,
   sizeGuideDimensionFields,
 } from '@/lib/size-guide-scene';
-import { SizeGuideDimensionDiagram } from './size-guide-furniture';
 import { SizeGuideSceneLightbox } from './size-guide-scene-lightbox';
 
 export function ArtworkSizeGuide({ artwork }) {
@@ -21,8 +20,6 @@ export function ArtworkSizeGuide({ artwork }) {
   const image = primaryArtworkImage(artwork);
   const imageUrl = artworkStorefrontImageUrl(artwork, image);
   const imageAlt = image?.altText || artwork?.title || 'Artwork';
-  const widthField = fields.find((field) => field.id === 'width');
-  const heightField = fields.find((field) => field.id === 'height');
 
   return (
     <section className="size-guide space-y-10 overflow-x-hidden" data-size-guide="ready">
@@ -43,18 +40,6 @@ export function ArtworkSizeGuide({ artwork }) {
           ) : null}
         </div>
       </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 items-center border-y border-fillet py-8">
-        <SizeGuideDimensionDiagram width={widthField?.value} height={heightField?.value} />
-        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {fields.map((field) => (
-            <div key={field.id} data-size-guide-field={field.id}>
-              <dt className="label-sm text-patina">{field.label}</dt>
-              <dd className="font-display text-2xl text-olive mt-2">{field.display}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
 
       <ul className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {comparisons.map((comparison, index) => (

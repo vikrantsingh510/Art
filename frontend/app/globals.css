@@ -282,6 +282,28 @@ body {
   transform: none;
 }
 
+.artwork-ar-runtime {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.artwork-ar-runtime-viewer {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  pointer-events: none;
+}
+
+.artwork-ar-runtime-mask {
+  position: absolute;
+  inset: 0;
+  background: var(--color-surface);
+  pointer-events: none;
+}
+
 .artwork-lightbox-dialog {
   width: min(90vw, calc(68vh * var(--artwork-aspect, 0.8)));
 }

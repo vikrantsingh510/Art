@@ -11,6 +11,16 @@ import {
 } from '@/lib/ar-poc-model-viewer';
 import { activateArtworkAr, arLaunchFailureCopy } from '@/lib/ar-assets/launch';
 
+function storefrontArStatusCopy(loadState, progress = 0, errorMessage = '') {
+  if (loadState === 'loading') {
+    return progress > 0 ? `Preparing AR… ${progress}%` : 'Preparing AR…';
+  }
+  if (loadState === 'error') {
+    return errorMessage || 'The AR model could not be loaded.';
+  }
+  return '';
+}
+
 export function ArtworkModelViewer({
   src,
   iosSrc,
@@ -20,6 +30,7 @@ export function ArtworkModelViewer({
   onArAvailable,
   launchLabel = 'View on your wall',
   unavailableCopy = null,
+  interactive = true,
 }) {
   const viewerRef = useRef(null);
   const [loadState, setLoadState] = useState('loading');
@@ -69,7 +80,11 @@ export function ArtworkModelViewer({
     function onError(event) {
       const reason = event?.detail?.type || event?.detail || 'unknown';
       setLoadState('error');
-      setErrorMessage(`The 3D painting could not be loaded (${String(reason)}).`);
+      setErrorMessage(
+        interactive
+          ? `The 3D painting could not be loaded (${String(reason)}).`
+          : `The AR model could not be loaded (${String(reason)}).`,
+      );
       onArAvailable?.(false);
     }
 
@@ -110,7 +125,7 @@ export function ArtworkModelViewer({
       el.removeEventListener('progress', onProgress);
       el.removeEventListener('ar-status', onArStatus);
     };
-  }, [onArAvailable, src, iosSrc]);
+  }, [onArAvailable, src, iosSrc, interactive]);
 
   async function launchAr() {
     const el = viewerRef.current;
@@ -133,40 +148,59 @@ export function ArtworkModelViewer({
   }
 
   const showArButton = shouldShowArLaunchButton(arAvailable);
-  const statusCopy = modelViewerStatusCopy(loadState, progress, errorMessage);
+  const statusCopy = interactive
+    ? modelViewerStatusCopy(loadState, progress, errorMessage)
+    : storefrontArStatusCopy(loadState, progress, errorMessage);
+  const showReadyCopy = interactive && loadState === 'ready';
+
+  const viewer = (
+    <model-viewer
+      ref={viewerRef}
+      src={src}
+      ios-src={iosSrc}
+      poster={poster || undefined}
+      alt={alt}
+      ar
+      ar-modes={MODEL_VIEWER_AR_MODES}
+      ar-placement="wall"
+      ar-scale="fixed"
+      shadow-intensity="0"
+      reveal="auto"
+      loading="lazy"
+      {...(interactive
+        ? {
+          'camera-controls': true,
+          'touch-action': 'pan-y',
+          'environment-image': 'neutral',
+          'camera-orbit': '0deg 75deg 105%',
+          className: 'w-full bg-stone',
+          style: { height: 'min(32rem, 70vh)', display: 'block' },
+        }
+        : {
+          className: 'artwork-ar-runtime-viewer',
+          style: { width: '4rem', height: '4rem', display: 'block' },
+        })}
+    >
+      <div slot="progress-bar" hidden style={{ display: 'none', pointerEvents: 'none' }} />
+      <div slot="ar-button" hidden style={{ display: 'none' }} />
+    </model-viewer>
+  );
 
   return (
     <div className="space-y-3">
-      <model-viewer
-        ref={viewerRef}
-        src={src}
-        ios-src={iosSrc}
-        poster={poster || undefined}
-        alt={alt}
-        ar
-        ar-modes={MODEL_VIEWER_AR_MODES}
-        ar-placement="wall"
-        ar-scale="fixed"
-        camera-controls
-        touch-action="pan-y"
-        shadow-intensity="0"
-        environment-image="neutral"
-        camera-orbit="0deg 75deg 105%"
-        reveal="auto"
-        loading="lazy"
-        className="w-full bg-stone"
-        style={{ height: 'min(32rem, 70vh)', display: 'block' }}
-      >
-        <div slot="progress-bar" hidden style={{ display: 'none', pointerEvents: 'none' }} />
-        <div slot="ar-button" hidden style={{ display: 'none' }} />
-      </model-viewer>
+      {interactive ? viewer : (
+        <div className="artwork-ar-runtime" data-ar-runtime="storefront" aria-hidden="true">
+          {viewer}
+          <span className="artwork-ar-runtime-mask" />
+        </div>
+      )}
       {loadState === 'loading' ? (
         <p className="text-sm text-on-surface-variant" role="status">{statusCopy}</p>
       ) : null}
       {loadState === 'error' ? (
         <p className="notice notice-error" role="alert">{statusCopy}</p>
       ) : null}
-      {loadState === 'ready' ? (
+      {showReadyCopy ? (
         <p className="text-sm text-on-surface-variant" role="status">{statusCopy}</p>
       ) : null}
       {arNote ? (
