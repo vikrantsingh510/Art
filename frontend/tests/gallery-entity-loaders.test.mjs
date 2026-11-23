@@ -19,6 +19,7 @@ test('gallery entity loaders are request-scoped React.cache wrappers', () => {
   assert.match(loaders, /loadBlogBySlug/);
   assert.match(loaders, /loadCart/);
   assert.match(loaders, /loadWishlist/);
+  assert.match(loaders, /loadWhatsappEnquiry/);
   assert.doesNotMatch(loaders, /unstable_cache|revalidate/);
 });
 
@@ -29,9 +30,11 @@ test('artwork, artist, collection and journal routes reuse the cached entity loa
   const journal = read('app/(gallery)/journal/[slug]/page.js');
 
   assert.match(artwork, /loadArtworkById\(id\)/);
+  assert.match(artwork, /loadWhatsappEnquiry\(\)/);
   assert.match(artwork, /generateMetadata/);
   assert.match(artwork, /notFound\(\)/);
   assert.doesNotMatch(artwork, /api\.getArtwork/);
+  assert.doesNotMatch(artwork, /api\.getWhatsappEnquiry/);
 
   assert.match(artist, /loadArtistBySlug\(slug\)/);
   assert.match(artist, /canonicalFor\(`\/artists\/\$\{slug\}`\)/);

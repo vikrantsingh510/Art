@@ -6,10 +6,10 @@ import { ArtworkGallery } from '@/components/artwork-gallery';
 import { ArtworkSizeGuide } from '@/components/artwork-size-guide';
 import { AddToCartButton, AddToWishlistButton } from '@/components/collection-actions';
 import { ErrorState } from '@/components/states';
-import { api, ApiClientError } from '@/lib/api';
+import { ApiClientError } from '@/lib/api';
 import { resolveArtworkArAssets } from '@/lib/ar-assets/storefront-storage';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
-import { loadArtworkById } from '@/lib/gallery-entity-loaders';
+import { loadArtworkById, loadWhatsappEnquiry } from '@/lib/gallery-entity-loaders';
 import { canonicalFor } from '@/lib/journal-origin';
 import { artworkStorefrontImageUrl, publicMediaItems, privateMediaItems } from '@/lib/media';
 import { formatInrFromPaise } from '@/lib/money';
@@ -51,12 +51,7 @@ export default async function ArtworkDetailPage({ params }) {
   const dimensions = formatDimensions(artwork);
   const ar = await resolveArtworkArAssets(artwork);
   const posterUrl = artworkStorefrontImageUrl(artwork);
-  let enquiry = { enabled: false };
-  try {
-    enquiry = await api.getWhatsappEnquiry();
-  } catch {
-    enquiry = { enabled: false };
-  }
+  const enquiry = await loadWhatsappEnquiry();
   const pageUrl = await canonicalFor(`/artwork/${artwork.id}`);
   const whatsappHref = enquiry?.enabled
     ? buildWhatsappEnquiryHref({

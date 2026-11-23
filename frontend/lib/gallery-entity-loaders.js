@@ -38,3 +38,15 @@ export const loadWishlist = cache(async function loadWishlist() {
   }
   return api.getWishlist({ token });
 });
+
+export const loadWhatsappEnquiry = cache(async function loadWhatsappEnquiry() {
+  try {
+    const enquiry = await api.getWhatsappEnquiry();
+    if (enquiry && typeof enquiry === 'object') {
+      return enquiry;
+    }
+    return { enabled: false };
+  } catch {
+    return { enabled: false };
+  }
+});

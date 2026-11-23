@@ -640,3 +640,21 @@ body {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.whatsapp-float {
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  background: #2e6b4f;
+}
+
+.whatsapp-float:hover,
+.whatsapp-float:focus-visible {
+  background: #275c44;
+}
+
+@media (min-width: 768px) {
+  .whatsapp-float {
+    right: max(1.75rem, env(safe-area-inset-right, 0px));
+    bottom: max(1.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}

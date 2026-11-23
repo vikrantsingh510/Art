@@ -40,8 +40,8 @@ export function WhatsappSettingsForm({ settings = null }) {
       });
       setFields(fieldsFromSettings(saved));
       setMessage(saved.enabled
-        ? 'WhatsApp enquiries are enabled on artwork pages.'
-        : 'WhatsApp enquiries are hidden on artwork pages.');
+        ? 'WhatsApp enquiries are enabled on the storefront.'
+        : 'WhatsApp enquiries are hidden on the storefront.');
     } catch (saveError) {
       setError(
         saveError instanceof ApiClientError
@@ -65,7 +65,7 @@ export function WhatsappSettingsForm({ settings = null }) {
         <span>
           <span className="label-md text-patina block">Enable WhatsApp enquiries</span>
           <span className="block text-sm text-on-surface-variant mt-1">
-            When enabled, artwork pages show a Click-to-Chat button. The number is never shown when this is off.
+            When enabled, a Click-to-Chat control appears on the storefront, including artwork pages. The number is never shown when this is off.
           </span>
         </span>
       </label>

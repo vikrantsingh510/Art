@@ -1,5 +1,6 @@
 export const DEFAULT_WHATSAPP_BUTTON_LABEL = 'Enquire on WhatsApp';
 export const WHATSAPP_ME_HOST = 'https://wa.me';
+export const DEFAULT_WHATSAPP_CONTACT_MESSAGE = "Hello, I would like to know more about Maison d'Art.";
 
 export function whatsappDigits(e164) {
   const raw = String(e164 || '').trim();
@@ -51,4 +52,26 @@ export function buildWhatsappEnquiryHref({ e164, title, id, url } = {}) {
 
   const text = buildWhatsappEnquiryMessage({ title, id, url });
   return `${WHATSAPP_ME_HOST}/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+export function buildWhatsappContactMessage() {
+  return DEFAULT_WHATSAPP_CONTACT_MESSAGE;
+}
+
+export function buildWhatsappContactHref({ e164 } = {}) {
+  const digits = whatsappDigits(e164);
+  if (!digits) {
+    return null;
+  }
+
+  const text = buildWhatsappContactMessage();
+  return `${WHATSAPP_ME_HOST}/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+export function resolveWhatsappFloatHref(enquiry) {
+  if (!enquiry?.enabled) {
+    return null;
+  }
+
+  return buildWhatsappContactHref({ e164: enquiry.e164 });
 }

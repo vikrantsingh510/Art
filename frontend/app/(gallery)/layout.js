@@ -2,7 +2,8 @@ import { PageTransition } from '@/components/page-transition';
 import { ErrorState } from '@/components/states';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { loadCart, loadWishlist } from '@/lib/gallery-entity-loaders';
+import { WhatsappFloat } from '@/components/whatsapp-float';
+import { loadCart, loadWishlist, loadWhatsappEnquiry } from '@/lib/gallery-entity-loaders';
 import { getCurrentUser } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,8 @@ export default async function GalleryLayout({ children }) {
     }
   }
 
+  const enquiry = await loadWhatsappEnquiry();
+
   return (
     <>
       <SiteHeader user={user} cartCount={cartCount} wishlistCount={wishlistCount} />
@@ -59,6 +62,7 @@ export default async function GalleryLayout({ children }) {
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter />
+      <WhatsappFloat enquiry={enquiry} />
     </>
   );
 }
