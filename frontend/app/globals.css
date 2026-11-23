@@ -534,40 +534,54 @@ body {
   inset: 0;
   z-index: 80;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 1rem;
-  overflow: hidden;
+  overflow: auto;
   cursor: pointer;
   background: color-mix(in srgb, var(--color-charcoal) 82%, transparent);
   animation: size-guide-lightbox-enter 200ms ease-out;
 }
 
 .size-guide-lightbox-dialog {
+  --lightbox-chrome: 12.5rem;
+  --lightbox-image-max-height: calc(min(92dvh, 92vh) - var(--lightbox-chrome));
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
   cursor: auto;
-  width: min(96vw, calc(78vh * var(--scene-aspect, 1)));
-  max-width: 96vw;
-  max-height: 86vh;
+  width: min(96vw, 72rem);
+  max-width: 100%;
+  margin-block: auto;
   animation: size-guide-lightbox-enter 220ms ease-out;
 }
 
 .size-guide-scene-lightbox {
-  max-height: calc(86vh - 4.75rem);
+  width: min(100%, calc(var(--lightbox-image-max-height) * var(--scene-aspect, 1.5)));
+  max-width: 100%;
+  max-height: var(--lightbox-image-max-height);
+  height: auto;
+  aspect-ratio: var(--scene-aspect, 1.5);
+  margin-inline: auto;
 }
 
 .size-guide-lightbox-scenes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
+  width: min(100%, 36rem);
   margin-top: 0.75rem;
+  flex-shrink: 0;
 }
 
 .size-guide-lightbox-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
   min-height: 44px;
-  padding: 0 0.5rem;
+  padding: 0.35rem;
   border: 1px solid var(--color-fillet);
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   color: var(--color-ink);
@@ -590,10 +604,30 @@ body {
   outline-offset: 2px;
 }
 
+.size-guide-lightbox-thumb {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--color-stone);
+}
+
+.size-guide-lightbox-thumb-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.size-guide-lightbox-scene-label {
+  display: block;
+  text-align: center;
+  line-height: 1.2;
+}
+
 .size-guide-lightbox-close {
-  position: fixed;
-  top: 0.75rem;
-  right: 0.75rem;
+  position: sticky;
+  top: 0;
+  align-self: flex-end;
   z-index: 2;
   min-height: 44px;
   min-width: 44px;
@@ -615,12 +649,8 @@ body {
   }
 
   .size-guide-lightbox-dialog {
-    width: min(92vw, calc(80vh * var(--scene-aspect, 1)));
-    max-height: 88vh;
-  }
-
-  .size-guide-scene-lightbox {
-    max-height: calc(88vh - 4.75rem);
+    width: min(92vw, 72rem);
+    --lightbox-chrome: 13rem;
   }
 }
 

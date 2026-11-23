@@ -138,6 +138,7 @@ export function SizeGuideSceneLightbox({
             </button>
             <h2 id={titleId} className="sr-only">{copy.title}</h2>
             <SizeGuideScenePreview
+              key={photo.id}
               photo={photo}
               overlay={overlay}
               scene={scene}
@@ -150,6 +151,7 @@ export function SizeGuideSceneLightbox({
               <div className="size-guide-lightbox-scenes" role="tablist" aria-label="Size comparison scenes">
                 {scenes.map((item) => {
                   const selected = item.reference.id === active.reference.id;
+                  const label = SCENE_OPTION_LABELS[item.reference.id] || item.copy.title;
                   return (
                     <button
                       key={item.reference.id}
@@ -160,7 +162,18 @@ export function SizeGuideSceneLightbox({
                       className={`size-guide-lightbox-scene${selected ? ' is-active' : ''}`}
                       onClick={(event) => selectScene(event, item.reference.id)}
                     >
-                      {SCENE_OPTION_LABELS[item.reference.id] || item.copy.title}
+                      <span className="size-guide-lightbox-thumb">
+                        <SizeGuideScenePreview
+                          photo={item.photo}
+                          overlay={item.overlay}
+                          scene={item.scene}
+                          sizes="180px"
+                          framed={false}
+                          showOverlay={false}
+                          className="size-guide-lightbox-thumb-preview"
+                        />
+                      </span>
+                      <span className="size-guide-lightbox-scene-label">{label}</span>
                     </button>
                   );
                 })}

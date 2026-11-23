@@ -29,6 +29,29 @@ function read(relativePath) {
   return fs.readFileSync(path.join(frontendRoot, relativePath), 'utf8');
 }
 
+function jpegDimensions(bytes) {
+  let offset = 2;
+  while (offset + 8 < bytes.length) {
+    if (bytes[offset] !== 0xff) {
+      return null;
+    }
+    const marker = bytes[offset + 1];
+    if (marker === 0xd8 || marker === 0xd9) {
+      offset += 2;
+      continue;
+    }
+    const length = (bytes[offset + 2] << 8) + bytes[offset + 3];
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return {
+        height: (bytes[offset + 5] << 8) + bytes[offset + 6],
+        width: (bytes[offset + 7] << 8) + bytes[offset + 8],
+      };
+    }
+    offset += 2 + length;
+  }
+  return null;
+}
+
 function assertSharedScale(scene, artworkCm, reference) {
   const widthScale = scene.artwork.widthPct / scene.furniture.widthPct;
   const heightScale = scene.artwork.heightPct / scene.furniture.heightPct;
@@ -236,4 +259,60 @@ test('size guide lightbox switches sofa bed and wall without closing the modal',
   assert.match(lightbox, /createPortal\(/);
   assert.equal([...lightbox.matchAll(/createPortal\(/g)].length, 1);
   assert.doesNotMatch(lightbox, /window\.location|router\.push|href=\{/);
+});
+
+test('size guide lightbox fits the viewport without cropping scene photos', () => {
+  const css = read('app/globals.css');
+  const lightboxBlock = css.slice(css.indexOf('.size-guide-lightbox-backdrop'));
+
+  assert.match(css, /\.size-guide-lightbox-backdrop\s*\{[^}]*overflow:\s*auto/);
+  assert.match(css, /\.size-guide-lightbox-dialog\s*\{[^}]*width:\s*min\(96vw, 72rem\)/);
+  assert.match(css, /\.size-guide-scene-lightbox\s*\{[^}]*width:\s*min\(100%, calc\(var\(--lightbox-image-max-height\) \* var\(--scene-aspect/);
+  assert.match(css, /\.size-guide-scene-lightbox\s*\{[^}]*aspect-ratio:\s*var\(--scene-aspect/);
+  assert.match(css, /\.size-guide-lightbox-close\s*\{[^}]*position:\s*sticky/);
+  assert.doesNotMatch(lightboxBlock.slice(0, lightboxBlock.indexOf('@keyframes')), /78vh \* var\(--scene-aspect/);
+  assert.doesNotMatch(lightboxBlock.slice(0, lightboxBlock.indexOf('@keyframes')), /80vh \* var\(--scene-aspect/);
+  assert.doesNotMatch(css, /\.size-guide-scene-lightbox[^{]*\{[^}]*object-fit:\s*contain/);
+  assert.match(css, /\.size-guide-photo\s*\{[^}]*object-fit:\s*cover/);
+});
+
+test('size guide lightbox uses 3:2 image thumbnails without artwork overlays', () => {
+  const lightbox = read('components/size-guide-scene-lightbox.js');
+  const preview = read('components/size-guide-scene-preview.js');
+  const css = read('app/globals.css');
+
+  assert.match(lightbox, /framed=\{false\}/);
+  assert.match(lightbox, /showOverlay=\{false\}/);
+  assert.match(lightbox, /size-guide-lightbox-thumb/);
+  assert.match(lightbox, /size-guide-lightbox-scene-label/);
+  assert.match(preview, /showOverlay = true/);
+  assert.match(preview, /framed = true/);
+  assert.match(preview, /showOverlay && overlay/);
+  assert.match(css, /\.size-guide-lightbox-thumb\s*\{[^}]*aspect-ratio:\s*3\s*\/\s*2/);
+  assert.match(css, /\.size-guide-lightbox-scenes\s*\{[^}]*grid-template-columns:\s*repeat\(3/);
+  assert.match(css, /\.size-guide-lightbox-scene\s*\{[^}]*min-height:\s*44px/);
+});
+
+test('sofa keeps a 3:2 presentation frame while bed and wall match served pixels', () => {
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.sofa.width, 1536);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.sofa.height, 1024);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.sofa.aspect, 1536 / 1024);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.bed.width, 1536);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.bed.height, 1024);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.bed.aspect, 1536 / 1024);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.wall.width, 1600);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.wall.height, 1067);
+  assert.equal(SIZE_GUIDE_PHOTO_FRAMES.wall.aspect, 1600 / 1067);
+
+  const sofaFile = jpegDimensions(fs.readFileSync(path.join(frontendRoot, 'assets', 'images', SIZE_GUIDE_PHOTO_FILES.sofa)));
+  const bedFile = jpegDimensions(fs.readFileSync(path.join(frontendRoot, 'assets', 'images', SIZE_GUIDE_PHOTO_FILES.bed)));
+  const wallFile = jpegDimensions(fs.readFileSync(path.join(frontendRoot, 'assets', 'images', SIZE_GUIDE_PHOTO_FILES.wall)));
+  assert.deepEqual(sofaFile, { width: 1214, height: 1214 });
+  assert.deepEqual(bedFile, { width: 1536, height: 1024 });
+  assert.deepEqual(wallFile, { width: 1600, height: 1067 });
+
+  const portrait = sizeGuideArtworkCm({ width: 90, height: 120, depth: 4, dimensionUnit: 'cm' });
+  const sofaOverlay = sizeGuidePhotoOverlay(portrait, SIZE_GUIDE_REFERENCES.sofa, SIZE_GUIDE_PHOTO_FRAMES.sofa);
+  assert.equal(Number(sofaOverlay.widthPct.toFixed(8)), Number(((90 / 220) * 48).toFixed(8)));
+  assert.equal(Number((sofaOverlay.heightPct / sofaOverlay.widthPct).toFixed(8)), Number((SIZE_GUIDE_PHOTO_FRAMES.sofa.aspect / (90 / 120)).toFixed(8)));
 });
