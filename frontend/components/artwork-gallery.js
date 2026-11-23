@@ -68,7 +68,15 @@ export function ArtworkGallery({ artwork }) {
   const previewAspect = previewAspectRatio(artwork);
 
   if (images.length === 0) {
-    return <ArtworkImage artwork={artwork} fit="physical" priority sizes="(min-width: 1024px) 55vw, 100vw" />;
+    return (
+      <ArtworkImage
+        artwork={artwork}
+        variant="detail"
+        fit="physical"
+        priority
+        sizes="(min-width: 768px) 55vw, 100vw"
+      />
+    );
   }
 
   return (
@@ -100,9 +108,10 @@ export function ArtworkGallery({ artwork }) {
           <ArtworkImage
             artwork={artwork}
             image={selected}
+            variant="detail"
             fit="physical"
             priority
-            sizes="(min-width: 1024px) 55vw, 100vw"
+            sizes="(min-width: 768px) 55vw, 100vw"
           />
         </button>
         {showControls ? (

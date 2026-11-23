@@ -16,9 +16,15 @@ export function ArtworkImage({
   const chosen = image || primaryArtworkImage(artwork);
   const url = artworkStorefrontImageUrl(artwork, chosen);
   const alt = chosen?.altText || artwork?.title || 'Artwork';
+  const frameClass = [
+    'artwork-image-frame',
+    variant === 'lightbox' ? 'artwork-lightbox-frame' : '',
+    variant === 'detail' ? 'artwork-detail-frame' : '',
+    className,
+  ].filter(Boolean).join(' ');
 
   if (!url) {
-    return <ImagePlaceholder className={className} label="Image not catalogued" />;
+    return <ImagePlaceholder className={frameClass} label="Image not catalogued" />;
   }
 
   const aspect = fit === 'physical' ? previewAspectRatio(artwork) : { width: 4, height: 5, source: 'salon' };
@@ -29,7 +35,7 @@ export function ArtworkImage({
 
   return (
     <div
-      className={`artwork-image-frame ${variant === 'lightbox' ? 'artwork-lightbox-frame' : ''} ${className}`}
+      className={frameClass}
       style={frameStyle}
       data-image-fit={aspect.source}
     >

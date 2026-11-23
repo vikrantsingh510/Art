@@ -439,3 +439,74 @@ test('storefront catalogue images skip the Next optimizer so Storage originals c
   assert.doesNotMatch(source, /'use client'/);
   assert.doesNotMatch(source, /useState/);
 });
+
+test('detail gallery constrains the main artwork to the first viewport without cropping', () => {
+  const root = path.dirname(fileURLToPath(import.meta.url));
+  const gallery = fs.readFileSync(path.join(root, '../components/artwork-gallery.js'), 'utf8');
+  const image = fs.readFileSync(path.join(root, '../components/artwork-image.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, '../app/globals.css'), 'utf8');
+  const page = fs.readFileSync(path.join(root, '../app/(gallery)/artwork/[id]/page.js'), 'utf8');
+
+  assert.match(image, /variant === 'detail' \? 'artwork-detail-frame'/);
+  assert.match(image, /object-contain/);
+  assert.doesNotMatch(image, /object-cover/);
+
+  const blocks = [...gallery.matchAll(/<ArtworkImage[\s\S]*?\/>/g)].map((match) => match[0]);
+  const detailBlocks = blocks.filter((block) => /variant="detail"/.test(block));
+  const lightboxBlocks = blocks.filter((block) => /variant="lightbox"/.test(block));
+  const thumbBlocks = blocks.filter((block) => /sizes="120px"/.test(block));
+  assert.equal(detailBlocks.length, 2);
+  assert.equal(lightboxBlocks.length, 1);
+  assert.equal(thumbBlocks.length, 1);
+  assert.doesNotMatch(thumbBlocks[0], /variant="detail"|variant="lightbox"/);
+  assert.doesNotMatch(lightboxBlocks[0], /variant="detail"/);
+
+  assert.match(css, /\.artwork-detail-frame/);
+  assert.match(css, /100svh/);
+  assert.match(css, /100dvh/);
+  assert.match(css, /--artwork-chrome:\s*7\.5rem/);
+  assert.match(css, /\.artwork-detail-frame img\s*\{[^}]*object-fit:\s*contain/);
+  assert.match(css, /\.artwork-detail-frame img\s*\{[^}]*object-position:\s*center/);
+  assert.doesNotMatch(css, /\.artwork-detail-frame img\s*\{[^}]*object-fit:\s*cover/);
+
+  assert.match(page, /md:grid-cols-12/);
+  assert.match(page, /md:col-span-7/);
+  assert.match(page, /md:col-span-5/);
+  assert.match(page, /md:items-start/);
+  assert.match(page, /AddToCartButton/);
+  assert.match(page, /AddToWishlistButton/);
+  assert.match(page, /ArtworkArPanel/);
+  assert.match(page, /ArViewer/);
+  assert.match(page, /ArtworkGallery/);
+});
+
+test('detail artwork max-height leaves the full painting in the first desktop viewport', () => {
+  const rem = 16;
+  const chrome = 7.5 * rem;
+  const desktopGutter = 6.25 * rem;
+  const mobileGutter = 5.5 * rem;
+  const portraitAspect = 90 / 120;
+  const viewports = [
+    { width: 1920, height: 1080, gutter: desktopGutter },
+    { width: 1440, height: 900, gutter: desktopGutter },
+    { width: 1366, height: 768, gutter: desktopGutter },
+    { width: 1280, height: 720, gutter: desktopGutter },
+    { width: 390, height: 844, gutter: mobileGutter },
+  ];
+
+  for (const viewport of viewports) {
+    const maxHeight = viewport.height - chrome - viewport.gutter;
+    const pageGutter = viewport.width >= 768 ? 128 : 48;
+    const columnWidth = viewport.width >= 768
+      ? ((viewport.width - pageGutter) * 7) / 12
+      : viewport.width - pageGutter;
+    const fittedWidth = Math.min(columnWidth, maxHeight * portraitAspect);
+    const fittedHeight = fittedWidth / portraitAspect;
+    assert.ok(maxHeight > 0, `${viewport.width}x${viewport.height} has a positive stage`);
+    assert.ok(fittedHeight <= maxHeight + 0.5, `${viewport.width}x${viewport.height} painting fits the stage`);
+    assert.ok(
+      fittedHeight <= viewport.height - chrome,
+      `${viewport.width}x${viewport.height} painting stays below the header`,
+    );
+  }
+});

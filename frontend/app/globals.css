@@ -243,6 +243,45 @@ body {
   background: var(--color-surface-container-low);
 }
 
+/* Detail main image: fit below announcement + nav (7.5rem) and page/breadcrumb gutters. */
+.artwork-detail-frame {
+  --artwork-chrome: 7.5rem;
+  --artwork-stage-gutter: 5.5rem;
+  --artwork-stage-max-height: calc(100dvh - var(--artwork-chrome) - var(--artwork-stage-gutter));
+  width: min(100%, calc(var(--artwork-stage-max-height) * var(--artwork-aspect, 0.8)));
+  max-width: 100%;
+  max-height: var(--artwork-stage-max-height);
+  height: auto;
+  margin-inline: auto;
+}
+
+@supports (height: 100svh) {
+  .artwork-detail-frame {
+    --artwork-stage-max-height: calc(100svh - var(--artwork-chrome) - var(--artwork-stage-gutter));
+  }
+}
+
+@media (min-width: 768px) {
+  .artwork-detail-frame {
+    --artwork-stage-gutter: 6rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .artwork-detail-frame {
+    --artwork-stage-gutter: 6.25rem;
+  }
+}
+
+.artwork-detail-frame img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.artwork-detail-frame .artwork-image-hover:hover {
+  transform: none;
+}
+
 .artwork-lightbox-dialog {
   width: min(90vw, calc(68vh * var(--artwork-aspect, 0.8)));
 }

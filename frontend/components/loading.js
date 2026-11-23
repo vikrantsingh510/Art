@@ -92,13 +92,13 @@ export function ArtworkGridSkeleton({
 
 export function ArtworkDetailSkeleton() {
   return (
-    <div className="page-shell py-10 md:py-16" role="status" aria-live="polite" aria-label="Loading artwork">
-      <Skeleton className="h-3 w-40 mb-8" />
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-7">
+    <div className="page-shell py-6 md:py-8" role="status" aria-live="polite" aria-label="Loading artwork">
+      <Skeleton className="h-3 w-40 mb-4 md:mb-5" />
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 md:items-start">
+        <div className="md:col-span-7">
           <ImagePlaceholder />
         </div>
-        <aside className="lg:col-span-5 space-y-5">
+        <aside className="md:col-span-5 space-y-5">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="h-12 w-5/6" />
           <Skeleton className="h-5 w-1/2" />

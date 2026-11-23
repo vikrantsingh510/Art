@@ -63,12 +63,12 @@ export default async function ArtworkDetailPage({ params }) {
     : null;
 
   return (
-    <div className="page-shell py-10 md:py-16">
-      <p className="label-sm text-patina mb-8">
+    <div className="page-shell py-6 md:py-8">
+      <p className="label-sm text-patina mb-4 md:mb-5">
         <Link href="/explore" className="text-link">The permanent collection</Link>
       </p>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-7 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 md:items-start">
+        <div className="md:col-span-7 space-y-5">
           <ArtworkGallery key={artwork.id} artwork={artwork} />
           {dimensions ? (
             <p className="text-sm text-patina">
@@ -81,7 +81,7 @@ export default async function ArtworkDetailPage({ params }) {
           )}
           <ArtworkSizeGuide artwork={artwork} />
         </div>
-        <aside className="lg:col-span-5 space-y-6">
+        <aside className="md:col-span-5 space-y-5">
           <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>
           <h1 className="font-display text-4xl md:text-5xl italic leading-tight">{artwork.title}</h1>
           {artwork.artist?.slug ? (
