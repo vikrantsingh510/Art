@@ -668,8 +668,8 @@ body {
 }
 
 .artwork-favourite-icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   overflow: visible;
   transition: transform 200ms ease-out, filter 200ms ease-out;
 }
