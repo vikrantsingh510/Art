@@ -105,7 +105,7 @@ export function ArtworkFavouriteButton({ artworkId, saved: savedProp = false }) 
       </button>
       <ActionStatus
         pending={pending}
-        pendingLabel={saved ? 'Removing from wishlist' : 'Saving to wishlist'}
+        pendingLabel={saved ? 'Saving to wishlist' : 'Removing from wishlist'}
         error={error}
         variant="live"
       />

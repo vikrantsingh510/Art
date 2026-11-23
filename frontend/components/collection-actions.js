@@ -143,7 +143,7 @@ export function AddToWishlistButton({ artworkId, saved: savedProp = false, nextP
         onClick={toggle}
       >
         {pending ? (
-          <ButtonLoader label={saved ? 'Removing…' : 'Saving…'} />
+          <ButtonLoader label={saved ? 'Saving…' : 'Removing…'} />
         ) : (
           <>
             <IconHeart className="artwork-wishlist-cta-icon shrink-0" filled={saved} />
@@ -153,7 +153,7 @@ export function AddToWishlistButton({ artworkId, saved: savedProp = false, nextP
       </button>
       <ActionStatus
         pending={pending}
-        pendingLabel={saved ? 'Removing from wishlist' : 'Saving to wishlist'}
+        pendingLabel={saved ? 'Saving to wishlist' : 'Removing from wishlist'}
         error={error}
       />
     </div>

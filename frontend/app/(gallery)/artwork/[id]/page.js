@@ -127,10 +127,12 @@ export default async function ArtworkDetailPage({ params }) {
       </div>
 
       {(artwork.story || artwork.description) ? (
-        <section className="max-w-3xl mt-20 space-y-4">
+        <section className="mt-16 md:mt-20 w-full space-y-5">
           <p className="label-md text-patina">Curatorial monograph</p>
-          <h2 className="font-display text-3xl">The artwork’s story</h2>
-          <p className="text-[15px] leading-7 whitespace-pre-wrap">{artwork.story || artwork.description}</p>
+          <h2 className="font-display text-3xl md:text-5xl italic leading-tight">The artwork’s story</h2>
+          <p className="text-[15px] md:text-base leading-7 whitespace-pre-wrap">
+            {artwork.story || artwork.description}
+          </p>
         </section>
       ) : null}
 

@@ -91,6 +91,7 @@ test('favourite button toggles the existing wishlist APIs with pending and login
   assert.match(button, /artwork-favourite-button/);
   assert.match(button, /h-12 w-12/);
   assert.match(button, /is-saved/);
+  assert.match(button, /pendingLabel=\{saved \? 'Saving to wishlist' : 'Removing from wishlist'\}/);
   assert.doesNotMatch(button, /artwork-favourite-button[^"]*(bg-ivory|backdrop-blur|shadow-\[)/);
   assert.doesNotMatch(button, /useQuery|QueryClient|react-query/i);
 
@@ -147,6 +148,8 @@ test('artwork detail CTA uses cached membership and toggles add or remove', () =
   assert.match(actions, /IconHeart/);
   assert.match(actions, /filled=\{saved\}/);
   assert.match(actions, /artwork-wishlist-cta/);
+  assert.match(actions, /saved \? 'Saving…' : 'Removing…'/);
+  assert.match(actions, /pendingLabel=\{saved \? 'Saving to wishlist' : 'Removing from wishlist'\}/);
   assert.doesNotMatch(actions, /ArtworkFavouriteButton/);
   assert.doesNotMatch(actions, /wishlistFavouriteLabel/);
   assert.doesNotMatch(actions, /artwork-favourite-button/);
