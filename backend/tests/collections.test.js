@@ -72,9 +72,24 @@ after(async () => {
 
 test('cover path helper stores under collections/{collectionId}/cover.{ext}', () => {
   const collectionId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-  assert.equal(collectionCoverStoragePath(collectionId, 'hero.PNG'), `collections/${collectionId}/cover.png`);
-  assert.equal(collectionCoverStoragePath(collectionId, 'hero.JPEG'), `collections/${collectionId}/cover.jpg`);
+  const uniqueId = '11111111-1111-4111-8111-111111111111';
+  assert.equal(
+    collectionCoverStoragePath(collectionId, 'hero.PNG', uniqueId),
+    `collections/${collectionId}/cover-${uniqueId}.png`,
+  );
+  assert.equal(
+    collectionCoverStoragePath(collectionId, 'hero.JPEG', uniqueId),
+    `collections/${collectionId}/cover-${uniqueId}.jpg`,
+  );
+  assert.match(
+    collectionCoverStoragePath(collectionId, 'hero.PNG'),
+    new RegExp(`^collections/${collectionId}/cover-[0-9a-f-]+\\.png$`),
+  );
   assert.doesNotThrow(() => assertCoverStoragePathForCollection(collectionId, `collections/${collectionId}/cover.jpg`));
+  assert.doesNotThrow(() => assertCoverStoragePathForCollection(
+    collectionId,
+    `collections/${collectionId}/cover-${uniqueId}.jpg`,
+  ));
   assert.throws(
     () => assertCoverStoragePathForCollection(collectionId, `${collectionId}/cover.jpg`),
     (error) => error.statusCode === 400,

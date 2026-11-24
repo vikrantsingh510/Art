@@ -37,6 +37,7 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
   const router = useRouter();
   const [fields, setFields] = useState(() => fieldsFromCollection(collection));
   const [coverPath, setCoverPath] = useState(collection?.coverImagePath || null);
+  const [coverUpdatedAt, setCoverUpdatedAt] = useState(collection?.updatedAt || null);
   const [pendingFile, setPendingFile] = useState(null);
   const [selectedArtworks, setSelectedArtworks] = useState(() => (collection?.artworks || []).map((item) => ({
     id: item.id,
@@ -106,10 +107,11 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
     } catch (uploadError) {
       throw new Error(uploadError?.message || explainStorageUploadError(uploadError));
     }
-    await client.updateCollection(collectionId, { coverImagePath: path });
+    const updated = await client.updateCollection(collectionId, { coverImagePath: path });
     setPendingFile(null);
-    setCoverPath(path);
-    return path;
+    setCoverPath(updated?.coverImagePath || path);
+    setCoverUpdatedAt(updated?.updatedAt || null);
+    return updated?.coverImagePath || path;
   }
 
   async function persist(nextPublished) {
@@ -153,6 +155,7 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
 
       setIsPublished(Boolean(current.isPublished));
       setCoverPath(current.coverImagePath || null);
+      setCoverUpdatedAt(current.updatedAt || null);
       setSelectedArtworks((current.artworks || []).map((item) => ({
         id: item.id,
         title: item.title,
@@ -231,6 +234,7 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
         <h2 className="font-display text-2xl">Cover</h2>
         <CollectionCoverUpload
           coverImagePath={coverPath}
+          coverUpdatedAt={coverUpdatedAt}
           constraints={constraints}
           constraintsError={constraintsError}
           constraintsLoading={constraintsLoading}

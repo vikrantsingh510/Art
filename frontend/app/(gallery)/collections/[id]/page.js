@@ -7,7 +7,7 @@ import { EmptyState, ErrorState } from '@/components/states';
 import { PageIntro } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { loadCollectionById } from '@/lib/gallery-entity-loaders';
-import { publicStorageUrl } from '@/lib/media';
+import { collectionCoverUrl } from '@/lib/collection-cover';
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -51,7 +51,7 @@ export default async function CollectionDetailPage({ params }) {
     );
   }
 
-  const coverUrl = publicStorageUrl(collection.coverImagePath);
+  const coverUrl = collectionCoverUrl(collection.coverImagePath, collection.updatedAt);
 
   return (
     <div>

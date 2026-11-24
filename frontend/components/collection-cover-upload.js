@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { inspectArtworkImageFile } from '@/lib/artwork-image-inspect';
 import { acceptAttributeFromConstraints, validateArtworkImageFile } from '@/lib/artwork-image-constraints';
-import { publicStorageUrl } from '@/lib/media';
+import { collectionCoverUrl } from '@/lib/collection-cover';
 import {
   ArtworkImageConstraintsStatus,
   isArtworkImagePickerBlocked,
@@ -12,6 +12,7 @@ import { Field } from './ui';
 
 export function CollectionCoverUpload({
   coverImagePath,
+  coverUpdatedAt,
   constraints,
   constraintsError,
   constraintsLoading,
@@ -21,7 +22,7 @@ export function CollectionCoverUpload({
 }) {
   const [error, setError] = useState('');
   const [objectUrl, setObjectUrl] = useState(null);
-  const previewUrl = objectUrl || publicStorageUrl(coverImagePath);
+  const previewUrl = objectUrl || collectionCoverUrl(coverImagePath, coverUpdatedAt);
 
   async function onFileChange(event) {
     const file = event.target.files?.[0];
@@ -57,7 +58,7 @@ export function CollectionCoverUpload({
         constraintsLoading={constraintsLoading}
         onRetry={onRetryConstraints}
       />
-      <Field label="Cover image" hint="Optional. Stored as collections/{id}/cover.{ext} in artwork-images." error={error}>
+      <Field label="Cover image" hint="Optional. Stored as collections/{id}/cover-{uuid}.{ext} in artwork-images." error={error}>
         <input
           className="field-input"
           type="file"

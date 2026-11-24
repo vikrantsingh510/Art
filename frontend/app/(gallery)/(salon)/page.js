@@ -9,7 +9,7 @@ import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { loadArtistBySlug, loadHomepageFaq, loadHomepageFeaturedArtist, loadHomepageHero } from '@/lib/gallery-entity-loaders';
-import { publicStorageUrl } from '@/lib/media';
+import { collectionCoverUrl } from '@/lib/collection-cover';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
 import { hydrateHomepageFeaturedArtist, selectHomepageArtists } from '@/lib/homepage-artists';
 import { shouldRenderHomepageFaq } from '@/lib/homepage-faq';
@@ -179,7 +179,7 @@ export default async function HomePage() {
                 </Link>
               ))}
               {collections.map((collection) => {
-                const coverUrl = publicStorageUrl(collection.coverImagePath);
+                const coverUrl = collectionCoverUrl(collection.coverImagePath, collection.updatedAt);
                 return (
                   <Link key={collection.id} href={`/collections/${collection.id}`} className="editorial-card-link border-t border-fillet pt-4">
                     {coverUrl ? (

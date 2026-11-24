@@ -3,7 +3,7 @@ import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import { publicStorageUrl } from '@/lib/media';
+import { collectionCoverUrl } from '@/lib/collection-cover';
 import { requireAdmin } from '@/lib/session';
 
 export const metadata = { title: 'Collections' };
@@ -52,7 +52,7 @@ export default async function AdminCollectionsPage() {
             </thead>
             <tbody>
               {collections.map((collection) => {
-                const coverUrl = publicStorageUrl(collection.coverImagePath);
+                const coverUrl = collectionCoverUrl(collection.coverImagePath, collection.updatedAt);
                 return (
                   <tr key={collection.id} className="border-b border-fillet">
                     <td className="py-4">

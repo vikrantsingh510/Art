@@ -4,7 +4,7 @@ import { ImagePlaceholder } from '@/components/loading';
 import { Reveal } from '@/components/reveal';
 import { EmptyState, ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
-import { publicStorageUrl } from '@/lib/media';
+import { collectionCoverUrl } from '@/lib/collection-cover';
 
 export const metadata = { title: 'Collections' };
 
@@ -33,7 +33,7 @@ export default async function CollectionsPage() {
           <Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {collections.map((collection) => {
-              const coverUrl = publicStorageUrl(collection.coverImagePath);
+              const coverUrl = collectionCoverUrl(collection.coverImagePath, collection.updatedAt);
               return (
                 <Link key={collection.id} href={`/collections/${collection.id}`} className="editorial-card-link border-t border-fillet pt-6 space-y-4">
                   {coverUrl ? (

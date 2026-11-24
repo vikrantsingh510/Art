@@ -4,7 +4,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ADMIN_NAV_LINKS } from '../lib/admin-nav.js';
-import { collectionCoverStoragePath, isCollectionCoverPath } from '../lib/collection-cover.js';
+import {
+  collectionCoverStoragePath,
+  collectionCoverUrl,
+  isCollectionCoverPath,
+} from '../lib/collection-cover.js';
 import { clearedExploreQuery, exploreHref, parseExploreQuery } from '../lib/explore-query.js';
 
 const frontendRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -84,14 +88,41 @@ test('empty admin collection state offers Create collection', () => {
 
 test('cover upload uses the artwork-images collections/{collectionId}/cover.{ext} prefix', () => {
   const collectionId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-  assert.equal(collectionCoverStoragePath(collectionId, 'hero.WEBP'), `collections/${collectionId}/cover.webp`);
+  const uniqueId = '11111111-1111-4111-8111-111111111111';
+  assert.equal(
+    collectionCoverStoragePath(collectionId, 'hero.WEBP', uniqueId),
+    `collections/${collectionId}/cover-${uniqueId}.webp`,
+  );
+  assert.match(
+    collectionCoverStoragePath(collectionId, 'hero.PNG'),
+    new RegExp(`^collections/${collectionId}/cover-[0-9a-f-]+\\.png$`),
+  );
   assert.equal(isCollectionCoverPath(collectionId, `collections/${collectionId}/cover.webp`), true);
+  assert.equal(
+    isCollectionCoverPath(collectionId, `collections/${collectionId}/cover-${uniqueId}.webp`),
+    true,
+  );
+  const publicUrl = (storagePath) => `https://example.supabase.co/storage/v1/object/public/artwork-images/${storagePath}`;
+  const coverUrl = collectionCoverUrl(
+    `collections/${collectionId}/cover.webp`,
+    '2026-11-24T12:00:00.000Z',
+    { publicUrl },
+  );
+  assert.match(coverUrl, /\/collections\/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\/cover\.webp/);
+  assert.match(coverUrl, /v=2026-11-24T12%3A00%3A00\.000Z/);
+  const later = collectionCoverUrl(
+    `collections/${collectionId}/cover.webp`,
+    '2026-11-25T12:00:00.000Z',
+    { publicUrl },
+  );
+  assert.notEqual(coverUrl, later);
   const form = read('components/collection-form.js');
   const upload = read('lib/artwork-image-upload.js');
   assert.match(form, /collectionCoverStoragePath/);
   assert.match(form, /uploadArtworkImageFile/);
   assert.match(form, /useArtworkImageConstraints/);
   assert.match(form, /retryConstraints/);
+  assert.match(form, /coverImagePath: path/);
   assert.match(upload, /ARTWORK_IMAGES_BUCKET/);
   assert.doesNotMatch(read('lib/collection-cover.js'), /service_role|SERVICE_ROLE/);
   assert.doesNotMatch(read('components/collection-cover-upload.js'), /service_role|SERVICE_ROLE/);
@@ -99,7 +130,7 @@ test('cover upload uses the artwork-images collections/{collectionId}/cover.{ext
 
 test('public listing renders a cover image or fallback and drops catalogue copy', () => {
   const listing = read('app/(gallery)/collections/page.js');
-  assert.match(listing, /publicStorageUrl\(collection\.coverImagePath\)/);
+  assert.match(listing, /collectionCoverUrl\(collection\.coverImagePath, collection\.updatedAt\)/);
   assert.match(listing, /ImagePlaceholder|No cover/);
   assert.match(listing, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
   assert.match(listing, /editorial-image-hover/);
@@ -120,6 +151,7 @@ test('public detail renders published artworks in hanging order', () => {
   assert.match(detail, /notFound\(\)/);
   assert.match(detail, /ArtworkCard/);
   assert.match(detail, /editorial-image-hover/);
+  assert.match(detail, /collectionCoverUrl\(collection\.coverImagePath, collection\.updatedAt\)/);
   assert.match(detail, /sortByCollectionOrder\(list\.items \|\| \[\], collection\.artworkIds\)/);
   assert.doesNotMatch(detail, /createdAt/);
   assert.doesNotMatch(detail, /Cover catalogued/);
@@ -130,7 +162,7 @@ test('homepage taxonomy and Explore keep collectionId links working', () => {
   const explore = read('app/(gallery)/explore/page.js');
   assert.match(homepage, /listCollections/);
   assert.match(homepage, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
-  assert.match(homepage, /publicStorageUrl\(collection\.coverImagePath\)/);
+  assert.match(homepage, /collectionCoverUrl\(collection\.coverImagePath, collection\.updatedAt\)/);
   assert.match(homepage, /src=\{coverUrl\}/);
   assert.match(explore, /collectionId: params.collectionId/);
   assert.match(explore, /listArtworks/);
