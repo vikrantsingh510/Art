@@ -124,6 +124,8 @@ test('homepage taxonomy and Explore keep collectionId links working', () => {
   const explore = read('app/(gallery)/explore/page.js');
   assert.match(homepage, /listCollections/);
   assert.match(homepage, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
+  assert.match(homepage, /publicStorageUrl\(collection\.coverImagePath\)/);
+  assert.match(homepage, /src=\{coverUrl\}/);
   assert.match(explore, /collectionId: params.collectionId/);
   assert.match(explore, /listArtworks/);
 

@@ -8,6 +8,7 @@ import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { loadArtistBySlug, loadHomepageFaq, loadHomepageFeaturedArtist, loadHomepageHero } from '@/lib/gallery-entity-loaders';
+import { publicStorageUrl } from '@/lib/media';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
 import { hydrateHomepageFeaturedArtist, selectHomepageArtists } from '@/lib/homepage-artists';
 
@@ -168,13 +169,28 @@ export default async function HomePage() {
                   <p className="text-sm text-on-surface-variant mt-2">{category.description || 'Open this series in the archive.'}</p>
                 </Link>
               ))}
-              {collections.map((collection) => (
-                <Link key={collection.id} href={`/collections/${collection.id}`} className="border-t border-fillet pt-4">
-                  <p className="label-sm text-patina">Collection</p>
-                  <h3 className="font-display text-2xl mt-2">{collection.name}</h3>
-                  <p className="text-sm text-on-surface-variant mt-2">{collection.description || 'View the published hanging.'}</p>
-                </Link>
-              ))}
+              {collections.map((collection) => {
+                const coverUrl = publicStorageUrl(collection.coverImagePath);
+                return (
+                  <Link key={collection.id} href={`/collections/${collection.id}`} className="border-t border-fillet pt-4">
+                    {coverUrl ? (
+                      <div className="relative aspect-[16/9] mb-4 bg-surface-container-low">
+                        <Image
+                          src={coverUrl}
+                          alt={collection.name}
+                          fill
+                          unoptimized
+                          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : null}
+                    <p className="label-sm text-patina">Collection</p>
+                    <h3 className="font-display text-2xl mt-2">{collection.name}</h3>
+                    <p className="text-sm text-on-surface-variant mt-2">{collection.description || 'View the published hanging.'}</p>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
