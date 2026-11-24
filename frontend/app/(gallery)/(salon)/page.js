@@ -6,9 +6,9 @@ import { ArtworkCard } from '@/components/artwork-card';
 import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
-import { loadHomepageHero } from '@/lib/gallery-entity-loaders';
+import { loadArtistBySlug, loadHomepageFeaturedArtist, loadHomepageHero } from '@/lib/gallery-entity-loaders';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
-import { selectHomepageArtists } from '@/lib/homepage-artists';
+import { hydrateHomepageFeaturedArtist, selectHomepageArtists } from '@/lib/homepage-artists';
 
 export const metadata = {
   title: 'Exhibition',
@@ -16,20 +16,28 @@ export const metadata = {
 
 async function loadHome() {
   try {
-    const [featuredLots, latest, categories, collections, artistList] = await Promise.all([
+    const [featuredLots, latest, categories, collections, artistList, pinnedArtist] = await Promise.all([
       api.listArtworks({ featured: 'true', limit: 8 }),
       api.listArtworks({ limit: 8 }),
       api.listCategories(),
       api.listCollections(),
       api.listArtists({ limit: 8 }),
+      loadHomepageFeaturedArtist(),
     ]);
-    const { featured, known } = selectHomepageArtists(artistList?.items || []);
+    const { featured, known } = selectHomepageArtists(artistList?.items || [], {
+      featuredArtist: pinnedArtist,
+    });
+    const featuredArtist = await hydrateHomepageFeaturedArtist(
+      featured,
+      pinnedArtist,
+      loadArtistBySlug,
+    );
     return {
       artworks: selectHomepageArtworks(featuredLots?.items, latest?.items, { limit: 8 }),
       total: latest?.total || 0,
       categories: Array.isArray(categories) ? categories : [],
       collections: Array.isArray(collections) ? collections : [],
-      featuredArtist: featured,
+      featuredArtist,
       knownArtists: known,
       error: null,
     };

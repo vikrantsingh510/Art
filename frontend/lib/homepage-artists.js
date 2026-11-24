@@ -7,15 +7,53 @@ export function publishedArtists(items) {
   ));
 }
 
-export function selectHomepageArtists(items, { knowLimit = 3 } = {}) {
+export function selectHomepageArtists(items, { knowLimit = 3, featuredArtist = null } = {}) {
   const published = publishedArtists(items);
+  const pinned = featuredArtist
+    && featuredArtist.id
+    && featuredArtist.status !== 'draft'
+    ? featuredArtist
+    : null;
   const withPortrait = published.filter((artist) => artist.profileImagePath);
-  const featured = withPortrait[0] || published[0] || null;
+  const featured = pinned || withPortrait[0] || published[0] || null;
   const known = published
     .filter((artist) => artist.id !== featured?.id)
     .slice(0, knowLimit);
 
   return { featured, known };
+}
+
+export function shouldHydrateHomepageFeaturedArtist(featured, pinnedArtist) {
+  if (!featured?.slug || featured.status === 'draft') {
+    return false;
+  }
+  if (
+    pinnedArtist?.id
+    && pinnedArtist.status !== 'draft'
+    && String(pinnedArtist.id) === String(featured.id)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export async function hydrateHomepageFeaturedArtist(featured, pinnedArtist, loadBySlug) {
+  if (!shouldHydrateHomepageFeaturedArtist(featured, pinnedArtist)) {
+    return featured || null;
+  }
+
+  try {
+    const detail = await loadBySlug(featured.slug);
+    if (!detail || detail.status === 'draft') {
+      return featured;
+    }
+    if (featured.id && detail.id && String(featured.id) !== String(detail.id)) {
+      return featured;
+    }
+    return { ...featured, ...detail };
+  } catch {
+    return featured;
+  }
 }
 
 export function artistPlainText(value) {

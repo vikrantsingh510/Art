@@ -10,6 +10,10 @@ import { artistPortraitStoragePath } from '@/lib/artist-portrait';
 import { getSupabasePublishableKey, getSupabaseUrl, isSupabaseConfigured } from '@/lib/env';
 import { explainStorageUploadError } from '@/lib/artwork-image-constraints';
 import { deleteArtworkImageFile, uploadArtworkImageFile } from '@/lib/artwork-image-upload';
+import {
+  homepageFeaturedArtistPutBody,
+  isArtistFeaturedOnHomepage,
+} from '@/lib/homepage-featured-artist';
 import { pendingButtonProps } from '@/lib/pending-action';
 import { ArtistPortraitUpload } from './artist-portrait-upload';
 import { ActionStatus, ButtonLoader } from './loading';
@@ -41,13 +45,14 @@ function fieldsFromArtist(artist) {
   };
 }
 
-export function ArtistForm({ artist = null, mode = 'create' }) {
+export function ArtistForm({ artist = null, mode = 'create', featuredArtistId = null }) {
   const router = useRouter();
   const [fields, setFields] = useState(() => fieldsFromArtist(artist));
   const [portraitPath, setPortraitPath] = useState(artist?.profileImagePath || null);
   const [pendingFile, setPendingFile] = useState(null);
   const [savedId, setSavedId] = useState(artist?.id || null);
   const [status, setStatus] = useState(artist?.status || 'draft');
+  const [pinnedArtistId, setPinnedArtistId] = useState(featuredArtistId || null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -58,6 +63,8 @@ export function ArtistForm({ artist = null, mode = 'create' }) {
     retryConstraints,
   } = useArtworkImageConstraints();
   const associated = Array.isArray(artist?.artworks) ? artist.artworks : [];
+  const featuredOnHomepage = isArtistFeaturedOnHomepage(savedId, pinnedArtistId);
+  const canFeature = Boolean(savedId) && status === 'published';
 
   function updateField(name, value) {
     setFields((current) => {
@@ -205,6 +212,40 @@ export function ArtistForm({ artist = null, mode = 'create' }) {
     }
   }
 
+  async function handleFeatureToggle(enabled) {
+    if (pending || !savedId) {
+      return;
+    }
+    if (enabled && status !== 'published') {
+      setError('Publish this artist before featuring them on the homepage.');
+      return;
+    }
+    const body = homepageFeaturedArtistPutBody({
+      artistId: savedId,
+      featuredArtistId: pinnedArtistId,
+      enabled,
+    });
+    if (!body) {
+      return;
+    }
+    setPending(true);
+    setError('');
+    setMessage('');
+    try {
+      const client = await createBrowserArtApi();
+      const saved = await client.updateAdminHomepageFeaturedArtistSettings(body);
+      setPinnedArtistId(saved?.artistId || null);
+      setMessage(saved?.artistId
+        ? 'This artist is featured on the homepage. Enabling another artist replaces this selection.'
+        : 'Homepage feature cleared. The salon will use automatic artist selection.');
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof ApiClientError ? caught.message : caught.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function clearPortrait() {
     setPendingFile(null);
     if (!portraitPath) {
@@ -278,6 +319,31 @@ export function ArtistForm({ artist = null, mode = 'create' }) {
           <p className="label-sm text-patina">Status: {status}</p>
         </div>
       </div>
+      <section className="space-y-4 max-w-xl">
+        <h2 className="font-display text-2xl">Homepage Visibility</h2>
+        <p className="text-sm text-on-surface-variant">
+          {!canFeature
+            ? 'Publish this artist before featuring them on the homepage. Unpublishing a featured artist returns the homepage to automatic selection.'
+            : featuredOnHomepage
+              ? 'This artist is currently featured. Enabling another artist replaces this selection. Unpublishing returns the homepage to automatic selection.'
+              : 'Enabling this control replaces any artist currently featured on the homepage. Unpublishing a featured artist returns the homepage to automatic selection.'}
+        </p>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-1 h-3.5 w-3.5 accent-charcoal"
+            checked={featuredOnHomepage}
+            disabled={pending || !canFeature}
+            onChange={(event) => handleFeatureToggle(event.target.checked)}
+          />
+          <span>
+            <span className="label-md text-patina block">Feature on Homepage</span>
+            <span className="block text-sm text-on-surface-variant mt-1">
+              Shows this artist in Artist in Focus. Only one artist can be featured at a time.
+            </span>
+          </span>
+        </label>
+      </section>
       {associated.length > 0 ? (
         <div className="space-y-3">
           <p className="label-md text-patina">Associated artworks</p>

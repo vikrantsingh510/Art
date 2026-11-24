@@ -38,6 +38,17 @@ function mapListItem(row, { includeAdminFields = false } = {}) {
   return item;
 }
 
+export function toPublicArtistProfile(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...mapListItem(row),
+    biography: row.biography,
+  };
+}
+
 function assertCanPublish(artist) {
   if (!String(artist.name || '').trim()) {
     throw new ApiError(400, 'A name is required to publish an artist.');
@@ -159,19 +170,7 @@ async function toAdminArtist(row) {
 
 async function toPublicArtist(row) {
   return {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    shortBio: row.shortBio,
-    biography: row.biography,
-    profileImagePath: row.profileImagePath,
-    profileImageAlt: row.profileImageAlt,
-    artisticStyle: row.artisticStyle,
-    medium: row.medium,
-    location: row.location,
-    seoTitle: row.seoTitle,
-    seoDescription: row.seoDescription,
-    publishedAt: row.publishedAt,
+    ...toPublicArtistProfile(row),
     artworks: await hydratePublicArtworkPreviews(row.id),
   };
 }
@@ -371,6 +370,7 @@ export async function deleteArtist(artistId, actorUserId) {
 }
 
 export default {
+  toPublicArtistProfile,
   listPublicArtists,
   getPublicArtistBySlug,
   listAdminArtists,

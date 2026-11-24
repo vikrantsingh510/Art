@@ -1,10 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import {
+  APP_SETTING_HOMEPAGE_FEATURED_ARTIST,
   APP_SETTING_HOMEPAGE_HERO,
   APP_SETTING_WHATSAPP_ENQUIRY,
   appSettings,
-} from '../db/schema/app-settings.schema.js';
+  artists,
+} from '../db/schema/index.js';
+import {
+  readHomepageFeaturedArtistId,
+  toHomepageFeaturedArtistSnapshot,
+  toPublicHomepageFeaturedArtist,
+} from '../lib/homepage-featured-artist.js';
 import {
   normalizeHomepageHeroAltText,
   normalizeHomepageHeroStoragePath,
@@ -18,6 +25,7 @@ import {
   toPublicWhatsappSnapshot,
 } from '../lib/whatsapp-enquiry.js';
 import { ApiError } from '../utils/ApiError.js';
+import { toPublicArtistProfile } from './artist.service.js';
 import { writeAuditLog } from './audit.service.js';
 
 function emptyAdminWhatsappSettings() {
@@ -188,6 +196,105 @@ export async function updateAdminHomepageHeroSettings(payload, actorUserId, { ip
   return toHomepageHeroSnapshot(row);
 }
 
+async function getHomepageFeaturedArtistSettingsRow() {
+  const [row] = await db
+    .select()
+    .from(appSettings)
+    .where(eq(appSettings.key, APP_SETTING_HOMEPAGE_FEATURED_ARTIST))
+    .limit(1);
+  return row || null;
+}
+
+async function findPublishedFeaturedArtist(artistId) {
+  const id = readHomepageFeaturedArtistId({ artistId });
+  if (!id) {
+    return null;
+  }
+
+  const [row] = await db
+    .select()
+    .from(artists)
+    .where(eq(artists.id, id))
+    .limit(1);
+
+  if (!row || row.status !== 'published') {
+    return null;
+  }
+
+  return row;
+}
+
+async function assertPublishedFeaturedArtist(artistId) {
+  const id = readHomepageFeaturedArtistId({ artistId });
+  const [row] = await db
+    .select({ id: artists.id, status: artists.status })
+    .from(artists)
+    .where(eq(artists.id, id))
+    .limit(1);
+
+  if (!row) {
+    throw new ApiError(404, 'Artist not found.');
+  }
+
+  if (row.status !== 'published') {
+    throw new ApiError(400, 'Only a published artist can be featured on the homepage.');
+  }
+
+  return row.id;
+}
+
+export async function getPublicHomepageFeaturedArtist() {
+  const row = await getHomepageFeaturedArtistSettingsRow();
+  const storedId = readHomepageFeaturedArtistId(row?.value);
+  const artist = await findPublishedFeaturedArtist(storedId);
+  return toPublicHomepageFeaturedArtist(toPublicArtistProfile(artist));
+}
+
+export async function getAdminHomepageFeaturedArtistSettings() {
+  const row = await getHomepageFeaturedArtistSettingsRow();
+  return toHomepageFeaturedArtistSnapshot(row);
+}
+
+export async function updateAdminHomepageFeaturedArtistSettings(payload, actorUserId, { ipAddress } = {}) {
+  const requestedId = payload.artistId == null || payload.artistId === ''
+    ? null
+    : String(payload.artistId).trim();
+  const artistId = requestedId ? await assertPublishedFeaturedArtist(requestedId) : null;
+  const value = { artistId };
+
+  const [row] = await db
+    .insert(appSettings)
+    .values({
+      key: APP_SETTING_HOMEPAGE_FEATURED_ARTIST,
+      value,
+      updatedBy: actorUserId || null,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: appSettings.key,
+      set: {
+        value,
+        updatedBy: actorUserId || null,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'settings.homepage_featured_artist.update',
+    entityType: 'app_settings',
+    entityId: artistId,
+    ipAddress: ipAddress || null,
+    metadata: {
+      key: APP_SETTING_HOMEPAGE_FEATURED_ARTIST,
+      artistId,
+    },
+  });
+
+  return toHomepageFeaturedArtistSnapshot(row);
+}
+
 export default {
   getPublicWhatsappEnquiry,
   getAdminWhatsappSettings,
@@ -195,4 +302,7 @@ export default {
   getPublicHomepageHero,
   getAdminHomepageHeroSettings,
   updateAdminHomepageHeroSettings,
+  getPublicHomepageFeaturedArtist,
+  getAdminHomepageFeaturedArtistSettings,
+  updateAdminHomepageFeaturedArtistSettings,
 };

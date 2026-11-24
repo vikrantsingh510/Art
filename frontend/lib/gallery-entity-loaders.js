@@ -73,3 +73,12 @@ export const loadHomepageHero = cache(async function loadHomepageHero() {
     return resolveHomepageHero(null);
   }
 });
+
+export const loadHomepageFeaturedArtist = cache(async function loadHomepageFeaturedArtist() {
+  try {
+    const data = await api.getHomepageFeaturedArtist();
+    return data?.artist || null;
+  } catch {
+    return null;
+  }
+});

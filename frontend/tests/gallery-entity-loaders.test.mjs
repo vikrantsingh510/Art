@@ -22,6 +22,7 @@ test('gallery entity loaders are request-scoped React.cache wrappers', () => {
   assert.match(loaders, /loadArtworkFavouriteSaved/);
   assert.match(loaders, /loadWhatsappEnquiry/);
   assert.match(loaders, /loadHomepageHero/);
+  assert.match(loaders, /loadHomepageFeaturedArtist/);
   assert.doesNotMatch(loaders, /unstable_cache|revalidate/);
 });
 

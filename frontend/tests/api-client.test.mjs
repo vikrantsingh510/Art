@@ -200,3 +200,32 @@ test('sends public homepage hero path', async () => {
   assert.match(calls[0].url, /\/api\/v1\/homepage\/hero$/);
   assert.equal(calls[0].method, 'GET');
 });
+
+test('sends homepage featured artist paths', async () => {
+  const calls = [];
+  const api = createArtApi({
+    baseUrl: 'http://api.test',
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), method: options.method, body: options.body });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ success: true, data: { artist: null } }),
+      };
+    },
+  });
+
+  await api.getHomepageFeaturedArtist();
+  await api.adminHomepageFeaturedArtistSettings({ token: 't' });
+  await api.updateAdminHomepageFeaturedArtistSettings(
+    { artistId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+    { token: 't' },
+  );
+  assert.match(calls[0].url, /\/api\/v1\/homepage\/featured-artist$/);
+  assert.equal(calls[0].method, 'GET');
+  assert.match(calls[1].url, /\/api\/v1\/admin\/settings\/homepage-featured-artist$/);
+  assert.equal(calls[1].method, 'GET');
+  assert.match(calls[2].url, /\/api\/v1\/admin\/settings\/homepage-featured-artist$/);
+  assert.equal(calls[2].method, 'PUT');
+  assert.match(calls[2].body, /aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/);
+});

@@ -1,9 +1,12 @@
 import { sendSuccess } from '../utils/ApiResponse.js';
 import {
+  getAdminHomepageFeaturedArtistSettings,
   getAdminHomepageHeroSettings,
   getAdminWhatsappSettings,
+  getPublicHomepageFeaturedArtist,
   getPublicHomepageHero,
   getPublicWhatsappEnquiry,
+  updateAdminHomepageFeaturedArtistSettings,
   updateAdminHomepageHeroSettings,
   updateAdminWhatsappSettings,
 } from '../services/settings.service.js';
@@ -42,6 +45,23 @@ export async function updateAdminHomepageHeroSettingsHandler(req, res) {
   return sendSuccess(res, { data });
 }
 
+export async function getPublicHomepageFeaturedArtistHandler(_req, res) {
+  const data = await getPublicHomepageFeaturedArtist();
+  return sendSuccess(res, { data });
+}
+
+export async function getAdminHomepageFeaturedArtistSettingsHandler(_req, res) {
+  const data = await getAdminHomepageFeaturedArtistSettings();
+  return sendSuccess(res, { data });
+}
+
+export async function updateAdminHomepageFeaturedArtistSettingsHandler(req, res) {
+  const data = await updateAdminHomepageFeaturedArtistSettings(req.body, req.user.id, {
+    ipAddress: req.ip,
+  });
+  return sendSuccess(res, { data });
+}
+
 export default {
   getPublicWhatsappEnquiryHandler,
   getAdminWhatsappSettingsHandler,
@@ -49,4 +69,7 @@ export default {
   getPublicHomepageHeroHandler,
   getAdminHomepageHeroSettingsHandler,
   updateAdminHomepageHeroSettingsHandler,
+  getPublicHomepageFeaturedArtistHandler,
+  getAdminHomepageFeaturedArtistSettingsHandler,
+  updateAdminHomepageFeaturedArtistSettingsHandler,
 };

@@ -11,8 +11,14 @@ export default async function EditArtistPage({ params }) {
   const { token } = await requireAdmin();
 
   let artist;
+  let featuredArtistId = null;
   try {
-    artist = await api.adminArtist(id, { token });
+    const [loadedArtist, featured] = await Promise.all([
+      api.adminArtist(id, { token }),
+      api.adminHomepageFeaturedArtistSettings({ token }).catch(() => ({ artistId: null })),
+    ]);
+    artist = loadedArtist;
+    featuredArtistId = featured?.artistId || null;
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 404) {
       notFound();
@@ -26,7 +32,7 @@ export default async function EditArtistPage({ params }) {
         <p className="label-sm text-patina">{artist.status}</p>
         <h1 className="font-display text-4xl mt-2">Edit {artist.name}</h1>
       </div>
-      <ArtistForm mode="edit" artist={artist} />
+      <ArtistForm mode="edit" artist={artist} featuredArtistId={featuredArtistId} />
     </div>
   );
 }

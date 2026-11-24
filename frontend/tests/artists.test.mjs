@@ -105,9 +105,18 @@ test('admin artist screens exist for list, create and edit', () => {
   assert.equal(fs.existsSync(path.join(frontendRoot, 'app/admin/artists/new/page.js')), true);
   assert.equal(fs.existsSync(path.join(frontendRoot, 'app/admin/artists/[id]/edit/page.js')), true);
   const form = read('components/artist-form.js');
+  const editPage = read('app/admin/artists/[id]/edit/page.js');
   assert.match(form, /Save draft/);
   assert.match(form, /Publish/);
   assert.match(form, /Unpublish/);
   assert.match(form, /Delete this artist permanently/);
   assert.match(form, /Associated artworks/);
+  assert.match(form, /Homepage Visibility/);
+  assert.match(form, /Feature on Homepage/);
+  assert.match(form, /updateAdminHomepageFeaturedArtistSettings/);
+  assert.match(form, /homepageFeaturedArtistPutBody/);
+  assert.match(form, /canFeature/);
+  assert.match(editPage, /adminHomepageFeaturedArtistSettings/);
+  assert.match(editPage, /featuredArtistId/);
+  assert.doesNotMatch(form, /service_role|SERVICE_ROLE/);
 });

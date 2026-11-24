@@ -4,11 +4,17 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  homepageFeaturedArtistPutBody,
+  isArtistFeaturedOnHomepage,
+} from '../lib/homepage-featured-artist.js';
+import {
   artistExcerpt,
   artistFocusCopy,
   artistStoryHref,
   artistWorksHref,
+  hydrateHomepageFeaturedArtist,
   selectHomepageArtists,
+  shouldHydrateHomepageFeaturedArtist,
 } from '../lib/homepage-artists.js';
 import { selectHomepageArtworks } from '../lib/homepage-artworks.js';
 
@@ -39,6 +45,87 @@ test('draft artists never become the featured or known set', () => {
   ]);
   assert.equal(featured, null);
   assert.deepEqual(known, []);
+});
+
+test('manually featured published artist takes priority over automatic portrait selection', () => {
+  const items = [
+    { id: 'a1', slug: 'newest', name: 'Newest', profileImagePath: 'artists/a1/portrait.jpg' },
+    { id: 'a2', slug: 'vishal-singh', name: 'Vishal Singh', profileImagePath: 'artists/a2/portrait.jpg' },
+    { id: 'a3', slug: 'third', name: 'Third', profileImagePath: 'artists/a3/portrait.jpg' },
+  ];
+  const pinned = {
+    id: 'a2',
+    slug: 'vishal-singh',
+    name: 'Vishal Singh',
+    shortBio: 'A painter of quiet afternoons.',
+    biography: 'There was once a meadow.',
+    location: 'Goa',
+    profileImagePath: 'artists/a2/portrait.jpg',
+    profileImageAlt: 'Portrait of Vishal Singh',
+  };
+  const { featured, known } = selectHomepageArtists(items, { featuredArtist: pinned });
+  assert.equal(featured.id, 'a2');
+  assert.equal(featured.biography, 'There was once a meadow.');
+  assert.deepEqual(known.map((item) => item.id), ['a1', 'a3']);
+  assert.equal(known.some((item) => item.id === featured.id), false);
+});
+
+test('null featured setting uses existing automatic selection', () => {
+  const items = [
+    { id: 'a1', slug: 'rahul', name: 'Rahul', profileImagePath: null },
+    { id: 'a2', slug: 'vishal', name: 'Vishal', profileImagePath: 'artists/v/portrait.jpg' },
+  ];
+  const automatic = selectHomepageArtists(items);
+  const withNull = selectHomepageArtists(items, { featuredArtist: null });
+  assert.equal(automatic.featured.id, 'a2');
+  assert.equal(withNull.featured.id, automatic.featured.id);
+  assert.deepEqual(withNull.known.map((item) => item.id), automatic.known.map((item) => item.id));
+});
+
+test('stale unpublished or deleted featured ids fall back to automatic selection', () => {
+  const items = [
+    { id: 'a1', slug: 'one', name: 'One', profileImagePath: 'artists/a1/portrait.jpg' },
+    { id: 'a2', slug: 'two', name: 'Two', profileImagePath: 'artists/a2/portrait.jpg' },
+    { id: 'draft-1', slug: 'hidden', name: 'Hidden', status: 'draft', profileImagePath: 'artists/d/portrait.jpg' },
+  ];
+  const missing = selectHomepageArtists(items, { featuredArtist: null });
+  const unpublished = selectHomepageArtists(items, {
+    featuredArtist: { id: 'draft-1', slug: 'hidden', name: 'Hidden', status: 'draft' },
+  });
+  assert.equal(missing.featured.id, 'a1');
+  assert.equal(unpublished.featured.id, 'a1');
+  assert.equal(missing.known.some((item) => item.id === 'draft-1'), false);
+  assert.equal(unpublished.known.some((item) => item.id === 'draft-1'), false);
+});
+
+test('manually featured artist outside the first published page is still selected with biography', () => {
+  const items = Array.from({ length: 8 }, (_, index) => ({
+    id: `page-${index}`,
+    slug: `page-${index}`,
+    name: `Page ${index}`,
+    profileImagePath: `artists/page-${index}/portrait.jpg`,
+  }));
+  const pinned = {
+    id: 'outside-100',
+    slug: 'atelier-beyond',
+    name: 'Atelier Beyond',
+    shortBio: 'A painter of quiet afternoons.',
+    biography: 'There was once a meadow. Light fell across the grass.',
+    location: 'Goa',
+    profileImagePath: 'artists/outside/portrait.jpg',
+    profileImageAlt: 'Portrait of Atelier Beyond',
+  };
+  const { featured, known } = selectHomepageArtists(items, { featuredArtist: pinned });
+  assert.equal(featured.id, 'outside-100');
+  assert.equal(featured.biography, pinned.biography);
+  assert.equal(featured.shortBio, pinned.shortBio);
+  assert.equal(featured.location, 'Goa');
+  assert.equal(items.some((item) => item.id === featured.id), false);
+  assert.equal(known.some((item) => item.id === featured.id), false);
+  assert.deepEqual(known.map((item) => item.id), ['page-0', 'page-1', 'page-2']);
+  const copy = artistFocusCopy(featured);
+  assert.equal(copy.headline, pinned.shortBio);
+  assert.match(copy.body, /There was once a meadow/);
 });
 
 test('fewer than three published artists render without placeholders', () => {
@@ -99,17 +186,121 @@ test('an older featured lot still leads the homepage when it is absent from the 
   assert.equal(selected.some((item) => item.id === 'new-7'), false);
 });
 
+test('enabling a new artist replaces the pin and disabling a non-featured artist does not clear it', () => {
+  assert.deepEqual(
+    homepageFeaturedArtistPutBody({
+      artistId: 'a2',
+      featuredArtistId: 'a1',
+      enabled: true,
+    }),
+    { artistId: 'a2' },
+  );
+  assert.deepEqual(
+    homepageFeaturedArtistPutBody({
+      artistId: 'a1',
+      featuredArtistId: 'a1',
+      enabled: false,
+    }),
+    { artistId: null },
+  );
+  assert.equal(
+    homepageFeaturedArtistPutBody({
+      artistId: 'a2',
+      featuredArtistId: 'a1',
+      enabled: false,
+    }),
+    null,
+  );
+  assert.equal(isArtistFeaturedOnHomepage('a1', 'a1'), true);
+  assert.equal(isArtistFeaturedOnHomepage('a2', 'a1'), false);
+});
+
+test('manually pinned artist does not trigger an extra detail request', async () => {
+  const pinned = {
+    id: 'a2',
+    slug: 'vishal-singh',
+    name: 'Vishal Singh',
+    biography: 'There was once a meadow.',
+  };
+  let calls = 0;
+  const result = await hydrateHomepageFeaturedArtist(pinned, pinned, async () => {
+    calls += 1;
+    return { ...pinned, biography: 'other' };
+  });
+  assert.equal(shouldHydrateHomepageFeaturedArtist(pinned, pinned), false);
+  assert.equal(calls, 0);
+  assert.equal(result.biography, 'There was once a meadow.');
+});
+
+test('automatic fallback fetches the selected artist biography and keeps list data on failure', async () => {
+  const featured = {
+    id: 'a2',
+    slug: 'vishal-singh',
+    name: 'Vishal Singh',
+    shortBio: 'A painter of quiet afternoons.',
+    profileImagePath: 'artists/v/portrait.jpg',
+  };
+  const items = [
+    featured,
+    { id: 'a3', slug: 'third', name: 'Third', profileImagePath: 'artists/t/portrait.jpg' },
+  ];
+  const selected = selectHomepageArtists(items);
+  assert.equal(selected.featured.id, 'a2');
+  assert.deepEqual(selected.known.map((item) => item.id), ['a3']);
+  assert.equal(shouldHydrateHomepageFeaturedArtist(selected.featured, null), true);
+
+  const hydrated = await hydrateHomepageFeaturedArtist(selected.featured, null, async (slug) => {
+    assert.equal(slug, 'vishal-singh');
+    return {
+      ...featured,
+      biography: 'There was once a meadow. Light fell across the grass.',
+    };
+  });
+  assert.equal(hydrated.biography, 'There was once a meadow. Light fell across the grass.');
+  assert.match(artistFocusCopy(hydrated).body, /There was once a meadow/);
+
+  const failed = await hydrateHomepageFeaturedArtist(selected.featured, null, async () => {
+    throw new Error('artist detail unavailable');
+  });
+  assert.equal(failed, selected.featured);
+  assert.equal(failed.biography, undefined);
+});
+
+test('no featured artist skips the detail request', async () => {
+  let calls = 0;
+  const result = await hydrateHomepageFeaturedArtist(null, null, async () => {
+    calls += 1;
+    return { id: 'x' };
+  });
+  assert.equal(shouldHydrateHomepageFeaturedArtist(null, null), false);
+  assert.equal(calls, 0);
+  assert.equal(result, null);
+});
+
 test('homepage fetches published artists once and renders both editorial sections', () => {
   const page = read('app/(gallery)/(salon)/page.js');
-  assert.match(page, /listArtists/);
+  const loaders = read('lib/gallery-entity-loaders.js');
+  const focus = read('components/artist-in-focus.js');
+  assert.match(page, /listArtists\(\{ limit: 8 \}\)/);
   assert.match(page, /selectHomepageArtists/);
+  assert.match(page, /featuredArtist: pinnedArtist/);
+  assert.match(page, /loadHomepageFeaturedArtist\(\)/);
+  assert.match(page, /hydrateHomepageFeaturedArtist/);
+  assert.match(page, /loadArtistBySlug/);
   assert.match(page, /selectHomepageArtworks/);
-  assert.match(page, /ArtistInFocus/);
+  assert.match(page, /<ArtistInFocus artist=\{featuredArtist\}/);
   assert.match(page, /ArtistsToKnow/);
   assert.match(page, /listArtworks\(\{ featured: 'true', limit: 8 \}\)/);
   assert.match(page, /listArtworks\(\{ limit: 8 \}\)/);
-  assert.doesNotMatch(page, /getArtist\(/);
+  assert.doesNotMatch(page, /listArtists\(\{ limit: 100 \}\)/);
+  assert.doesNotMatch(page, /api\.getArtist/);
   assert.doesNotMatch(page, /Elena|Lila|quotation|Lorem|sample artist/i);
+  assert.match(focus, /artistFocusCopy\(artist\)/);
+  assert.match(loaders, /export const loadHomepageFeaturedArtist = cache\(/);
+  assert.match(loaders, /export const loadArtistBySlug = cache\(/);
+  assert.match(loaders, /getHomepageFeaturedArtist/);
+  assert.match(loaders, /data\?\.artist/);
+  assert.doesNotMatch(loaders, /unstable_cache|revalidate/);
 });
 
 test('editorial sections match the split-screen and three-column structure', () => {

@@ -12,7 +12,12 @@ export const homepageHeroSettingsBody = z.object({
   altText: z.string().trim().max(HOMEPAGE_HERO_ALT_MAX_LENGTH).nullable().optional(),
 });
 
+export const homepageFeaturedArtistSettingsBody = z.object({
+  artistId: z.union([z.string().uuid(), z.null()]),
+});
+
 export default {
   whatsappSettingsBody,
   homepageHeroSettingsBody,
+  homepageFeaturedArtistSettingsBody,
 };
