@@ -10,7 +10,7 @@ const links = [
   { href: '/collections', label: 'Collections' },
   { href: '/journal', label: 'Journal' },
   { href: '/artists', label: 'Artists' },
-  { href: '/about', label: 'Our Philosophy' },
+  { href: '/about', label: 'Why Us' },
   { href: '/contact', label: 'Inquiry' },
 ];
 

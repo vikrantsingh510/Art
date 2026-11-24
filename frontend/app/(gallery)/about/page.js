@@ -1,10 +1,10 @@
-export const metadata = { title: 'Our Philosophy' };
+export const metadata = { title: 'Why Us' };
 
 export default function AboutPage() {
   return (
     <div className="page-shell pt-12 md:pt-20 pb-24 space-y-8">
       <header className="space-y-4">
-        <p className="label-sm text-patina">Our philosophy</p>
+        <p className="label-sm text-patina">Why us</p>
         <h1 className="font-display text-4xl md:text-[40px] leading-tight text-ink">
           Art is the hero. The canvas is its monument.
         </h1>
