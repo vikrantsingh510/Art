@@ -108,10 +108,15 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
       throw new Error(uploadError?.message || explainStorageUploadError(uploadError));
     }
     const updated = await client.updateCollection(collectionId, { coverImagePath: path });
+    const nextPath = updated?.coverImagePath || path;
     setPendingFile(null);
-    setCoverPath(updated?.coverImagePath || path);
-    setCoverUpdatedAt(updated?.updatedAt || null);
-    return updated?.coverImagePath || path;
+    setCoverPath(nextPath);
+    setCoverUpdatedAt(updated?.updatedAt || new Date().toISOString());
+    return {
+      path: nextPath,
+      updatedAt: updated?.updatedAt || null,
+      collection: updated,
+    };
   }
 
   async function persist(nextPublished) {
@@ -133,6 +138,7 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
         isPublished: nextPublished,
       };
 
+      const hadPendingCover = Boolean(pendingFile);
       let current = null;
       if (savedId) {
         current = await client.updateCollection(savedId, payload);
@@ -141,11 +147,17 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
         setSavedId(current.id);
       }
 
-      const nextPath = pendingFile
-        ? await persistCover(client, current.id, current.coverImagePath || coverPath)
-        : coverPath;
-      if (!pendingFile && nextPath !== (current.coverImagePath || null)) {
-        current = await client.updateCollection(current.id, { coverImagePath: nextPath });
+      let nextCoverPath = coverPath;
+      let nextCoverUpdatedAt = coverUpdatedAt;
+      if (hadPendingCover) {
+        const uploaded = await persistCover(client, current.id, current.coverImagePath || coverPath);
+        nextCoverPath = uploaded.path;
+        nextCoverUpdatedAt = uploaded.updatedAt || nextCoverUpdatedAt;
+        current = uploaded.collection || current;
+      } else if (nextCoverPath !== (current.coverImagePath || null)) {
+        current = await client.updateCollection(current.id, { coverImagePath: nextCoverPath });
+        nextCoverPath = current.coverImagePath || nextCoverPath;
+        nextCoverUpdatedAt = current.updatedAt || nextCoverUpdatedAt;
       }
 
       current = await client.replaceCollectionArtworks(
@@ -154,8 +166,12 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
       );
 
       setIsPublished(Boolean(current.isPublished));
-      setCoverPath(current.coverImagePath || null);
-      setCoverUpdatedAt(current.updatedAt || null);
+      setCoverPath(hadPendingCover ? nextCoverPath : (current.coverImagePath || null));
+      setCoverUpdatedAt(
+        hadPendingCover
+          ? (current.updatedAt || nextCoverUpdatedAt)
+          : (current.updatedAt || null),
+      );
       setSelectedArtworks((current.artworks || []).map((item) => ({
         id: item.id,
         title: item.title,
@@ -164,7 +180,10 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
         storagePath: item.storagePath,
       })));
       setMessage(nextPublished ? 'Collection published.' : 'Draft saved.');
-      router.replace(`/admin/collections/${current.id}/edit`);
+      const editHref = `/admin/collections/${current.id}/edit`;
+      if (mode !== 'edit' || savedId !== current.id) {
+        router.replace(editHref);
+      }
       router.refresh();
     } catch (caught) {
       const details = caught instanceof ApiClientError ? caught.details : null;
@@ -233,6 +252,7 @@ export function CollectionForm({ collection = null, mode = 'create' }) {
       <section className="space-y-5">
         <h2 className="font-display text-2xl">Cover</h2>
         <CollectionCoverUpload
+          key={`${coverPath || 'none'}::${coverUpdatedAt || 'new'}`}
           coverImagePath={coverPath}
           coverUpdatedAt={coverUpdatedAt}
           constraints={constraints}

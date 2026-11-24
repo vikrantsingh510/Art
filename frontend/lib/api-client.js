@@ -78,6 +78,7 @@ export function createApiClient({
     try {
       const response = await fetchImpl(url, {
         method,
+        cache: 'no-store',
         headers: {
           Accept: 'application/json',
           ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),

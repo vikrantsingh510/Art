@@ -70,7 +70,12 @@ export function CollectionCoverUpload({
       {previewUrl ? (
         <div className="space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={previewUrl} alt="Collection cover preview" className="max-h-64 object-contain bg-surface-container-low" />
+          <img
+            key={previewUrl}
+            src={previewUrl}
+            alt="Collection cover preview"
+            className="max-h-64 object-contain bg-surface-container-low"
+          />
           <button
             className="text-link"
             type="button"

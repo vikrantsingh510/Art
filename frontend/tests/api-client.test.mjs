@@ -21,6 +21,7 @@ test('unwraps success envelopes and sends bearer tokens', async () => {
   assert.deepEqual(data, { items: [], total: 0 });
   assert.match(calls[0].url, /\/api\/v1\/artworks\?q=ochre&page=2/);
   assert.equal(calls[0].options.headers.Authorization, 'Bearer access-token');
+  assert.equal(calls[0].options.cache, 'no-store');
 });
 
 test('maps Express error envelopes without retrying', async () => {

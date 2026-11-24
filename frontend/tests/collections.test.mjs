@@ -123,7 +123,11 @@ test('cover upload uses the artwork-images collections/{collectionId}/cover.{ext
   assert.match(form, /useArtworkImageConstraints/);
   assert.match(form, /retryConstraints/);
   assert.match(form, /coverImagePath: path/);
+  assert.match(form, /key=\{\`\$\{coverPath \|\| 'none'\}::\$\{coverUpdatedAt \|\| 'new'\}`\}/);
+  assert.match(form, /hadPendingCover \? nextCoverPath/);
+  assert.match(form, /mode !== 'edit' \|\| savedId !== current\.id/);
   assert.match(upload, /ARTWORK_IMAGES_BUCKET/);
+  assert.match(read('lib/api-client.js'), /cache:\s*'no-store'/);
   assert.doesNotMatch(read('lib/collection-cover.js'), /service_role|SERVICE_ROLE/);
   assert.doesNotMatch(read('components/collection-cover-upload.js'), /service_role|SERVICE_ROLE/);
 });
