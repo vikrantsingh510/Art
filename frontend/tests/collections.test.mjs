@@ -21,6 +21,8 @@ test('customer navigation includes Collections at /collections', () => {
     assert.match(source, /href: '\/collections'|href="\/collections"/);
     assert.match(source, /Collections/);
   }
+  assert.match(header, /whitespace-nowrap/);
+  assert.match(header, /hidden xl:flex/);
 });
 
 test('admin navigation lists Collections separately from Artwork collection', () => {

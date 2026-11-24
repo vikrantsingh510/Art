@@ -26,9 +26,13 @@ export function SiteHeader({ user, cartCount = 0, wishlistCount = 0 }) {
             Maison d&apos;Art
           </Link>
         </div>
-        <nav className="hidden xl:flex items-center gap-8">
+        <nav className="hidden xl:flex flex-1 items-center justify-center gap-x-5 2xl:gap-8 min-w-0">
           {nav.map((item) => (
-            <Link key={item.href} href={item.href} className="label-md text-on-surface-variant hover:text-on-surface">
+            <Link
+              key={item.href}
+              href={item.href}
+              className="label-md whitespace-nowrap shrink-0 text-on-surface-variant hover:text-on-surface"
+            >
               {item.label}
             </Link>
           ))}
