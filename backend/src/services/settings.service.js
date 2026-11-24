@@ -1,12 +1,18 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../config/database.js';
 import {
+  APP_SETTING_HOMEPAGE_FAQ,
   APP_SETTING_HOMEPAGE_FEATURED_ARTIST,
   APP_SETTING_HOMEPAGE_HERO,
   APP_SETTING_WHATSAPP_ENQUIRY,
   appSettings,
   artists,
 } from '../db/schema/index.js';
+import {
+  normalizeHomepageFaqDocument,
+  toHomepageFaqSnapshot,
+  toPublicHomepageFaq,
+} from '../lib/homepage-faq.js';
 import {
   readHomepageFeaturedArtistId,
   toHomepageFeaturedArtistSnapshot,
@@ -295,6 +301,62 @@ export async function updateAdminHomepageFeaturedArtistSettings(payload, actorUs
   return toHomepageFeaturedArtistSnapshot(row);
 }
 
+async function getHomepageFaqSettingsRow() {
+  const [row] = await db
+    .select()
+    .from(appSettings)
+    .where(eq(appSettings.key, APP_SETTING_HOMEPAGE_FAQ))
+    .limit(1);
+  return row || null;
+}
+
+export async function getPublicHomepageFaq() {
+  const row = await getHomepageFaqSettingsRow();
+  return toPublicHomepageFaq(row?.value);
+}
+
+export async function getAdminHomepageFaqSettings() {
+  const row = await getHomepageFaqSettingsRow();
+  return toHomepageFaqSnapshot(row);
+}
+
+export async function updateAdminHomepageFaqSettings(payload, actorUserId, { ipAddress } = {}) {
+  const value = normalizeHomepageFaqDocument(payload);
+
+  const [row] = await db
+    .insert(appSettings)
+    .values({
+      key: APP_SETTING_HOMEPAGE_FAQ,
+      value,
+      updatedBy: actorUserId || null,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: appSettings.key,
+      set: {
+        value,
+        updatedBy: actorUserId || null,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'settings.homepage_faq.update',
+    entityType: 'app_settings',
+    entityId: null,
+    ipAddress: ipAddress || null,
+    metadata: {
+      key: APP_SETTING_HOMEPAGE_FAQ,
+      enabled: value.enabled,
+      itemCount: value.items.length,
+    },
+  });
+
+  return toHomepageFaqSnapshot(row);
+}
+
 export default {
   getPublicWhatsappEnquiry,
   getAdminWhatsappSettings,
@@ -305,4 +367,7 @@ export default {
   getPublicHomepageFeaturedArtist,
   getAdminHomepageFeaturedArtistSettings,
   updateAdminHomepageFeaturedArtistSettings,
+  getPublicHomepageFaq,
+  getAdminHomepageFaqSettings,
+  updateAdminHomepageFaqSettings,
 };

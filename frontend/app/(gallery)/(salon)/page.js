@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { ArtistInFocus } from '@/components/artist-in-focus';
 import { ArtistsToKnow } from '@/components/artists-to-know';
 import { ArtworkCard } from '@/components/artwork-card';
+import { HomepageFaq } from '@/components/homepage-faq';
 import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
-import { loadArtistBySlug, loadHomepageFeaturedArtist, loadHomepageHero } from '@/lib/gallery-entity-loaders';
+import { loadArtistBySlug, loadHomepageFaq, loadHomepageFeaturedArtist, loadHomepageHero } from '@/lib/gallery-entity-loaders';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
 import { hydrateHomepageFeaturedArtist, selectHomepageArtists } from '@/lib/homepage-artists';
 
@@ -55,9 +56,10 @@ async function loadHome() {
 }
 
 export default async function HomePage() {
-  const [{ artworks, total, categories, collections, featuredArtist, knownArtists, error }, hero] = await Promise.all([
+  const [{ artworks, total, categories, collections, featuredArtist, knownArtists, error }, hero, faq] = await Promise.all([
     loadHome(),
     loadHomepageHero(),
+    loadHomepageFaq(),
   ]);
 
   return (
@@ -177,6 +179,8 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      <HomepageFaq faq={faq} />
     </div>
   );
 }

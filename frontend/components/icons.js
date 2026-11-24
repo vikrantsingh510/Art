@@ -55,6 +55,22 @@ export function IconArrow({ className = 'h-4 w-4 shrink-0' }) {
   );
 }
 
+export function IconPlus({ className = 'h-5 w-5 shrink-0' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+      <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
+export function IconMinus({ className = 'h-5 w-5 shrink-0' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+      <path d="M6 12h12" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  );
+}
+
 export function IconWhatsapp({ className = 'h-6 w-6 shrink-0' }) {
   return (
     <svg className={className} viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">

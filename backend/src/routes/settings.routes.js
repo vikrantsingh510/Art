@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import {
+  getAdminHomepageFaqSettingsHandler,
   getAdminHomepageFeaturedArtistSettingsHandler,
   getAdminHomepageHeroSettingsHandler,
   getAdminWhatsappSettingsHandler,
+  updateAdminHomepageFaqSettingsHandler,
   updateAdminHomepageFeaturedArtistSettingsHandler,
   updateAdminHomepageHeroSettingsHandler,
   updateAdminWhatsappSettingsHandler,
@@ -10,6 +12,7 @@ import {
 import { validate } from '../middlewares/validate.middleware.js';
 import { asyncHandler } from '../utils/async-handler.js';
 import {
+  homepageFaqSettingsBody,
   homepageFeaturedArtistSettingsBody,
   homepageHeroSettingsBody,
   whatsappSettingsBody,
@@ -37,4 +40,10 @@ settingsAdminRouter.put(
   '/homepage-featured-artist',
   validate({ body: homepageFeaturedArtistSettingsBody }),
   asyncHandler(updateAdminHomepageFeaturedArtistSettingsHandler),
+);
+settingsAdminRouter.get('/homepage-faq', asyncHandler(getAdminHomepageFaqSettingsHandler));
+settingsAdminRouter.put(
+  '/homepage-faq',
+  validate({ body: homepageFaqSettingsBody }),
+  asyncHandler(updateAdminHomepageFaqSettingsHandler),
 );

@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { api } from './api';
+import { emptyPublicHomepageFaq, resolveHomepageFaq } from './homepage-faq';
 import { resolveHomepageHero } from './homepage-hero';
 import { getAccessToken } from './session';
 import { isArtworkInWishlist } from './wishlist-favourite';
@@ -80,5 +81,14 @@ export const loadHomepageFeaturedArtist = cache(async function loadHomepageFeatu
     return data?.artist || null;
   } catch {
     return null;
+  }
+});
+
+export const loadHomepageFaq = cache(async function loadHomepageFaq() {
+  try {
+    const data = await api.getHomepageFaq();
+    return resolveHomepageFaq(data);
+  } catch {
+    return emptyPublicHomepageFaq();
   }
 });

@@ -229,3 +229,69 @@ test('sends homepage featured artist paths', async () => {
   assert.equal(calls[2].method, 'PUT');
   assert.match(calls[2].body, /aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/);
 });
+
+test('sends public homepage FAQ path', async () => {
+  const calls = [];
+  const api = createArtApi({
+    baseUrl: 'http://api.test',
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), method: options.method });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          success: true,
+          data: { enabled: false, heading: null, subtitle: null, items: [] },
+        }),
+      };
+    },
+  });
+
+  await api.getHomepageFaq();
+  assert.match(calls[0].url, /\/api\/v1\/homepage\/faq$/);
+  assert.equal(calls[0].method, 'GET');
+  assert.doesNotMatch(calls[0].url, /admin/);
+});
+
+test('sends admin homepage FAQ settings paths', async () => {
+  const calls = [];
+  const api = createArtApi({
+    baseUrl: 'http://api.test',
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), method: options.method, body: options.body });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          success: true,
+          data: {
+            enabled: false,
+            heading: null,
+            subtitle: null,
+            homepageLimit: null,
+            items: [],
+            updatedAt: null,
+          },
+        }),
+      };
+    },
+  });
+
+  await api.adminHomepageFaqSettings({ token: 't' });
+  await api.updateAdminHomepageFaqSettings(
+    {
+      enabled: true,
+      heading: 'From the atelier',
+      subtitle: null,
+      homepageLimit: 2,
+      items: [{ question: 'How is provenance recorded?', answer: 'With a certificate.', enabled: true }],
+    },
+    { token: 't' },
+  );
+  assert.match(calls[0].url, /\/api\/v1\/admin\/settings\/homepage-faq$/);
+  assert.equal(calls[0].method, 'GET');
+  assert.match(calls[1].url, /\/api\/v1\/admin\/settings\/homepage-faq$/);
+  assert.equal(calls[1].method, 'PUT');
+  assert.match(calls[1].body, /How is provenance recorded\?/);
+  assert.match(calls[1].body, /homepageLimit":2/);
+});

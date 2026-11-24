@@ -38,6 +38,7 @@ export {
   webhookProcessingStatusEnum,
 } from './enums.js';
 export {
+  APP_SETTING_HOMEPAGE_FAQ,
   APP_SETTING_HOMEPAGE_FEATURED_ARTIST,
   APP_SETTING_HOMEPAGE_HERO,
   APP_SETTING_WHATSAPP_ENQUIRY,

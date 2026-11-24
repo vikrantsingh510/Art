@@ -1,3 +1,4 @@
+import { HomepageFaqForm } from '@/components/homepage-faq-form';
 import { HomepageHeroForm } from '@/components/homepage-hero-form';
 import { ErrorState } from '@/components/states';
 import { WhatsappSettingsForm } from '@/components/whatsapp-settings-form';
@@ -12,6 +13,8 @@ export default async function AdminSettingsPage() {
   let loadError = null;
   let hero = { storagePath: null, altText: null, updatedAt: null };
   let heroLoadError = null;
+  let faq = null;
+  let faqLoadError = null;
 
   try {
     settings = await api.adminWhatsappSettings({ token });
@@ -23,6 +26,12 @@ export default async function AdminSettingsPage() {
     hero = await api.adminHomepageHeroSettings({ token });
   } catch (error) {
     heroLoadError = error;
+  }
+
+  try {
+    faq = await api.adminHomepageFaqSettings({ token });
+  } catch (error) {
+    faqLoadError = error;
   }
 
   return (
@@ -51,6 +60,20 @@ export default async function AdminSettingsPage() {
           <ErrorState error={heroLoadError} retryHref="/admin/settings" />
         ) : (
           <HomepageHeroForm hero={hero} />
+        )}
+      </section>
+
+      <section className="space-y-8">
+        <div>
+          <h2 className="font-display text-3xl">Homepage FAQ</h2>
+          <p className="mt-3 max-w-xl text-sm text-on-surface-variant">
+            Manage the collector questions shown on the salon homepage. Inactive items stay in this list and are never exposed publicly.
+          </p>
+        </div>
+        {faqLoadError ? (
+          <ErrorState error={faqLoadError} retryHref="/admin/settings" />
+        ) : (
+          <HomepageFaqForm settings={faq} />
         )}
       </section>
     </div>
