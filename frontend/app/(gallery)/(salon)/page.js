@@ -167,10 +167,11 @@ export default async function HomePage() {
             <p className="label-md text-patina">Taxonomy of form</p>
             <h2 className="font-display text-3xl md:text-4xl mt-2">Explore by medium &amp; series</h2>
           </div>
+          <HomepageCollectionShowcase collections={collections} />
           {categories.length === 0 && collections.length === 0 ? (
             <p className="text-sm text-on-surface-variant">Categories and collections will appear when the atelier publishes them.</p>
           ) : categories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8${collections.length > 0 ? ' mt-12' : ''}`}>
               {categories.map((category, index) => (
                 <Link key={category.id} href={`/explore?categoryId=${category.id}`} className="editorial-card-link border-t border-fillet pt-4">
                   <p className="label-sm text-patina">{String(index + 1).padStart(2, '0')}</p>
@@ -183,8 +184,6 @@ export default async function HomePage() {
           </Reveal>
         </div>
       </section>
-
-      <HomepageCollectionShowcase collections={collections} />
 
       {shouldRenderHomepageFaq(faq) ? (
         <Reveal>
