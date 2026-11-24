@@ -17,21 +17,21 @@ export function HomepageFaq({ faq }) {
 
   return (
     <section
-      className="page-shell py-20 md:py-28"
+      className="page-shell py-16 md:py-20"
       aria-labelledby={faq.heading ? 'homepage-faq-heading' : undefined}
       aria-label={faq.heading ? undefined : 'Frequently asked questions'}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 mb-12 lg:mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 mb-8 md:mb-10">
         {faq.heading ? (
           <h2
             id="homepage-faq-heading"
-            className="lg:col-span-5 font-display text-[38px] md:text-[48px] lg:text-[52px] leading-[1.15] tracking-[-0.02em] text-ink"
+            className="lg:col-span-5 font-display text-3xl md:text-4xl leading-tight text-ink"
           >
             {faq.heading}
           </h2>
         ) : null}
         {faq.subtitle ? (
-          <p className="lg:col-span-7 lg:col-start-6 text-[15px] md:text-base leading-7 text-on-surface-variant max-w-xl lg:max-w-none lg:pt-3">
+          <p className="lg:col-span-7 lg:col-start-6 text-[15px] leading-7 text-on-surface-variant max-w-xl lg:max-w-none lg:pt-1">
             {faq.subtitle}
           </p>
         ) : null}
@@ -47,16 +47,16 @@ export function HomepageFaq({ faq }) {
                 <button
                   type="button"
                   id={buttonId}
-                  className="flex w-full cursor-pointer items-start justify-between gap-6 border-0 bg-transparent py-6 text-left font-display text-[22px] md:text-[26px] leading-snug text-ink"
+                  className="flex w-full cursor-pointer items-start justify-between gap-4 border-0 bg-transparent py-4 text-left font-display text-lg md:text-xl leading-snug text-ink"
                   aria-expanded={open}
                   aria-controls={panelId}
                   onClick={() => toggle(item.id)}
                 >
-                  <span>{item.question}</span>
+                  <span className="min-w-0">{item.question}</span>
                   {open ? (
-                    <IconMinus className="mt-1.5 h-5 w-5 shrink-0 text-patina" />
+                    <IconMinus className="mt-1 h-4 w-4 shrink-0 text-patina" />
                   ) : (
-                    <IconPlus className="mt-1.5 h-5 w-5 shrink-0 text-patina" />
+                    <IconPlus className="mt-1 h-4 w-4 shrink-0 text-patina" />
                   )}
                 </button>
               </h3>
@@ -65,7 +65,7 @@ export function HomepageFaq({ faq }) {
                 role="region"
                 aria-labelledby={buttonId}
                 hidden={!open}
-                className="pb-7 pr-12 max-w-3xl"
+                className="pb-5 pr-10 max-w-3xl"
               >
                 <p className="whitespace-pre-wrap text-[15px] leading-7 text-on-surface-variant">
                   {item.answer}
