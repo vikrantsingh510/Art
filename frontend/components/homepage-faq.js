@@ -17,7 +17,7 @@ export function HomepageFaq({ faq }) {
 
   return (
     <section
-      className="page-shell py-16 md:py-20"
+      className="page-shell pt-16 md:pt-20"
       aria-labelledby={faq.heading ? 'homepage-faq-heading' : undefined}
       aria-label={faq.heading ? undefined : 'Frequently asked questions'}
     >

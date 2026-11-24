@@ -305,6 +305,20 @@ test('FAQ accordion renders heading, questions and independent expand state', ()
   assert.equal(openIds.has(loaded.items[1].id), true);
 });
 
+test('homepage FAQ does not stack section bottom padding on top of footer margin', () => {
+  const component = read('components/homepage-faq.js');
+  const page = read('app/(gallery)/(salon)/page.js');
+  const footer = read('components/site-footer.js');
+
+  assert.match(component, /page-shell pt-16 md:pt-20/);
+  assert.doesNotMatch(component, /py-16 md:py-20|pb-16|pb-20/);
+  assert.match(component, /mb-8 md:mb-10/);
+  assert.match(component, /py-4 text-left font-display/);
+  assert.match(footer, /footer className="w-full bg-surface-container-low mt-20"/);
+  assert.match(footer, /page-shell pt-20 pb-12/);
+  assert.match(page, /<Reveal>\s*<HomepageFaq faq=\{faq\} \/>\s*<\/Reveal>/);
+});
+
 test('homepage FAQ sits after taxonomy and never uses admin FAQ endpoints', () => {
   const page = read('app/(gallery)/(salon)/page.js');
   const taxonomyIndex = page.indexOf('Explore by medium');
