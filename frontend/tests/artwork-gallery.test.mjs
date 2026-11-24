@@ -552,3 +552,38 @@ test('artwork gallery lightbox fades without changing swipe, keyboard or physica
   assert.match(page, /ArtworkSizeGuide/);
   assert.match(page, /ArViewer/);
 });
+
+test('mobile gallery nav uses compact circular arrows without changing swipe or lightbox', () => {
+  const root = path.dirname(fileURLToPath(import.meta.url));
+  const gallery = fs.readFileSync(path.join(root, '../components/artwork-gallery.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, '../app/globals.css'), 'utf8');
+  const icons = fs.readFileSync(path.join(root, '../components/icons.js'), 'utf8');
+
+  assert.match(gallery, /from '\.\/icons'/);
+  assert.match(gallery, /IconArrow/);
+  assert.match(gallery, /aria-label="Previous artwork image"/);
+  assert.match(gallery, /aria-label="Next artwork image"/);
+  assert.match(gallery, /onClick=\{\(\) => go\(-1\)\}/);
+  assert.match(gallery, /onClick=\{\(\) => go\(1\)\}/);
+  assert.match(gallery, /artwork-gallery-nav-prev/);
+  assert.match(gallery, /artwork-gallery-nav-next/);
+  assert.match(gallery, /artwork-gallery-nav-icon/);
+  assert.match(gallery, /artwork-gallery-nav-label/);
+  assert.match(gallery, /swipeDirection/);
+  assert.match(gallery, /event\.key === 'ArrowRight'/);
+  assert.match(gallery, /event\.key === 'ArrowLeft'/);
+  assert.match(icons, /export function IconArrow/);
+  assert.match(css, /\.artwork-gallery-nav \{[\s\S]*border-radius:\s*50%/);
+  assert.match(css, /\.artwork-gallery-nav \{[\s\S]*width:\s*2\.5rem/);
+  assert.match(css, /\.artwork-gallery-nav \{[\s\S]*height:\s*2\.5rem/);
+  assert.match(css, /@media \(max-width: 767\.98px\) \{[\s\S]*\.artwork-gallery-nav-label \{[\s\S]*display:\s*none/);
+  assert.match(css, /\.artwork-gallery-nav \{[\s\S]*font-size:\s*0/);
+  assert.match(css, /@media \(min-width: 768px\) \{[\s\S]*\.artwork-gallery-nav \{[\s\S]*min-height:\s*44px/);
+  assert.match(css, /@media \(min-width: 768px\) \{[\s\S]*\.artwork-gallery-nav-icon \{[\s\S]*display:\s*none/);
+  assert.match(css, /@media \(min-width: 768px\) \{[\s\S]*\.artwork-gallery-nav-label \{[\s\S]*display:\s*inline/);
+  assert.match(css, /@media \(hover: hover\)[\s\S]*\.artwork-gallery-nav:hover/);
+  assert.match(css, /\.artwork-gallery-nav:focus-visible/);
+  assert.match(gallery, /btn-secondary min-h-11[\s\S]*Previous/);
+  assert.match(gallery, /btn-secondary min-h-11[\s\S]*Next/);
+  assert.doesNotMatch(gallery, /from 'lucide-react'|from 'react-icons'/);
+});

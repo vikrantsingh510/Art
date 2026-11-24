@@ -6,6 +6,7 @@ import { previewAspectRatio } from '@/lib/ar-assets/storefront';
 import { ARTWORK_LIGHTBOX_MS, shouldDeferLightboxExit } from '@/lib/artwork-lightbox';
 import { galleryHasControls, orderedGalleryImages, swipeDirection, wrapGalleryIndex } from '@/lib/artwork-gallery';
 import { ArtworkImage } from './artwork-image';
+import { IconArrow } from './icons';
 
 export function ArtworkGallery({ artwork }) {
   const images = orderedGalleryImages(artwork);
@@ -170,19 +171,21 @@ export function ArtworkGallery({ artwork }) {
           <>
             <button
               type="button"
-              className="artwork-gallery-nav left-3"
-              aria-label="Previous image"
+              className="artwork-gallery-nav artwork-gallery-nav-prev left-2 md:left-3"
+              aria-label="Previous artwork image"
               onClick={() => go(-1)}
             >
-              Previous
+              <IconArrow className="artwork-gallery-nav-icon h-4 w-4 shrink-0" />
+              <span className="artwork-gallery-nav-label">Previous</span>
             </button>
             <button
               type="button"
-              className="artwork-gallery-nav right-3"
-              aria-label="Next image"
+              className="artwork-gallery-nav artwork-gallery-nav-next right-2 md:right-3"
+              aria-label="Next artwork image"
               onClick={() => go(1)}
             >
-              Next
+              <IconArrow className="artwork-gallery-nav-icon h-4 w-4 shrink-0" />
+              <span className="artwork-gallery-nav-label">Next</span>
             </button>
           </>
         ) : null}
