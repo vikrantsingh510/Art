@@ -64,6 +64,10 @@ test('artist detail lists published artworks and preserves story and works ancho
   assert.match(profile, /href=\{`\/artwork\/\$\{artwork\.id\}`\}/);
   assert.match(profile, /id="story"/);
   assert.match(profile, /id="works"/);
+  assert.match(profile, /editorial-image-hover/);
+  assert.match(profile, /artwork-contain-hover/);
+  assert.match(profile, /object-contain/);
+  assert.doesNotMatch(profile.split('async function FeaturedWork')[1].split('async function ArtistWorkTile')[0], /artwork-image-hover/);
   assert.match(profile, /The story behind the work/);
   assert.match(profile, /Selected works/);
   assert.match(profile, /Discover more original art/);

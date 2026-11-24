@@ -5,6 +5,7 @@ import { ArtworkArPanel } from '@/components/artwork-ar-panel';
 import { ArtworkGallery } from '@/components/artwork-gallery';
 import { ArtworkSizeGuide } from '@/components/artwork-size-guide';
 import { AddToCartButton, AddToWishlistButton } from '@/components/collection-actions';
+import { Reveal } from '@/components/reveal';
 import { ErrorState } from '@/components/states';
 import { ApiClientError } from '@/lib/api';
 import { resolveArtworkArAssets } from '@/lib/ar-assets/storefront-storage';
@@ -91,7 +92,8 @@ export default async function ArtworkDetailPage({ params }) {
           )}
           <ArtworkSizeGuide artwork={artwork} visualization={visualization} />
         </div>
-        <aside className="md:col-span-5 space-y-5">
+        <aside className="md:col-span-5">
+          <Reveal className="space-y-5">
           <p className="label-sm text-patina">{availabilityLabel(artwork)}</p>
           <h1 className="font-display text-4xl md:text-5xl italic leading-tight">{artwork.title}</h1>
           {artwork.artist?.slug ? (
@@ -123,16 +125,19 @@ export default async function ArtworkDetailPage({ params }) {
             <Spec label="Year" value={artwork.yearCreated} />
             <Spec label="Availability" value={`${artwork.availableQuantity ?? '—'} available`} />
           </dl>
+          </Reveal>
         </aside>
       </div>
 
       {(artwork.story || artwork.description) ? (
-        <section className="mt-16 md:mt-20 w-full space-y-5">
+        <section className="mt-16 md:mt-20 w-full">
+          <Reveal className="space-y-5">
           <p className="label-md text-patina">Curatorial monograph</p>
           <h2 className="font-display text-3xl md:text-5xl italic leading-tight">The artwork’s story</h2>
           <p className="text-[15px] md:text-base leading-7 whitespace-pre-wrap">
             {artwork.story || artwork.description}
           </p>
+          </Reveal>
         </section>
       ) : null}
 

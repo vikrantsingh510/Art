@@ -32,7 +32,7 @@ export function AddressBook({ addresses }) {
   }
 
   if (!addresses.length) {
-    return <p className="text-sm text-on-surface-variant">No addresses saved yet.</p>;
+    return <p className="empty-state text-sm text-on-surface-variant">No addresses saved yet.</p>;
   }
 
   return (

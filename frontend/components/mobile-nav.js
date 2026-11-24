@@ -23,23 +23,23 @@ export function MobileNav({ user, cartCount = 0, wishlistCount = 0 }) {
         {open ? <IconClose /> : <IconMenu />}
       </button>
       {open ? (
-        <div className="absolute left-0 right-0 top-full bg-surface border-b border-fillet px-6 py-6 space-y-4">
+        <div className="mobile-nav-panel absolute left-0 right-0 top-full bg-surface border-b border-fillet px-6 py-6 space-y-4">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="label-md block text-on-surface" onClick={() => setOpen(false)}>
+            <Link key={link.href} href={link.href} className="site-nav-link label-md block text-on-surface" onClick={() => setOpen(false)}>
               {link.label}
             </Link>
           ))}
-          <Link href="/account/wishlist" className="label-md block" onClick={() => setOpen(false)}>
+          <Link href="/account/wishlist" className="site-nav-link label-md block" onClick={() => setOpen(false)}>
             Wishlist{wishlistCount ? ` (${wishlistCount})` : ''}
           </Link>
-          <Link href="/cart" className="label-md block" onClick={() => setOpen(false)}>
+          <Link href="/cart" className="site-nav-link label-md block" onClick={() => setOpen(false)}>
             Bag{cartCount ? ` (${cartCount})` : ''}
           </Link>
-          <Link href={user ? '/account' : '/auth/login'} className="label-md block" onClick={() => setOpen(false)}>
+          <Link href={user ? '/account' : '/auth/login'} className="site-nav-link label-md block" onClick={() => setOpen(false)}>
             {user ? 'Dossier' : 'Sign in'}
           </Link>
           {user?.isAdmin ? (
-            <Link href="/admin" className="label-md block" onClick={() => setOpen(false)}>
+            <Link href="/admin" className="site-nav-link label-md block" onClick={() => setOpen(false)}>
               Curatorial console
             </Link>
           ) : null}

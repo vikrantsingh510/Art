@@ -24,7 +24,7 @@ export default async function OrdersPage() {
         <ul className="space-y-4">
           {orders.map((order) => (
             <li key={order.id} className="border border-fillet p-5">
-              <Link href={`/account/orders/${order.id}`} className="font-display text-2xl">
+              <Link href={`/account/orders/${order.id}`} className="salon-title-link font-display text-2xl">
                 {order.orderNumber}
               </Link>
               <p className="text-sm text-on-surface-variant mt-2">

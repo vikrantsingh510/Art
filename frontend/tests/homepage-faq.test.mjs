@@ -267,6 +267,7 @@ test('disabled or empty FAQ snapshots do not render', () => {
 test('FAQ accordion renders heading, questions and independent expand state', () => {
   const component = read('components/homepage-faq.js');
   const icons = read('components/icons.js');
+  const styles = read('app/globals.css');
 
   assert.match(component, /\{faq\.heading\}/);
   assert.match(component, /\{faq\.subtitle\}/);
@@ -276,6 +277,10 @@ test('FAQ accordion renders heading, questions and independent expand state', ()
   assert.match(component, /type="button"/);
   assert.match(component, /aria-expanded=\{open\}/);
   assert.match(component, /aria-controls=\{panelId\}/);
+  assert.match(component, /aria-hidden=\{!open\}/);
+  assert.match(component, /homepage-faq-panel/);
+  assert.match(component, /homepage-faq-icon/);
+  assert.doesNotMatch(component, /(?<!aria-)hidden=\{!open\}/);
   assert.match(component, /toggleHomepageFaqOpenIds/);
   assert.match(component, /IconPlus/);
   assert.match(component, /IconMinus/);
@@ -284,6 +289,11 @@ test('FAQ accordion renders heading, questions and independent expand state', ()
   assert.doesNotMatch(component, /Questions collectors ask/);
   assert.match(icons, /export function IconPlus/);
   assert.match(icons, /export function IconMinus/);
+  assert.match(styles, /\.homepage-faq-panel[\s\S]*grid-template-rows:\s*0fr/);
+  assert.match(styles, /\.homepage-faq-panel\.is-open[\s\S]*grid-template-rows:\s*1fr/);
+  assert.match(styles, /\.homepage-faq-panel[\s\S]*var\(--motion\)/);
+  assert.match(styles, /\.homepage-faq-icon[\s\S]*var\(--motion-fast\)/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*\.homepage-faq-panel/);
 
   let openIds = new Set();
   openIds = toggleHomepageFaqOpenIds(openIds, loaded.items[0].id);

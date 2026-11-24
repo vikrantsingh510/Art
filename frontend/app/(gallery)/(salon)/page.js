@@ -4,6 +4,7 @@ import { ArtistInFocus } from '@/components/artist-in-focus';
 import { ArtistsToKnow } from '@/components/artists-to-know';
 import { ArtworkCard } from '@/components/artwork-card';
 import { HomepageFaq } from '@/components/homepage-faq';
+import { Reveal } from '@/components/reveal';
 import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
@@ -11,6 +12,7 @@ import { loadArtistBySlug, loadHomepageFaq, loadHomepageFeaturedArtist, loadHome
 import { publicStorageUrl } from '@/lib/media';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
 import { hydrateHomepageFeaturedArtist, selectHomepageArtists } from '@/lib/homepage-artists';
+import { shouldRenderHomepageFaq } from '@/lib/homepage-faq';
 
 export const metadata = {
   title: 'Exhibition',
@@ -78,7 +80,7 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-surface/80 via-surface/20 to-transparent" />
         <div className="relative z-10 page-shell pt-44 pb-16">
-          <div className="max-w-3xl space-y-5">
+          <div className="hero-copy max-w-3xl space-y-5">
             <p className="inline-flex items-center gap-3 bg-surface/90 px-3.5 py-1.5 label-sm text-on-surface-variant">
               <span className="w-1.5 h-1.5 bg-secondary" />
               Current Curation / Vérité Salon
@@ -97,7 +99,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="page-shell py-20 grid md:grid-cols-2 gap-16">
+      <section className="page-shell py-20">
+        <Reveal className="grid md:grid-cols-2 gap-16" stagger={2}>
         <div>
           <p className="label-md text-patina">The Maison manifesto</p>
           <h2 className="font-display text-4xl leading-tight mt-4">Solitary devotion, uncompromised permanence.</h2>
@@ -124,9 +127,11 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+        </Reveal>
       </section>
 
       <section className="page-shell pb-20">
+        <Reveal stagger={2}>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
             <p className="label-md text-patina">Archival salon catalogue</p>
@@ -149,6 +154,7 @@ export default async function HomePage() {
             ))}
           </div>
         )}
+        </Reveal>
       </section>
 
       <ArtistInFocus artist={featuredArtist} />
@@ -156,25 +162,28 @@ export default async function HomePage() {
 
       <section className="bg-stone py-20">
         <div className="page-shell">
-          <p className="label-md text-patina">Taxonomy of form</p>
-          <h2 className="font-display text-3xl md:text-4xl mt-2 mb-10">Explore by medium &amp; series</h2>
+          <Reveal stagger={2}>
+          <div className="mb-10">
+            <p className="label-md text-patina">Taxonomy of form</p>
+            <h2 className="font-display text-3xl md:text-4xl mt-2">Explore by medium &amp; series</h2>
+          </div>
           {categories.length === 0 && collections.length === 0 ? (
             <p className="text-sm text-on-surface-variant">Categories and collections will appear when the atelier publishes them.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {categories.map((category, index) => (
-                <Link key={category.id} href={`/explore?categoryId=${category.id}`} className="border-t border-fillet pt-4">
+                <Link key={category.id} href={`/explore?categoryId=${category.id}`} className="editorial-card-link border-t border-fillet pt-4">
                   <p className="label-sm text-patina">{String(index + 1).padStart(2, '0')}</p>
-                  <h3 className="font-display text-2xl mt-2">{category.name}</h3>
+                  <h3 className="editorial-card-title font-display text-2xl mt-2">{category.name}</h3>
                   <p className="text-sm text-on-surface-variant mt-2">{category.description || 'Open this series in the archive.'}</p>
                 </Link>
               ))}
               {collections.map((collection) => {
                 const coverUrl = publicStorageUrl(collection.coverImagePath);
                 return (
-                  <Link key={collection.id} href={`/collections/${collection.id}`} className="border-t border-fillet pt-4">
+                  <Link key={collection.id} href={`/collections/${collection.id}`} className="editorial-card-link border-t border-fillet pt-4">
                     {coverUrl ? (
-                      <div className="relative aspect-[16/9] mb-4 bg-surface-container-low">
+                      <div className="editorial-image-hover relative aspect-[16/9] mb-4 overflow-hidden bg-surface-container-low">
                         <Image
                           src={coverUrl}
                           alt={collection.name}
@@ -186,17 +195,22 @@ export default async function HomePage() {
                       </div>
                     ) : null}
                     <p className="label-sm text-patina">Collection</p>
-                    <h3 className="font-display text-2xl mt-2">{collection.name}</h3>
+                    <h3 className="editorial-card-title font-display text-2xl mt-2">{collection.name}</h3>
                     <p className="text-sm text-on-surface-variant mt-2">{collection.description || 'View the published hanging.'}</p>
                   </Link>
                 );
               })}
             </div>
           )}
+          </Reveal>
         </div>
       </section>
 
-      <HomepageFaq faq={faq} />
+      {shouldRenderHomepageFaq(faq) ? (
+        <Reveal>
+          <HomepageFaq faq={faq} />
+        </Reveal>
+      ) : null}
     </div>
   );
 }

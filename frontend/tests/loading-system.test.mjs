@@ -63,6 +63,50 @@ test('quiet luxury loading tokens exist without shimmer or spinner CSS', () => {
   assert.doesNotMatch(css, /animate-spin/);
 });
 
+test('premium motion tokens and Batch A interactions stay CSS-only', () => {
+  const css = read('app/globals.css');
+  const header = read('components/site-header.js');
+  const mobile = read('components/mobile-nav.js');
+  const ui = read('components/ui.js');
+  const pageTransition = read('components/page-transition.js');
+  const artworkImage = read('components/artwork-image.js');
+  const artworkCard = read('components/artwork-card.js');
+
+  assert.match(css, /--motion-fast:\s*180ms/);
+  assert.match(css, /--motion:\s*280ms/);
+  assert.match(css, /--motion-slow:\s*400ms/);
+  assert.match(css, /--motion-ease:\s*cubic-bezier\(0\.22,\s*1,\s*0\.36,\s*1\)/);
+  assert.match(css, /--motion-distance:\s*10px/);
+  assert.match(css, /\.site-nav-link[\s\S]*transition:\s*color 200ms var\(--motion-ease\)/);
+  assert.match(css, /@keyframes\s+mobile-nav-enter/);
+  assert.match(css, /translateY\(8px\)/);
+  assert.match(css, /\.mobile-nav-panel[\s\S]*animation:\s*mobile-nav-enter 220ms var\(--motion-ease\)/);
+  assert.match(css, /\.btn-primary[\s\S]*var\(--motion-slow\)[\s\S]*var\(--motion-ease\)/);
+  assert.match(css, /\.text-link[\s\S]*var\(--motion-fast\)[\s\S]*var\(--motion-ease\)/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce[\s\S]*\.mobile-nav-panel[\s\S]*opacity:\s*1/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce[\s\S]*\.site-nav-link/);
+  assert.match(css, /\.page-enter/);
+  assert.match(css, /\.artwork-image-fade/);
+  assert.doesNotMatch(css, /@keyframes\s+shimmer/i);
+  assert.doesNotMatch(css, /animate-spin/);
+  assert.doesNotMatch(css, /IntersectionObserver/);
+
+  assert.match(header, /site-nav-link/);
+  assert.match(header, /whitespace-nowrap/);
+  assert.match(mobile, /mobile-nav-panel/);
+  assert.match(mobile, /setOpen\(false\)/);
+  assert.match(mobile, /aria-label=\{open \? 'Close menu' : 'Open menu'\}/);
+  assert.match(ui, /btn-primary/);
+  assert.match(ui, /btn-secondary/);
+  assert.doesNotMatch(ui, /scale-|hover:scale/);
+  assert.doesNotMatch(header, /scale-/);
+  assert.doesNotMatch(mobile, /scale-/);
+  assert.match(pageTransition, /page-enter/);
+  assert.match(artworkImage, /artwork-image-fade/);
+  assert.match(artworkImage, /ArtworkImageFade/);
+  assert.match(artworkCard, /hover=\{false\}/);
+});
+
 test('route loading coverage is in place for data-heavy salon and console pages', () => {
   const files = [
     'app/(gallery)/loading.js',

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArtworkFavouriteButton } from '@/components/artwork-favourite-button';
 import { MarkdownBody } from '@/components/markdown-body';
+import { Reveal } from '@/components/reveal';
 import { Button } from '@/components/ui';
 import { availabilityLabel, formatDimensions } from '@/lib/format';
 import { loadArtworkFavouriteSaved } from '@/lib/gallery-entity-loaders';
@@ -27,7 +28,7 @@ async function FeaturedWork({ artwork }) {
     <div className="bg-surface border border-fillet p-6 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         <div className="lg:col-span-7 relative min-w-0">
-          <Link href={`/artwork/${artwork.id}`} className="bg-surface-container relative overflow-hidden block min-w-0">
+          <Link href={`/artwork/${artwork.id}`} className="artwork-contain-hover bg-surface-container relative overflow-hidden block min-w-0">
             <div className="relative aspect-[16/11] w-full">
               {imageUrl ? (
                 <Image
@@ -36,7 +37,7 @@ async function FeaturedWork({ artwork }) {
                   fill
                   unoptimized
                   sizes="(min-width: 1024px) 55vw, 100vw"
-                  className="object-contain artwork-image-hover"
+                  className="object-contain"
                 />
               ) : (
                 <div className="absolute inset-0 bg-surface-container-low" />
@@ -100,7 +101,7 @@ async function ArtistWorkTile({ artwork }) {
     <article className="bg-surface border border-fillet flex flex-col justify-between min-w-0">
       <div>
         <div className="relative">
-          <Link href={`/artwork/${artwork.id}`} className="block relative aspect-[4/3] bg-surface-container overflow-hidden">
+          <Link href={`/artwork/${artwork.id}`} className="artwork-contain-hover block relative aspect-[4/3] bg-surface-container overflow-hidden">
             {imageUrl ? (
               <Image
                 src={imageUrl}
@@ -108,7 +109,7 @@ async function ArtistWorkTile({ artwork }) {
                 fill
                 unoptimized
                 sizes="(min-width: 1024px) 30vw, 100vw"
-                className="object-contain artwork-image-hover"
+                className="object-contain"
               />
             ) : null}
             <span className="absolute top-3 left-3 bg-surface/90 label-sm text-ink uppercase tracking-widest px-2.5 py-1">
@@ -145,9 +146,9 @@ function PeerArtist({ artist }) {
   return (
     <Link
       href={`/artists/${artist.slug}`}
-      className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 md:p-5 md:bg-surface md:border md:border-fillet md:hover:border-bronze transition-colors duration-300 min-w-0"
+      className="peer-artist-link flex flex-col md:flex-row md:items-center gap-2 md:gap-4 md:p-5 md:bg-surface md:border md:border-fillet md:hover:border-bronze min-w-0"
     >
-      <div className="relative aspect-square md:w-16 md:h-16 md:aspect-auto shrink-0 bg-surface-container overflow-hidden">
+      <div className="editorial-image-hover relative aspect-square md:w-16 md:h-16 md:aspect-auto shrink-0 bg-surface-container overflow-hidden">
         {portraitUrl ? (
           <Image
             src={portraitUrl}
@@ -188,20 +189,20 @@ export function ArtistProfile({ artist, peers = [] }) {
     <article className="overflow-x-hidden">
       <div className="page-shell pt-6 pb-8">
         <nav aria-label="Breadcrumbs" className="label-sm text-patina flex flex-wrap items-center gap-2 uppercase tracking-[0.16em]">
-          <Link href="/" className="hover:text-ink">Home</Link>
+          <Link href="/" className="site-nav-link hover:text-ink">Home</Link>
           <span className="text-outline-variant">/</span>
-          <Link href="/artists" className="hover:text-ink">Artists</Link>
+          <Link href="/artists" className="site-nav-link hover:text-ink">Artists</Link>
           <span className="text-outline-variant">/</span>
           <span className="text-ink">{artist.name}</span>
         </nav>
       </div>
 
       <header className="page-shell pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        <Reveal className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start" stagger={2}>
           <div className="lg:col-span-5 min-w-0">
             {portraitUrl ? (
               <div className="bg-surface-container-low p-0 lg:p-4 lg:border lg:border-outline-variant/40">
-                <div className="relative aspect-[4/5] lg:aspect-[3/4] overflow-hidden bg-surface-container">
+                <div className="editorial-image-hover relative aspect-[4/5] lg:aspect-[3/4] overflow-hidden bg-surface-container">
                   <Image
                     src={portraitUrl}
                     alt={caption || artist.name}
@@ -209,7 +210,7 @@ export function ArtistProfile({ artist, peers = [] }) {
                     unoptimized
                     priority
                     sizes="(min-width: 1024px) 40vw, 100vw"
-                    className="object-cover artwork-image-hover"
+                    className="object-cover"
                   />
                 </div>
                 {caption ? (
@@ -267,13 +268,13 @@ export function ArtistProfile({ artist, peers = [] }) {
               </p>
             </div>
           </div>
-        </div>
+        </Reveal>
       </header>
 
       {artist.biography ? (
         <section id="story" className="w-full bg-surface-container-low py-20 border-y border-fillet scroll-mt-28">
           <div className="page-shell">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+            <Reveal className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start" stagger={2}>
               <div className="lg:col-span-5 space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="h-px w-6 bg-bronze" />
@@ -286,7 +287,7 @@ export function ArtistProfile({ artist, peers = [] }) {
               <div className="lg:col-span-7 artist-story-body min-w-0">
                 <MarkdownBody markdown={artist.biography} />
               </div>
-            </div>
+            </Reveal>
           </div>
         </section>
       ) : (
@@ -295,6 +296,7 @@ export function ArtistProfile({ artist, peers = [] }) {
 
       {cards.length > 0 ? (
         <section className="page-shell py-20">
+          <Reveal>
           <div className="mb-8">
             <p className="label-sm text-bronze mb-2">Technical discipline</p>
             <h2 className="font-display text-[28px] leading-9 text-ink">Inside the artist’s practice</h2>
@@ -307,12 +309,13 @@ export function ArtistProfile({ artist, peers = [] }) {
               </div>
             ))}
           </div>
+          </Reveal>
         </section>
       ) : null}
 
       <section id="works" className="w-full bg-surface-container-low/60 py-20 border-t border-fillet scroll-mt-28">
         <div className="page-shell space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <Reveal className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2 max-w-2xl min-w-0">
               <div className="flex items-center gap-3">
                 <span className="h-px w-6 bg-bronze" />
@@ -329,9 +332,9 @@ export function ArtistProfile({ artist, peers = [] }) {
                 {acquiredCount > 0 ? <span>{acquiredCount} acquired</span> : null}
               </div>
             ) : null}
-          </div>
+          </Reveal>
           {works.length > 0 ? (
-            <div className="space-y-8">
+            <Reveal className="space-y-8">
               {featured ? <FeaturedWork artwork={featured} /> : null}
               {remaining.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-8">
@@ -340,7 +343,7 @@ export function ArtistProfile({ artist, peers = [] }) {
                   ))}
                 </div>
               ) : null}
-            </div>
+            </Reveal>
           ) : (
             <p className="text-sm text-on-surface-variant">No published works are currently associated with this artist.</p>
           )}
@@ -349,6 +352,7 @@ export function ArtistProfile({ artist, peers = [] }) {
 
       <section className="w-full bg-surface-container-low py-20 border-t border-fillet">
         <div className="page-shell">
+          <Reveal>
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-12">
             <p className="label-sm text-bronze">Curatorial continuity</p>
             <h2 className="font-display text-[30px] md:text-[40px] leading-tight text-ink">Discover more original art.</h2>
@@ -367,6 +371,7 @@ export function ArtistProfile({ artist, peers = [] }) {
             <Button href="/explore" className="w-full sm:w-auto">Explore art</Button>
             <Button href="/artists" variant="secondary" className="w-full sm:w-auto">View all artists</Button>
           </div>
+          </Reveal>
         </div>
       </section>
     </article>

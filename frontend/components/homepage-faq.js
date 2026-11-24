@@ -53,23 +53,28 @@ export function HomepageFaq({ faq }) {
                   onClick={() => toggle(item.id)}
                 >
                   <span className="min-w-0">{item.question}</span>
-                  {open ? (
-                    <IconMinus className="mt-1 h-4 w-4 shrink-0 text-patina" />
-                  ) : (
-                    <IconPlus className="mt-1 h-4 w-4 shrink-0 text-patina" />
-                  )}
+                  <span className={`homepage-faq-icon mt-1 inline-flex shrink-0${open ? ' is-open' : ''}`} aria-hidden="true">
+                    {open ? (
+                      <IconMinus className="h-4 w-4 text-patina" />
+                    ) : (
+                      <IconPlus className="h-4 w-4 text-patina" />
+                    )}
+                  </span>
                 </button>
               </h3>
               <div
                 id={panelId}
                 role="region"
                 aria-labelledby={buttonId}
-                hidden={!open}
-                className="pb-5 pr-10 max-w-3xl"
+                aria-hidden={!open}
+                inert={!open ? true : undefined}
+                className={`homepage-faq-panel${open ? ' is-open' : ''}`}
               >
-                <p className="whitespace-pre-wrap text-[15px] leading-7 text-on-surface-variant">
-                  {item.answer}
-                </p>
+                <div className="homepage-faq-panel-inner">
+                  <p className="whitespace-pre-wrap pb-5 pr-10 max-w-3xl text-[15px] leading-7 text-on-surface-variant">
+                    {item.answer}
+                  </p>
+                </div>
               </div>
             </div>
           );

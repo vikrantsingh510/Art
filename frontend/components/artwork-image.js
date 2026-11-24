@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import { previewAspectRatio } from '@/lib/ar-assets/storefront';
 import { artworkStorefrontImageUrl, primaryArtworkImage } from '@/lib/media';
+import { ArtworkImageFade } from './artwork-image-fade';
 import { ImagePlaceholder } from './loading';
 
 export function ArtworkImage({
@@ -48,15 +48,15 @@ export function ArtworkImage({
     >
       {/* Public storefront previews bypass /_next/image. Display derivatives
           are served by /media/display so the optimizer never fetches Storage. */}
-      <Image
+      <ArtworkImageFade
         src={url}
         alt={alt}
         fill
         sizes={sizes}
         priority={priority}
         unoptimized
-        {...(onError ? { onError } : {})}
-        className={`object-contain artwork-image-fade${hover ? ' artwork-image-hover' : ''}`}
+        onError={onError}
+        className={`object-contain artwork-image-fade${priority ? ' is-ready' : ''}${hover ? ' artwork-image-hover' : ''}`}
       />
     </div>
   );

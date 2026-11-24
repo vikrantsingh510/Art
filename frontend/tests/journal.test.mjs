@@ -48,9 +48,15 @@ test('journal listing and detail pages set metadata, canonical URLs and cover Op
 test('journal detail links related artworks to /artwork/{id}', () => {
   const detail = read('app/(gallery)/journal/[slug]/page.js');
   const card = read('components/artwork-card.js');
+  const journalCard = read('components/journal-card.js');
   assert.match(detail, /ArtworkCard/);
   assert.match(detail, /blog\.artworks/);
+  assert.match(detail, /priority/);
+  assert.match(detail, /editorial-image-hover/);
+  assert.match(journalCard, /editorial-image-hover/);
+  assert.match(journalCard, /editorial-card-title/);
   assert.match(card, /href=\{`\/artwork\/\$\{artwork\.id\}`\}/);
+  assert.match(card, /hover=\{false\}/);
 });
 
 test('cover upload uses the artwork-images blogs/{blogId}/cover.{ext} prefix', () => {

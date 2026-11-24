@@ -15,9 +15,9 @@ export function JournalCard({ blog }) {
 
   return (
     <article className="border-t border-fillet pt-6 space-y-4">
-      <Link href={`/journal/${blog.slug}`} className="block space-y-4">
+      <Link href={`/journal/${blog.slug}`} className="editorial-card-link block space-y-4">
         {coverUrl ? (
-          <div className="relative aspect-[16/9] bg-surface-container-low">
+          <div className="editorial-image-hover relative aspect-[16/9] overflow-hidden bg-surface-container-low">
             <Image
               src={coverUrl}
               alt={blog.coverAltText || blog.title}
@@ -31,11 +31,11 @@ export function JournalCard({ blog }) {
           <ImagePlaceholder className="max-w-md" label="No cover" />
         )}
         {published ? <p className="label-sm text-patina">{published}</p> : null}
-        <h2 className="font-display text-3xl italic leading-tight">{blog.title}</h2>
+        <h2 className="editorial-card-title font-display text-3xl italic leading-tight">{blog.title}</h2>
         {blog.excerpt ? (
           <p className="text-[15px] leading-6 text-on-surface-variant">{blog.excerpt}</p>
         ) : null}
-        <p className="label-sm text-bronze">Read the entry</p>
+        <p className="editorial-card-cta label-sm text-bronze">Read the entry</p>
       </Link>
     </article>
   );

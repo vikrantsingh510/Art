@@ -32,7 +32,7 @@ export default async function CartPage() {
               <div>
                 <p className="font-display text-2xl italic">
                   {item.artwork ? (
-                    <Link href={`/artwork/${item.artwork.id}`}>{item.artwork.title}</Link>
+                    <Link href={`/artwork/${item.artwork.id}`} className="salon-title-link">{item.artwork.title}</Link>
                   ) : 'Unavailable work'}
                 </p>
                 <p className="text-sm text-on-surface-variant">{item.artwork?.artistName}</p>

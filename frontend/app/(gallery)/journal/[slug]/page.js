@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArtworkCard } from '@/components/artwork-card';
 import { MarkdownBody } from '@/components/markdown-body';
+import { Reveal } from '@/components/reveal';
 import { ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
 import { loadBlogBySlug } from '@/lib/gallery-entity-loaders';
@@ -65,7 +66,7 @@ export default async function JournalDetailPage({ params }) {
   return (
     <article>
       <header className="page-shell pt-12 md:pt-20 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+        <Reveal className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16" stagger={2}>
           <div className="lg:col-span-5 space-y-4">
             <p className="label-sm text-patina">Journal</p>
             <h1 className="font-display text-4xl md:text-[40px] leading-tight text-ink">{blog.title}</h1>
@@ -76,7 +77,7 @@ export default async function JournalDetailPage({ params }) {
               <p className="max-w-xl text-[15px] leading-6 text-on-surface-variant">{blog.excerpt}</p>
             ) : null}
             {coverUrl ? (
-              <div className="relative aspect-[16/9] bg-surface-container-low">
+              <div className="editorial-image-hover relative aspect-[16/9] overflow-hidden bg-surface-container-low">
                 <Image
                   src={coverUrl}
                   alt={blog.coverAltText || blog.title}
@@ -89,13 +90,16 @@ export default async function JournalDetailPage({ params }) {
               </div>
             ) : null}
           </div>
-        </div>
+        </Reveal>
       </header>
       <div className="page-shell pb-16">
-        <MarkdownBody markdown={blog.body} />
+        <Reveal>
+          <MarkdownBody markdown={blog.body} />
+        </Reveal>
       </div>
       {(blog.artworks || []).length > 0 ? (
-        <section className="page-shell pb-20 space-y-8">
+        <section className="page-shell pb-20">
+          <Reveal className="space-y-8" stagger={2}>
           <div>
             <p className="label-sm text-patina">On view</p>
             <h2 className="font-display text-3xl mt-2">Related artworks</h2>
@@ -105,6 +109,7 @@ export default async function JournalDetailPage({ params }) {
               <ArtworkCard key={artwork.id} artwork={artwork} />
             ))}
           </div>
+          </Reveal>
         </section>
       ) : null}
     </article>

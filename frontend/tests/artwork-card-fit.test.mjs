@@ -101,6 +101,27 @@ test('storefront artwork cards do not scale the painting beyond its frame', () =
   assert.match(styles, /\.artwork-favourite-button:hover:not\(:disabled\) \.artwork-favourite-icon[\s\S]*transform:\s*scale/);
 });
 
+test('artwork card hover polish never crops or scales the painting', () => {
+  const card = read('components/artwork-card.js');
+  const image = read('components/artwork-image.js');
+  const styles = read('app/globals.css');
+
+  assert.match(card, /<ArtworkImage artwork=\{artwork\} fit="physical" hover=\{false\} \/>/);
+  assert.match(card, /artwork-card-media/);
+  assert.match(card, /ArtworkFavouriteButton/);
+  assert.doesNotMatch(card, /object-cover/);
+  assert.doesNotMatch(card, /scale\(/);
+  assert.match(image, /object-contain/);
+  assert.doesNotMatch(image, /object-cover/);
+  assert.match(styles, /@media \(hover: hover\)[\s\S]*\.artwork-card-media:hover \.artwork-image-frame/);
+  assert.match(styles, /\.artwork-card-media:hover \.artwork-image-frame img[\s\S]*filter:\s*brightness/);
+  assert.match(styles, /\.artwork-contain-hover:hover img[\s\S]*filter:\s*brightness/);
+  assert.doesNotMatch(styles, /\.artwork-card-media[^{]*\{[^}]*scale\(/);
+  assert.doesNotMatch(styles, /\.artwork-card-media:hover[^{]*\{[^}]*scale\(/);
+  assert.doesNotMatch(styles, /\.artwork-card-media:hover \.artwork-image-frame img\s*\{[^}]*scale\(/);
+  assert.match(styles, /\.artwork-card-media \.artwork-image-frame[\s\S]*box-shadow/);
+});
+
 test('artwork detail gallery still uses physical fit on the stage and salon thumbs', () => {
   const gallery = read('components/artwork-gallery.js');
   const blocks = [...gallery.matchAll(/<ArtworkImage[\s\S]*?\/>/g)].map((match) => match[0]);

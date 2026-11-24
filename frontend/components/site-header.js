@@ -31,31 +31,31 @@ export function SiteHeader({ user, cartCount = 0, wishlistCount = 0 }) {
             <Link
               key={item.href}
               href={item.href}
-              className="label-md whitespace-nowrap shrink-0 text-on-surface-variant hover:text-on-surface"
+              className="site-nav-link label-md whitespace-nowrap shrink-0 text-on-surface-variant hover:text-on-surface"
             >
               {item.label}
             </Link>
           ))}
         </nav>
         <div className="flex items-center gap-5 shrink-0">
-          <Link href="/explore" aria-label="Search archive" className="text-on-surface-variant hover:text-on-surface">
+          <Link href="/explore" aria-label="Search archive" className="site-nav-link text-on-surface-variant hover:text-on-surface">
             <IconSearch />
           </Link>
           <span className="hidden sm:inline label-sm text-on-surface-variant">INR (₹)</span>
-          <Link href="/account/wishlist" aria-label="Saved works" className="relative text-on-surface-variant hover:text-on-surface">
+          <Link href="/account/wishlist" aria-label="Saved works" className="site-nav-link relative text-on-surface-variant hover:text-on-surface">
             <IconHeart />
             {wishlistCount > 0 ? <span className="absolute -top-2 -right-2 label-sm text-bronze">{wishlistCount}</span> : null}
           </Link>
-          <Link href="/cart" aria-label="Acquisitions bag" className="relative text-on-surface-variant hover:text-on-surface">
+          <Link href="/cart" aria-label="Acquisitions bag" className="site-nav-link relative text-on-surface-variant hover:text-on-surface">
             <IconBag />
             {cartCount > 0 ? <span className="absolute -top-2 -right-2 label-sm text-bronze">{cartCount}</span> : null}
           </Link>
           <div className="h-4 w-px bg-outline-variant hidden sm:block" />
-          <Link href={user ? '/account' : '/auth/login'} className="hidden lg:inline label-sm text-on-surface-variant hover:text-primary">
+          <Link href={user ? '/account' : '/auth/login'} className="site-nav-link hidden lg:inline label-sm text-on-surface-variant hover:text-primary">
             {user ? 'Dossier' : 'Sign in'}
           </Link>
           {user?.isAdmin ? (
-            <Link href="/admin" className="hidden lg:inline label-sm text-bronze">
+            <Link href="/admin" className="site-nav-link hidden lg:inline label-sm text-bronze">
               Console
             </Link>
           ) : null}

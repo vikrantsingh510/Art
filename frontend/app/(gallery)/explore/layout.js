@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { ExploreFilters, ExploreFiltersFallback } from '@/components/explore-filters';
+import { ExplorePendingProvider, ExploreResults } from '@/components/explore-pending';
 import { PageIntro } from '@/components/ui';
 import { api } from '@/lib/api';
 
@@ -20,10 +21,14 @@ export default async function ExploreLayout({ children }) {
         description="Browse singular, non-reproducible original paintings. Refine the hanging by search, category or acquisition value."
       />
       <div className="page-shell pb-20 space-y-10">
-        <Suspense fallback={<ExploreFiltersFallback />}>
-          <ExploreFilters categories={categories} />
-        </Suspense>
-        {children}
+        <ExplorePendingProvider>
+          <Suspense fallback={<ExploreFiltersFallback />}>
+            <ExploreFilters categories={categories} />
+          </Suspense>
+          <ExploreResults>
+            {children}
+          </ExploreResults>
+        </ExplorePendingProvider>
       </div>
     </div>
   );

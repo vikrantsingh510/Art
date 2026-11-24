@@ -10,7 +10,7 @@ export async function ArtworkCard({ artwork, showFavourite = true }) {
 
   return (
     <article className="space-y-4">
-      <div className="relative">
+      <div className="artwork-card-media relative">
         <Link href={`/artwork/${artwork.id}`} className="block">
           <ArtworkImage artwork={artwork} fit="physical" hover={false} />
         </Link>

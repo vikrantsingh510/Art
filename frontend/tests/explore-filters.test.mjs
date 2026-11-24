@@ -79,3 +79,47 @@ test('catalogue filter UI keeps live controls and hides unsupported medium, scal
   assert.match(page, /listArtworks/);
   assert.doesNotMatch(page, /medium|orientation|movement|artistId/);
 });
+
+test('explore filter navigation still pushes query state and keeps aria-busy', () => {
+  const filters = read('components/explore-filters.js');
+  const pending = read('components/explore-pending.js');
+  const layout = read('app/(gallery)/explore/layout.js');
+  const loading = read('app/(gallery)/explore/loading.js');
+  const styles = read('app/globals.css');
+  const page = read('app/(gallery)/explore/page.js');
+
+  assert.match(filters, /aria-busy=\{pending\}/);
+  assert.match(filters, /pendingButtonProps\(pending\)/);
+  assert.match(filters, /router\.push\(href\)/);
+  assert.match(filters, /setPending\(true\)/);
+  assert.match(filters, /useExplorePending/);
+  assert.match(pending, /aria-busy=\{pending\}/);
+  assert.match(pending, /explore-results is-pending/);
+  assert.match(pending, /isExploreLoadingChild/);
+  assert.match(layout, /ExplorePendingProvider/);
+  assert.match(layout, /ExploreResults/);
+  assert.match(loading, /ExploreLoadingMarker/);
+  assert.doesNotMatch(loading, /ArtworkGridSkeleton/);
+  assert.match(styles, /\.explore-results\.is-pending[\s\S]*opacity:\s*0\.72/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*\.explore-results\.is-pending[\s\S]*opacity:\s*1/);
+  assert.match(page, /ArtworkCard/);
+  assert.doesNotMatch(page, /'use client'/);
+  assert.doesNotMatch(page, /<Reveal/);
+  assert.doesNotMatch(styles, /\.explore-results[\s\S]{0,180}scale\(/);
+  assert.doesNotMatch(filters, /animate-spin/);
+  assert.doesNotMatch(pending, /animate-spin|shimmer/i);
+});
+
+test('explore search stays a submit field with unchanged keyboard behaviour', () => {
+  const filters = read('components/explore-filters.js');
+  const searchInput = filters.split('placeholder="Title, artist, monograph"')[0].slice(-320);
+
+  assert.match(filters, /onSubmit=\{/);
+  assert.match(filters, /event\.preventDefault\(\)/);
+  assert.match(filters, /name="q"/);
+  assert.match(filters, /autoComplete="off"/);
+  assert.match(searchInput, /className="field-input"/);
+  assert.match(searchInput, /name="q"/);
+  assert.doesNotMatch(searchInput, /onChange|onKeyDown|onInput|onKeyUp/);
+  assert.doesNotMatch(filters, /router\.push\([^)]*q/);
+});

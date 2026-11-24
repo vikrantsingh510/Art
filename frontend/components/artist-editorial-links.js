@@ -5,8 +5,8 @@ export function ArtistEditorialLinks({ artist, showStory = true, tone = 'dark' }
   const worksHref = artistWorksHref(artist);
   const storyHref = artistStoryHref(artist);
   const className = tone === 'light'
-    ? 'label-sm text-bronze underline underline-offset-[6px] decoration-bronze/70 hover:text-antique'
-    : 'label-sm text-bronze underline underline-offset-[6px] decoration-bronze/80 hover:text-secondary-container';
+    ? 'artist-editorial-link label-sm text-bronze underline underline-offset-[6px] decoration-bronze/70 hover:text-antique'
+    : 'artist-editorial-link label-sm text-bronze underline underline-offset-[6px] decoration-bronze/80 hover:text-secondary-container';
   const worksLabel = tone === 'dark' ? "Explore artist's works" : "Explore artist's work";
   const storyLabel = tone === 'dark' ? "Read artist's story" : 'Read their story';
 

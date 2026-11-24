@@ -7,7 +7,7 @@ export function LoadingState({ label = 'Loading the salon archive…' }) {
 
 export function EmptyState({ title, description, action }) {
   return (
-    <div className="border border-fillet bg-stone px-6 py-12 text-center">
+    <div className="empty-state border border-fillet bg-stone px-6 py-12 text-center">
       <h2 className="font-display text-2xl italic text-ink">{title}</h2>
       {description ? <p className="mt-3 text-sm text-on-surface-variant">{description}</p> : null}
       {action ? <div className="mt-6 flex justify-center">{action}</div> : null}

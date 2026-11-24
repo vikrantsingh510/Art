@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ImagePlaceholder } from '@/components/loading';
+import { Reveal } from '@/components/reveal';
 import { EmptyState, ErrorState } from '@/components/states';
 import { api, ApiClientError } from '@/lib/api';
 import { publicStorageUrl } from '@/lib/media';
@@ -18,22 +19,25 @@ export default async function CollectionsPage() {
 
   return (
     <div>
-      <header className="page-shell pt-12 md:pt-20 pb-10 space-y-4">
+      <header className="page-shell pt-12 md:pt-20 pb-10">
+        <Reveal className="space-y-4">
         <p className="label-sm text-patina">Published hangings</p>
         <h1 className="font-display text-4xl md:text-[40px] leading-tight text-ink">Collections</h1>
+        </Reveal>
       </header>
       <div className="page-shell pb-20">
         {error ? <ErrorState error={error} retryHref="/collections" /> : null}
         {!error && collections.length === 0 ? (
           <EmptyState title="No published collections" description="When a hanging is released, it will appear here." />
         ) : (
+          <Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {collections.map((collection) => {
               const coverUrl = publicStorageUrl(collection.coverImagePath);
               return (
-                <Link key={collection.id} href={`/collections/${collection.id}`} className="border-t border-fillet pt-6 space-y-4">
+                <Link key={collection.id} href={`/collections/${collection.id}`} className="editorial-card-link border-t border-fillet pt-6 space-y-4">
                   {coverUrl ? (
-                    <div className="relative aspect-[16/9] bg-surface-container-low">
+                    <div className="editorial-image-hover relative aspect-[16/9] overflow-hidden bg-surface-container-low">
                       <Image
                         src={coverUrl}
                         alt={collection.name}
@@ -47,15 +51,16 @@ export default async function CollectionsPage() {
                     <ImagePlaceholder className="max-w-md" label="No cover" />
                   )}
                   <p className="label-sm text-patina">{collection.slug}</p>
-                  <h2 className="font-display text-3xl italic leading-tight">{collection.name}</h2>
+                  <h2 className="editorial-card-title font-display text-3xl italic leading-tight">{collection.name}</h2>
                   <p className="text-sm text-on-surface-variant">
                     {collection.description || 'View the published works in this hanging.'}
                   </p>
-                  <p className="label-sm text-bronze">View the hanging</p>
+                  <p className="editorial-card-cta label-sm text-bronze">View the hanging</p>
                 </Link>
               );
             })}
           </div>
+          </Reveal>
         )}
       </div>
     </div>

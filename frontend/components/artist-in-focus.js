@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { ArtistEditorialLinks } from '@/components/artist-editorial-links';
+import { Reveal } from '@/components/reveal';
 import { artistFocusCopy } from '@/lib/homepage-artists';
 import { publicStorageUrl } from '@/lib/media';
 
@@ -14,8 +15,8 @@ export function ArtistInFocus({ artist }) {
 
   return (
     <section aria-labelledby="artist-in-focus-heading" className="w-full">
-      <div className="artist-in-focus-frame grid grid-cols-1 lg:grid-cols-2">
-        <div className="artist-in-focus-portrait relative bg-charcoal overflow-hidden">
+      <Reveal className="artist-in-focus-frame grid grid-cols-1 lg:grid-cols-2" stagger={2}>
+        <div className="artist-in-focus-portrait editorial-image-hover relative bg-charcoal overflow-hidden">
           {portraitUrl ? (
             <Image
               src={portraitUrl}
@@ -63,7 +64,7 @@ export function ArtistInFocus({ artist }) {
             <ArtistEditorialLinks artist={artist} showStory={showStory} tone="dark" />
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

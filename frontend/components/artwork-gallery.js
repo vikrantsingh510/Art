@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { previewAspectRatio } from '@/lib/ar-assets/storefront';
+import { ARTWORK_LIGHTBOX_MS, shouldDeferLightboxExit } from '@/lib/artwork-lightbox';
 import { galleryHasControls, orderedGalleryImages, swipeDirection, wrapGalleryIndex } from '@/lib/artwork-gallery';
 import { ArtworkImage } from './artwork-image';
 
@@ -10,7 +11,9 @@ export function ArtworkGallery({ artwork }) {
   const images = orderedGalleryImages(artwork);
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [lightboxExiting, setLightboxExiting] = useState(false);
   const pointerX = useRef(null);
+  const exitTimer = useRef(null);
   const selectedIndex = images.length ? wrapGalleryIndex(index, images.length) : 0;
   const selected = images[selectedIndex] || null;
   const showControls = galleryHasControls(images);
@@ -18,6 +21,38 @@ export function ArtworkGallery({ artwork }) {
   function go(offset) {
     setIndex((current) => wrapGalleryIndex(current + offset, images.length));
   }
+
+  function openLightbox() {
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+      exitTimer.current = null;
+    }
+    setLightboxExiting(false);
+    setLightbox(true);
+  }
+
+  function closeLightbox() {
+    if (!lightbox || lightboxExiting) {
+      return;
+    }
+    if (!shouldDeferLightboxExit()) {
+      setLightbox(false);
+      setLightboxExiting(false);
+      return;
+    }
+    setLightboxExiting(true);
+    exitTimer.current = setTimeout(() => {
+      setLightbox(false);
+      setLightboxExiting(false);
+      exitTimer.current = null;
+    }, ARTWORK_LIGHTBOX_MS);
+  }
+
+  useEffect(() => () => {
+    if (exitTimer.current) {
+      clearTimeout(exitTimer.current);
+    }
+  }, []);
 
   useEffect(() => {
     if (!lightbox) {
@@ -28,7 +63,22 @@ export function ArtworkGallery({ artwork }) {
     function onKeyDown(event) {
       if (event.key === 'Escape') {
         event.preventDefault();
-        setLightbox(false);
+        if (!shouldDeferLightboxExit()) {
+          setLightbox(false);
+          setLightboxExiting(false);
+        } else {
+          setLightboxExiting((exiting) => {
+            if (exiting) {
+              return exiting;
+            }
+            exitTimer.current = setTimeout(() => {
+              setLightbox(false);
+              setLightboxExiting(false);
+              exitTimer.current = null;
+            }, ARTWORK_LIGHTBOX_MS);
+            return true;
+          });
+        }
       }
       if (event.key === 'ArrowRight') {
         event.preventDefault();
@@ -102,17 +152,19 @@ export function ArtworkGallery({ artwork }) {
         <button
           type="button"
           className="block w-full text-left"
-          onClick={() => setLightbox(true)}
+          onClick={openLightbox}
           aria-label="View artwork image full screen"
         >
-          <ArtworkImage
-            artwork={artwork}
-            image={selected}
-            variant="detail"
-            fit="physical"
-            priority
-            sizes="(min-width: 768px) 55vw, 100vw"
-          />
+          <div className="artwork-gallery-stage" key={selected.id}>
+            <ArtworkImage
+              artwork={artwork}
+              image={selected}
+              variant="detail"
+              fit="physical"
+              priority
+              sizes="(min-width: 768px) 55vw, 100vw"
+            />
+          </div>
         </button>
         {showControls ? (
           <>
@@ -143,7 +195,7 @@ export function ArtworkGallery({ artwork }) {
               type="button"
               role="tab"
               aria-selected={imageIndex === selectedIndex}
-              className={`border ${imageIndex === index ? 'border-bronze' : 'border-fillet'}`}
+              className={`artwork-gallery-thumb${imageIndex === selectedIndex ? ' is-active' : ''}`}
               onClick={() => setIndex(imageIndex)}
             >
               <ArtworkImage
@@ -160,11 +212,11 @@ export function ArtworkGallery({ artwork }) {
 
       {lightbox ? createPortal(
         <div
-          className="fixed inset-0 z-[80] bg-charcoal/80 flex items-center justify-center p-4 overflow-y-auto cursor-pointer"
+          className={`artwork-lightbox-backdrop fixed inset-0 z-[80] bg-charcoal/80 flex items-center justify-center p-4 overflow-y-auto cursor-pointer${lightboxExiting ? ' is-exiting' : ''}`}
           role="dialog"
           aria-modal="true"
           aria-label="Artwork image"
-          onClick={() => setLightbox(false)}
+          onClick={closeLightbox}
         >
           <div
             className="artwork-lightbox-dialog mx-auto my-auto space-y-4 cursor-auto"
@@ -177,17 +229,19 @@ export function ArtworkGallery({ artwork }) {
               <p className="label-sm text-bronze">
                 {selectedIndex + 1} of {images.length}
               </p>
-              <button className="btn-secondary min-h-11" type="button" onClick={() => setLightbox(false)}>
+              <button className="btn-secondary min-h-11" type="button" onClick={closeLightbox}>
                 Close
               </button>
             </div>
-            <ArtworkImage
-              artwork={artwork}
-              image={selected}
-              variant="lightbox"
-              fit="physical"
-              sizes="90vw"
-            />
+            <div className="artwork-gallery-stage" key={selected.id}>
+              <ArtworkImage
+                artwork={artwork}
+                image={selected}
+                variant="lightbox"
+                fit="physical"
+                sizes="90vw"
+              />
+            </div>
             {showControls ? (
               <div className="flex justify-between gap-3">
                 <button className="btn-secondary min-h-11" type="button" onClick={() => go(-1)}>Previous</button>

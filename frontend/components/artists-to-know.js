@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArtistEditorialLinks } from '@/components/artist-editorial-links';
+import { Reveal } from '@/components/reveal';
 import { artistCategoryLabel, artistExcerpt } from '@/lib/homepage-artists';
 import { publicStorageUrl } from '@/lib/media';
 
@@ -11,7 +12,7 @@ function ArtistsToKnowCard({ artist }) {
   const showStory = Boolean(artist.biography || artist.shortBio);
 
   return (
-    <article className="relative min-h-[28rem] md:min-h-[32rem] overflow-hidden bg-olive text-ivory">
+    <article className="editorial-image-hover relative min-h-[28rem] md:min-h-[32rem] overflow-hidden bg-olive text-ivory">
       {portraitUrl ? (
         <Image
           src={portraitUrl}
@@ -46,6 +47,7 @@ export function ArtistsToKnow({ artists }) {
   return (
     <section aria-labelledby="artists-to-know-heading" className="bg-surface">
       <div className="page-shell py-16 md:py-24">
+        <Reveal stagger={2}>
         <header className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-16 items-end mb-10 md:mb-14">
           <div className="lg:col-span-7 space-y-3">
             <p className="label-sm text-bronze">Artists to know</p>
@@ -65,6 +67,7 @@ export function ArtistsToKnow({ artists }) {
             <ArtistsToKnowCard key={artist.id} artist={artist} />
           ))}
         </div>
+        </Reveal>
       </div>
     </section>
   );

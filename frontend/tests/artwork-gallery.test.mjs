@@ -9,6 +9,7 @@ import {
   swipeDirection,
   wrapGalleryIndex,
 } from '../lib/artwork-gallery.js';
+import { ARTWORK_LIGHTBOX_MS, shouldDeferLightboxExit } from '../lib/artwork-lightbox.js';
 import {
   MAX_ARTWORK_IMAGES,
   capacityLabel,
@@ -509,4 +510,45 @@ test('detail artwork max-height leaves the full painting in the first desktop vi
       `${viewport.width}x${viewport.height} painting stays below the header`,
     );
   }
+});
+
+test('artwork gallery lightbox fades without changing swipe, keyboard or physical fit', () => {
+  const root = path.dirname(fileURLToPath(import.meta.url));
+  const gallery = fs.readFileSync(path.join(root, '../components/artwork-gallery.js'), 'utf8');
+  const css = fs.readFileSync(path.join(root, '../app/globals.css'), 'utf8');
+  const page = fs.readFileSync(path.join(root, '../app/(gallery)/artwork/[id]/page.js'), 'utf8');
+
+  assert.equal(ARTWORK_LIGHTBOX_MS, 200);
+  globalThis.matchMedia = () => ({ matches: false });
+  assert.equal(shouldDeferLightboxExit(), true);
+  globalThis.matchMedia = () => ({ matches: true });
+  assert.equal(shouldDeferLightboxExit(), false);
+  delete globalThis.matchMedia;
+
+  assert.match(gallery, /closeLightbox/);
+  assert.match(gallery, /openLightbox/);
+  assert.match(gallery, /artwork-lightbox-backdrop/);
+  assert.match(gallery, /is-exiting/);
+  assert.match(gallery, /ARTWORK_LIGHTBOX_MS/);
+  assert.match(gallery, /shouldDeferLightboxExit/);
+  assert.match(gallery, /swipeDirection/);
+  assert.match(gallery, /event\.key === 'ArrowRight'/);
+  assert.match(gallery, /event\.key === 'ArrowLeft'/);
+  assert.match(gallery, /event\.key === 'Escape'/);
+  assert.match(gallery, /artwork-gallery-thumb/);
+  assert.match(gallery, /artwork-gallery-stage/);
+  assert.match(gallery, /key=\{selected\.id\}/);
+  assert.match(gallery, /fit="physical"/);
+  assert.match(gallery, /priority/);
+  assert.doesNotMatch(gallery, /hover=\{false\}/);
+  assert.doesNotMatch(gallery, /setInterval|autoplay/);
+  assert.doesNotMatch(gallery, /model-viewer|ArViewer/);
+  assert.match(css, /artwork-lightbox-enter 200ms var\(--motion-ease\)/);
+  assert.match(css, /\.artwork-lightbox-backdrop\.is-exiting/);
+  assert.match(css, /\.artwork-gallery-thumb\.is-active/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce[\s\S]*\.artwork-lightbox-backdrop/);
+  assert.match(css, /\.artwork-detail-frame img\s*\{[^}]*object-fit:\s*contain/);
+  assert.match(page, /ArtworkGallery/);
+  assert.match(page, /ArtworkSizeGuide/);
+  assert.match(page, /ArViewer/);
 });

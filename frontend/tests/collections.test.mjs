@@ -102,6 +102,8 @@ test('public listing renders a cover image or fallback and drops catalogue copy'
   assert.match(listing, /publicStorageUrl\(collection\.coverImagePath\)/);
   assert.match(listing, /ImagePlaceholder|No cover/);
   assert.match(listing, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
+  assert.match(listing, /editorial-image-hover/);
+  assert.match(listing, /editorial-card-link/);
   assert.doesNotMatch(listing, /Cover catalogued/);
   assert.match(listing, /listCollections/);
   assert.match(listing, /EmptyState/);
@@ -117,6 +119,8 @@ test('public detail renders published artworks in hanging order', () => {
   assert.match(detail, /This hanging has no published works yet\./);
   assert.match(detail, /notFound\(\)/);
   assert.match(detail, /ArtworkCard/);
+  assert.match(detail, /editorial-image-hover/);
+  assert.match(detail, /sortByCollectionOrder\(list\.items \|\| \[\], collection\.artworkIds\)/);
   assert.doesNotMatch(detail, /createdAt/);
   assert.doesNotMatch(detail, /Cover catalogued/);
 });

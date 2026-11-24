@@ -13,17 +13,17 @@ export default async function AccountPage() {
         {user.isAdmin ? 'You have curatorial console access.' : 'You are signed in as a collector.'}
       </p>
       <div className="grid md:grid-cols-2 gap-6">
-        <Link href="/account/orders" className="border border-fillet p-6">
+        <Link href="/account/orders" className="editorial-card-link border border-fillet p-6">
           <p className="label-md text-patina">Orders</p>
-          <p className="font-display text-2xl mt-2">Reservation history</p>
+          <p className="editorial-card-title font-display text-2xl mt-2">Reservation history</p>
         </Link>
-        <Link href="/cart" className="border border-fillet p-6">
+        <Link href="/cart" className="editorial-card-link border border-fillet p-6">
           <p className="label-md text-patina">Bag</p>
-          <p className="font-display text-2xl mt-2">Works ready to reserve</p>
+          <p className="editorial-card-title font-display text-2xl mt-2">Works ready to reserve</p>
         </Link>
-        <Link href="/account/wishlist" className="border border-fillet p-6">
+        <Link href="/account/wishlist" className="editorial-card-link border border-fillet p-6">
           <p className="label-md text-patina">Wishlist</p>
-          <p className="font-display text-2xl mt-2">Saved without holding stock</p>
+          <p className="editorial-card-title font-display text-2xl mt-2">Saved without holding stock</p>
         </Link>
       </div>
     </div>

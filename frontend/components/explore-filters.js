@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { pendingButtonProps } from '@/lib/pending-action';
 import {
@@ -11,17 +11,24 @@ import {
   exploreHref,
   parseExploreQuery,
 } from '@/lib/explore-query';
+import { useExplorePending } from './explore-pending';
 import { ButtonLoader } from './loading';
 
 export function ExploreFilters({ categories }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setPending } = useExplorePending();
   const current = parseExploreQuery(Object.fromEntries(searchParams.entries()));
   const currentHref = exploreHref(current, current.page);
   const [requestedHref, setRequestedHref] = useState(null);
   const pending = Boolean(requestedHref && requestedHref !== currentHref);
   const chips = exploreFilterChips(current, { categories });
   const filtersActive = exploreHasActiveFilters(current);
+
+  useEffect(() => {
+    setPending(pending);
+    return () => setPending(false);
+  }, [pending, setPending]);
 
   function update(next) {
     const merged = { ...current, ...next, page: next.page || 1 };
@@ -30,6 +37,7 @@ export function ExploreFilters({ categories }) {
       return;
     }
     setRequestedHref(href);
+    setPending(true);
     router.push(href);
   }
 
