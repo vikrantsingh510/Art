@@ -14,6 +14,13 @@ export default function AdminSettingsLoading() {
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-12 w-40" />
       </div>
+      <div className="space-y-6 max-w-xl">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-12 w-40" />
+      </div>
     </div>
   );
 }

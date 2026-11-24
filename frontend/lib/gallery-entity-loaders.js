@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { api } from './api';
+import { resolveHomepageHero } from './homepage-hero';
 import { getAccessToken } from './session';
 import { isArtworkInWishlist } from './wishlist-favourite';
 
@@ -58,5 +59,17 @@ export const loadWhatsappEnquiry = cache(async function loadWhatsappEnquiry() {
     return { enabled: false };
   } catch {
     return { enabled: false };
+  }
+});
+
+export const loadHomepageHero = cache(async function loadHomepageHero() {
+  try {
+    const hero = await api.getHomepageHero();
+    if (hero && typeof hero === 'object') {
+      return resolveHomepageHero(hero);
+    }
+    return resolveHomepageHero(null);
+  } catch {
+    return resolveHomepageHero(null);
   }
 });

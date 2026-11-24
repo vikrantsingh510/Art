@@ -9,6 +9,7 @@ import { cartRouter, addressRouter, checkoutRouter, orderRouter, wishlistRouter 
 import { categoryPublicRouter, collectionPublicRouter } from './catalog.routes.js';
 import { enquiryPublicRouter } from './enquiry.routes.js';
 import healthRouter from './health.routes.js';
+import { homepagePublicRouter } from './homepage.routes.js';
 import { paymentRouter, webhookRouter } from './payment.routes.js';
 
 const apiRouter = Router();
@@ -21,6 +22,7 @@ apiRouter.use('/categories', categoryPublicRouter);
 apiRouter.use('/collections', collectionPublicRouter);
 apiRouter.use('/blogs', blogPublicRouter);
 apiRouter.use('/enquiry', enquiryPublicRouter);
+apiRouter.use('/homepage', homepagePublicRouter);
 apiRouter.use('/cart', requireAuth, cartRouter);
 apiRouter.use('/wishlist', requireAuth, wishlistRouter);
 apiRouter.use('/addresses', requireAuth, addressRouter);

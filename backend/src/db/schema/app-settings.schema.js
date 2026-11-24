@@ -2,6 +2,7 @@ import { jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { profiles } from './profiles.schema.js';
 
 export const APP_SETTING_WHATSAPP_ENQUIRY = 'whatsapp_enquiry';
+export const APP_SETTING_HOMEPAGE_HERO = 'homepage_hero';
 
 export const appSettings = pgTable('app_settings', {
   key: varchar('key', { length: 100 }).primaryKey().notNull(),

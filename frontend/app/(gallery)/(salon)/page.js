@@ -6,6 +6,7 @@ import { ArtworkCard } from '@/components/artwork-card';
 import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
+import { loadHomepageHero } from '@/lib/gallery-entity-loaders';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
 import { selectHomepageArtists } from '@/lib/homepage-artists';
 
@@ -46,17 +47,21 @@ async function loadHome() {
 }
 
 export default async function HomePage() {
-  const { artworks, total, categories, collections, featuredArtist, knownArtists, error } = await loadHome();
+  const [{ artworks, total, categories, collections, featuredArtist, knownArtists, error }, hero] = await Promise.all([
+    loadHome(),
+    loadHomepageHero(),
+  ]);
 
   return (
     <div>
       <section className="hero-frame relative w-full -mt-[7.5rem] min-h-[34rem] md:min-h-[52rem] flex flex-col justify-end bg-surface-container-low overflow-hidden">
         <Image
-          src="/images/hero-salon.webp"
-          alt="Museum gallery exhibition of large-scale original textured paintings"
+          src={hero.src}
+          alt={hero.alt}
           fill
           priority
           sizes="100vw"
+          {...(hero.unoptimized ? { unoptimized: true } : {})}
           className="object-cover object-center brightness-[0.92] contrast-[1.03]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />

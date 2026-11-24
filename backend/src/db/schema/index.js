@@ -37,7 +37,11 @@ export {
   userRoleEnum,
   webhookProcessingStatusEnum,
 } from './enums.js';
-export { APP_SETTING_WHATSAPP_ENQUIRY, appSettings } from './app-settings.schema.js';
+export {
+  APP_SETTING_HOMEPAGE_HERO,
+  APP_SETTING_WHATSAPP_ENQUIRY,
+  appSettings,
+} from './app-settings.schema.js';
 export { profiles } from './profiles.schema.js';
 export { userRoles } from './user-roles.schema.js';
 export { addresses } from './addresses.schema.js';

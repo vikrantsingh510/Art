@@ -1,6 +1,15 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../config/database.js';
-import { APP_SETTING_WHATSAPP_ENQUIRY, appSettings } from '../db/schema/app-settings.schema.js';
+import {
+  APP_SETTING_HOMEPAGE_HERO,
+  APP_SETTING_WHATSAPP_ENQUIRY,
+  appSettings,
+} from '../db/schema/app-settings.schema.js';
+import {
+  normalizeHomepageHeroAltText,
+  normalizeHomepageHeroStoragePath,
+  toHomepageHeroSnapshot,
+} from '../lib/homepage-hero.js';
 import {
   maskWhatsappE164,
   normalizeWhatsappButtonLabel,
@@ -117,8 +126,73 @@ export async function updateAdminWhatsappSettings(payload, actorUserId, { ipAddr
   return toAdminWhatsappSettings(row);
 }
 
+async function getHomepageHeroSettingsRow() {
+  const [row] = await db
+    .select()
+    .from(appSettings)
+    .where(eq(appSettings.key, APP_SETTING_HOMEPAGE_HERO))
+    .limit(1);
+  return row || null;
+}
+
+export async function getPublicHomepageHero() {
+  const row = await getHomepageHeroSettingsRow();
+  return toHomepageHeroSnapshot(row);
+}
+
+export async function getAdminHomepageHeroSettings() {
+  const row = await getHomepageHeroSettingsRow();
+  return toHomepageHeroSnapshot(row);
+}
+
+export async function updateAdminHomepageHeroSettings(payload, actorUserId, { ipAddress } = {}) {
+  const storagePath = normalizeHomepageHeroStoragePath(payload.storagePath);
+  const altText = normalizeHomepageHeroAltText(payload.altText);
+
+  const value = {
+    storagePath,
+    altText,
+  };
+
+  const [row] = await db
+    .insert(appSettings)
+    .values({
+      key: APP_SETTING_HOMEPAGE_HERO,
+      value,
+      updatedBy: actorUserId || null,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: appSettings.key,
+      set: {
+        value,
+        updatedBy: actorUserId || null,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  await writeAuditLog({
+    actorUserId,
+    action: 'settings.homepage_hero.update',
+    entityType: 'app_settings',
+    entityId: null,
+    ipAddress: ipAddress || null,
+    metadata: {
+      key: APP_SETTING_HOMEPAGE_HERO,
+      storagePath,
+      altTextLength: altText ? altText.length : 0,
+    },
+  });
+
+  return toHomepageHeroSnapshot(row);
+}
+
 export default {
   getPublicWhatsappEnquiry,
   getAdminWhatsappSettings,
   updateAdminWhatsappSettings,
+  getPublicHomepageHero,
+  getAdminHomepageHeroSettings,
+  updateAdminHomepageHeroSettings,
 };

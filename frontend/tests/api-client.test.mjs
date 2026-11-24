@@ -152,3 +152,51 @@ test('sends profile, wishlist and admin order paths', async () => {
   assert.match(calls[10].url, /\/api\/v1\/admin\/collections\/col-id\/artworks$/);
   assert.equal(calls[10].method, 'PUT');
 });
+
+test('sends admin homepage hero settings paths', async () => {
+  const calls = [];
+  const api = createArtApi({
+    baseUrl: 'http://api.test',
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), method: options.method, body: options.body });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ success: true, data: { storagePath: null, altText: null } }),
+      };
+    },
+  });
+
+  await api.adminHomepageHeroSettings({ token: 't' });
+  await api.updateAdminHomepageHeroSettings(
+    { storagePath: 'settings/homepage/hero-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.webp', altText: 'Salon' },
+    { token: 't' },
+  );
+  assert.match(calls[0].url, /\/api\/v1\/admin\/settings\/homepage-hero$/);
+  assert.equal(calls[0].method, 'GET');
+  assert.match(calls[1].url, /\/api\/v1\/admin\/settings\/homepage-hero$/);
+  assert.equal(calls[1].method, 'PUT');
+  assert.match(calls[1].body, /settings\/homepage\/hero-/);
+});
+
+test('sends public homepage hero path', async () => {
+  const calls = [];
+  const api = createArtApi({
+    baseUrl: 'http://api.test',
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), method: options.method });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          success: true,
+          data: { storagePath: null, altText: null, updatedAt: null },
+        }),
+      };
+    },
+  });
+
+  await api.getHomepageHero();
+  assert.match(calls[0].url, /\/api\/v1\/homepage\/hero$/);
+  assert.equal(calls[0].method, 'GET');
+});
