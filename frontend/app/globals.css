@@ -264,6 +264,149 @@ body {
   overflow: hidden;
 }
 
+.homepage-collection-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .homepage-collection-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.75rem;
+  }
+
+  .homepage-collection-grid[data-count="1"] {
+    grid-template-columns: 1fr;
+  }
+
+  .homepage-collection-grid[data-count="3"] .homepage-collection-panel:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.homepage-collection-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  height: 18.5rem;
+  background: var(--color-olive);
+  color: var(--color-ivory);
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .homepage-collection-panel {
+    height: 24rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .homepage-collection-panel {
+    height: 26rem;
+  }
+}
+
+.homepage-collection-panel:focus-visible {
+  outline: 2px solid var(--color-antique);
+  outline-offset: 3px;
+}
+
+.homepage-collection-media,
+.homepage-collection-fallback {
+  position: absolute;
+  inset: 0;
+}
+
+.homepage-collection-media img {
+  object-fit: cover;
+}
+
+.homepage-collection-fallback {
+  background: var(--color-olive);
+}
+
+.homepage-collection-veil,
+.homepage-collection-veil-boost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.homepage-collection-veil {
+  background: linear-gradient(to top, rgba(17, 17, 16, 0.84) 0%, rgba(17, 17, 16, 0.38) 46%, rgba(17, 17, 16, 0.1) 72%, transparent 100%);
+}
+
+.homepage-collection-veil-boost {
+  background: rgba(17, 17, 16, 0.2);
+  opacity: 0;
+  transition: opacity var(--motion-slow) var(--motion-ease);
+}
+
+.homepage-collection-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  max-width: min(42rem, 92%);
+  padding: 1.2rem 1.2rem 1.3rem;
+}
+
+@media (min-width: 768px) {
+  .homepage-collection-copy {
+    padding: 1.6rem 1.85rem 1.7rem;
+  }
+}
+
+.homepage-collection-title {
+  font-size: 1.65rem;
+  line-height: 1.2;
+  font-style: italic;
+}
+
+@media (min-width: 768px) {
+  .homepage-collection-title {
+    font-size: 1.85rem;
+  }
+}
+
+.homepage-collection-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 38rem;
+  font-size: 13px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--color-ivory) 82%, transparent);
+}
+
+.homepage-collection-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 1.5rem;
+  margin-top: 0.45rem;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ivory);
+  opacity: 1;
+  transition: opacity var(--motion-slow) var(--motion-ease);
+}
+
+.homepage-collection-cta-arrow {
+  display: inline-block;
+  transition: transform var(--motion-slow) var(--motion-ease);
+}
+
 .editorial-card-title,
 .editorial-card-cta,
 .artist-editorial-link {
@@ -574,6 +717,20 @@ body {
     border-color: var(--color-bronze);
     background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   }
+
+  .homepage-collection-cta {
+    opacity: 0;
+  }
+
+  .homepage-collection-panel:hover .homepage-collection-cta,
+  .homepage-collection-panel:focus-visible .homepage-collection-cta {
+    opacity: 1;
+  }
+
+  .homepage-collection-panel:hover .homepage-collection-veil-boost,
+  .homepage-collection-panel:focus-visible .homepage-collection-veil-boost {
+    opacity: 1;
+  }
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -587,6 +744,21 @@ body {
 
   .editorial-image-hover:hover img {
     transform: scale(1.02);
+  }
+
+  .homepage-collection-media img {
+    transform: scale(1);
+    transition: transform var(--motion-slow) var(--motion-ease);
+  }
+
+  .homepage-collection-panel:hover .homepage-collection-media img,
+  .homepage-collection-panel:focus-visible .homepage-collection-media img {
+    transform: scale(1.03);
+  }
+
+  .homepage-collection-panel:hover .homepage-collection-cta-arrow,
+  .homepage-collection-panel:focus-visible .homepage-collection-cta-arrow {
+    transform: translateX(4px);
   }
 }
 
@@ -681,7 +853,11 @@ body {
   .editorial-card-cta,
   .artist-editorial-link,
   .peer-artist-link,
-  .artwork-contain-hover img {
+  .artwork-contain-hover img,
+  .homepage-collection-media img,
+  .homepage-collection-cta,
+  .homepage-collection-cta-arrow,
+  .homepage-collection-veil-boost {
     animation: none;
     transition: none;
   }
@@ -702,8 +878,14 @@ body {
   }
 
   .artwork-image-hover:hover,
-  .editorial-image-hover:hover img {
+  .editorial-image-hover:hover img,
+  .homepage-collection-panel:hover .homepage-collection-media img,
+  .homepage-collection-panel:focus-visible .homepage-collection-media img {
     transform: none;
+  }
+
+  .homepage-collection-cta {
+    opacity: 1;
   }
 
   .artwork-lightbox-backdrop,

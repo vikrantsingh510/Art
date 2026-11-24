@@ -9,7 +9,7 @@ import { ErrorState, EmptyState } from '@/components/states';
 import { Button } from '@/components/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { loadArtistBySlug, loadHomepageFaq, loadHomepageFeaturedArtist, loadHomepageHero } from '@/lib/gallery-entity-loaders';
-import { collectionCoverUrl } from '@/lib/collection-cover';
+import { HomepageCollectionShowcase } from '@/components/homepage-collection-showcase';
 import { selectHomepageArtworks } from '@/lib/homepage-artworks';
 import { hydrateHomepageFeaturedArtist, selectHomepageArtists } from '@/lib/homepage-artists';
 import { shouldRenderHomepageFaq } from '@/lib/homepage-faq';
@@ -169,7 +169,7 @@ export default async function HomePage() {
           </div>
           {categories.length === 0 && collections.length === 0 ? (
             <p className="text-sm text-on-surface-variant">Categories and collections will appear when the atelier publishes them.</p>
-          ) : (
+          ) : categories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {categories.map((category, index) => (
                 <Link key={category.id} href={`/explore?categoryId=${category.id}`} className="editorial-card-link border-t border-fillet pt-4">
@@ -178,33 +178,13 @@ export default async function HomePage() {
                   <p className="text-sm text-on-surface-variant mt-2">{category.description || 'Open this series in the archive.'}</p>
                 </Link>
               ))}
-              {collections.map((collection) => {
-                const coverUrl = collectionCoverUrl(collection.coverImagePath, collection.updatedAt);
-                return (
-                  <Link key={collection.id} href={`/collections/${collection.id}`} className="editorial-card-link border-t border-fillet pt-4">
-                    {coverUrl ? (
-                      <div className="editorial-image-hover relative aspect-[16/9] mb-4 overflow-hidden bg-surface-container-low">
-                        <Image
-                          src={coverUrl}
-                          alt={collection.name}
-                          fill
-                          unoptimized
-                          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : null}
-                    <p className="label-sm text-patina">Collection</p>
-                    <h3 className="editorial-card-title font-display text-2xl mt-2">{collection.name}</h3>
-                    <p className="text-sm text-on-surface-variant mt-2">{collection.description || 'View the published hanging.'}</p>
-                  </Link>
-                );
-              })}
             </div>
-          )}
+          ) : null}
           </Reveal>
         </div>
       </section>
+
+      <HomepageCollectionShowcase collections={collections} />
 
       {shouldRenderHomepageFaq(faq) ? (
         <Reveal>

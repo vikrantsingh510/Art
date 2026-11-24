@@ -163,11 +163,22 @@ test('public detail renders published artworks in hanging order', () => {
 
 test('homepage taxonomy and Explore keep collectionId links working', () => {
   const homepage = read('app/(gallery)/(salon)/page.js');
+  const showcase = read('components/homepage-collection-showcase.js');
   const explore = read('app/(gallery)/explore/page.js');
   assert.match(homepage, /listCollections/);
-  assert.match(homepage, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
-  assert.match(homepage, /collectionCoverUrl\(collection\.coverImagePath, collection\.updatedAt\)/);
-  assert.match(homepage, /src=\{coverUrl\}/);
+  assert.match(homepage, /<HomepageCollectionShowcase collections=\{collections\} \/>/);
+  assert.doesNotMatch(homepage, /api\.listCollections\(\)[\s\S]*api\.listCollections/);
+  assert.match(showcase, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
+  assert.match(showcase, /collectionCoverUrl\(collection\.coverImagePath, collection\.updatedAt\)/);
+  assert.match(showcase, /src=\{coverUrl\}/);
+  assert.match(showcase, /Explore collection \$\{collection\.name\}/);
+  assert.match(showcase, /Explore Collection/);
+  assert.match(showcase, /homepage-collection-panel/);
+  assert.match(showcase, /homepage-collection-title/);
+  assert.match(showcase, /homepage-collection-description/);
+  assert.match(showcase, /homepage-collection-cta/);
+  assert.doesNotMatch(showcase, /'use client'/);
+  assert.doesNotMatch(showcase, /listCollections|fetch\(/);
   assert.match(explore, /collectionId: params.collectionId/);
   assert.match(explore, /listArtworks/);
 
@@ -182,6 +193,32 @@ test('homepage taxonomy and Explore keep collectionId links working', () => {
     /collectionId=11111111-1111-4111-8111-111111111111/,
   );
   assert.equal(clearedExploreQuery(parsed).collectionId, '');
+});
+
+test('homepage collection showcase overlays copy, clips hover zoom and keeps CTA on touch', () => {
+  const homepage = read('app/(gallery)/(salon)/page.js');
+  const showcase = read('components/homepage-collection-showcase.js');
+  const listing = read('app/(gallery)/collections/page.js');
+  const styles = read('app/globals.css');
+
+  assert.match(homepage, /listCollections/);
+  assert.match(homepage, /<HomepageCollectionShowcase collections=\{collections\} \/>/);
+  assert.doesNotMatch(homepage, /unstable_cache|revalidate/);
+  assert.match(showcase, /items\.map\(\(collection\)/);
+  assert.match(showcase, /href=\{`\/collections\/\$\{collection\.id\}`\}/);
+  assert.match(showcase, /View the published hanging/);
+  assert.match(showcase, /aria-label=\{`Explore collection \$\{collection\.name\}`\}/);
+  assert.match(styles, /\.homepage-collection-panel[\s\S]*overflow:\s*hidden/);
+  assert.match(styles, /@media \(hover: hover\) and \(prefers-reduced-motion: no-preference\)[\s\S]*\.homepage-collection-panel:hover \.homepage-collection-media img[\s\S]*scale\(1\.03\)/);
+  assert.match(styles, /@media \(hover: hover\)[\s\S]*\.homepage-collection-cta[\s\S]*opacity:\s*0/);
+  assert.match(styles, /\.homepage-collection-cta \{[\s\S]*opacity:\s*1/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*\.homepage-collection-cta[\s\S]*opacity:\s*1/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*\.homepage-collection-panel:hover \.homepage-collection-media img[\s\S]*transform:\s*none/);
+  assert.match(styles, /\.homepage-collection-panel:focus-visible/);
+  assert.doesNotMatch(styles, /@keyframes\s+shimmer/i);
+  assert.doesNotMatch(listing, /homepage-collection-panel/);
+  assert.match(listing, /editorial-card-link/);
+  assert.match(listing, /View the hanging/);
 });
 
 test('artwork form does not send collectionIds when membership is unchanged or the list is empty', () => {

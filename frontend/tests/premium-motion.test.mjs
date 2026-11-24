@@ -180,6 +180,7 @@ test('editorial image hover is clipped and does not change artwork card dimensio
   const artistCard = read('components/artist-card.js');
   const collections = read('app/(gallery)/collections/page.js');
   const page = read('app/(gallery)/(salon)/page.js');
+  const showcase = read('components/homepage-collection-showcase.js');
   const card = read('components/artwork-card.js');
   const styles = read('app/globals.css');
 
@@ -188,11 +189,14 @@ test('editorial image hover is clipped and does not change artwork card dimensio
   assert.match(journal, /editorial-image-hover/);
   assert.match(artistCard, /editorial-image-hover/);
   assert.match(collections, /editorial-image-hover/);
-  assert.match(page, /editorial-image-hover/);
+  assert.match(page, /HomepageCollectionShowcase/);
+  assert.match(showcase, /homepage-collection-panel/);
   assert.doesNotMatch(card, /editorial-image-hover/);
   assert.match(styles, /@media \(hover: hover\) and \(prefers-reduced-motion: no-preference\)[\s\S]*\.editorial-image-hover:hover img[\s\S]*scale\(1\.02\)/);
   assert.match(styles, /\.editorial-image-hover \{\s*overflow:\s*hidden/);
   assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*\.editorial-image-hover:hover img[\s\S]*transform:\s*none/);
+  assert.match(styles, /\.homepage-collection-panel[\s\S]*overflow:\s*hidden/);
+  assert.match(styles, /@media \(hover: hover\) and \(prefers-reduced-motion: no-preference\)[\s\S]*scale\(1\.03\)/);
   assert.match(card, /fit="physical"/);
   assert.match(card, /hover=\{false\}/);
 });
